@@ -365,9 +365,16 @@ export default function LogWorkout() {
               onChange={(e) => setSessionDate(e.target.value)}
               className={inputClass}
             />
-            <p className="mt-1.5 text-[11px] text-charcoal-muted">
-              Plan mileage: {formatPreciseNumber(planMileages[sessionDate] ?? 0)} km
-            </p>
+            {(planMileages[sessionDate] ?? 0) > 0 ? (
+              <p className="mt-1.5 text-[11px] text-charcoal-muted">
+                Plan mileage: {formatPreciseNumber(planMileages[sessionDate] ?? 0)} km
+              </p>
+            ) : (
+              <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-coral/30 bg-coral/10 px-3 py-2 text-[12px] font-medium text-coral">
+                <Icon name="event_busy" size={15} />
+                Unavailable for this date — no session mileage set.
+              </div>
+            )}
           </div>
         )}
 
@@ -417,20 +424,27 @@ export default function LogWorkout() {
         {/* Sticky submit */}
         {category && (
           <div className="sticky bottom-20 sm:bottom-4 z-10 pt-2">
-            <button
-              type="submit"
-              disabled={isSubmitting || isUploadingProof}
-              className="focus-ring w-full rounded-full bg-coral py-3.5 text-[14px] font-semibold text-white transition-all hover:bg-coral-dark active:scale-[0.99] disabled:opacity-40"
-            >
-              {isSubmitting || isUploadingProof ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                  {isUploadingProof ? 'Uploading...' : 'Logging...'}
-                </span>
-              ) : (
-                'Log this workout'
-              )}
-            </button>
+            {(() => {
+              const sessionUnavailable = category === 'session' && (planMileages[sessionDate] ?? 0) <= 0;
+              return (
+                <button
+                  type="submit"
+                  disabled={isSubmitting || isUploadingProof || sessionUnavailable}
+                  className="focus-ring w-full rounded-full bg-coral py-3.5 text-[14px] font-semibold text-white transition-all hover:bg-coral-dark active:scale-[0.99] disabled:opacity-40"
+                >
+                  {isSubmitting || isUploadingProof ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      {isUploadingProof ? 'Uploading...' : 'Logging...'}
+                    </span>
+                  ) : sessionUnavailable ? (
+                    'Unavailable for this date'
+                  ) : (
+                    'Log this workout'
+                  )}
+                </button>
+              );
+            })()}
           </div>
         )}
       </form>
