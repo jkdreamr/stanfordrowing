@@ -22,8 +22,11 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.07] bg-[#0d1110]/90 sm:hidden">
-      <div className="flex items-end justify-around px-2 pb-safe">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.07] bg-[#0d1110]/95 sm:hidden">
+      <div
+        className="flex items-stretch justify-around px-2 pt-1"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+      >
         {ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
 
@@ -33,14 +36,14 @@ export default function BottomNav() {
                 key={item.href}
                 href={item.href}
                 aria-label="Log the work"
-                className="flex min-h-[64px] flex-col items-center justify-center gap-1 px-2 touch-manipulation"
+                className="flex min-h-[44px] flex-col items-center justify-end gap-1 px-2 touch-manipulation"
               >
                 <span
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-coral text-white shadow-glow transition-all duration-200 active:scale-90 ${
+                  className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-coral text-white shadow-glow transition-all duration-200 active:scale-90 ${
                     active ? 'ring-2 ring-white/20' : ''
                   }`}
                 >
-                  <Icon name={item.icon} size={26} />
+                  <Icon name={item.icon} size={24} />
                 </span>
                 <span className={`text-[9px] font-semibold tracking-wide ${active ? 'text-coral' : 'text-charcoal-muted'}`}>
                   {item.label}
@@ -54,11 +57,11 @@ export default function BottomNav() {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex min-h-[64px] flex-1 flex-col items-center justify-center gap-1 px-2 transition-colors active:scale-95 touch-manipulation ${
+              className={`flex min-h-[44px] flex-1 flex-col items-center justify-end gap-1 px-2 pt-1 transition-colors active:scale-95 touch-manipulation ${
                 active ? 'text-charcoal' : 'text-charcoal-muted'
               }`}
             >
-              <Icon name={item.icon} size={23} fill={active} />
+              <Icon name={item.icon} size={22} fill={active} />
               <span className={`text-[9px] font-semibold tracking-wide ${active ? 'text-charcoal' : 'text-charcoal-muted'}`}>
                 {item.label}
               </span>
