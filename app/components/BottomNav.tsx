@@ -22,8 +22,11 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="pb-safe glass fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.07] sm:hidden">
-      <div className="flex items-stretch justify-around px-2 pt-2">
+    <nav
+      className="glass fixed inset-x-0 z-50 border-t border-white/[0.07] sm:hidden"
+      style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div className="flex items-stretch justify-around px-2 pt-2 pb-3">
         {ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
 
