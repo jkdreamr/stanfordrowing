@@ -27,12 +27,21 @@ export interface Workout {
   proofUrl?: string;
   activityName?: string;
   reactions?: WorkoutReaction[];
+  comments?: WorkoutComment[];
   weightedScore?: number;
   createdAt: string;
 }
 
 export interface WorkoutReaction {
   userId: string;
+  createdAt: string;
+}
+
+export interface WorkoutComment {
+  id: string;
+  userId: string;
+  userName?: string;
+  body: string;
   createdAt: string;
 }
 

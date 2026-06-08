@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Workout, WorkoutType, WorkoutTypeConfig, User } from '@/lib/types';
 import {
   formatPreciseNumber,
@@ -15,6 +15,7 @@ import Avatar from './Avatar';
 import Icon from './Icon';
 import RespectButton from './RespectButton';
 import ProofPreview from './ProofPreview';
+import CommentSection from './CommentSection';
 
 interface WorkoutPostCardProps {
   workout: Workout;
@@ -22,6 +23,8 @@ interface WorkoutPostCardProps {
   badges?: Badge[];
   currentUser: User | null;
   onToggleRespect: (workout: Workout) => void;
+  onAddComment?: (workout: Workout, body: string) => Promise<boolean>;
+  onDeleteComment?: (workout: Workout, commentId: string) => void;
   actions?: ReactNode;
 }
 
@@ -40,16 +43,21 @@ export default function WorkoutPostCard({
   badges = [],
   currentUser,
   onToggleRespect,
+  onAddComment,
+  onDeleteComment,
   actions,
 }: WorkoutPostCardProps) {
+  const [showComments, setShowComments] = useState(false);
   const author = getUserById(workout.oderId);
   const displayName = author?.name ?? workout.userName ?? 'Unknown';
   const primary = getWorkoutPrimaryValue(workout, configs);
   const points = getWorkoutWeightedScore(workout, configs);
   const reactions = workout.reactions ?? [];
+  const comments = workout.comments ?? [];
   const hasReacted = reactions.some((r) => r.userId === currentUser?.id);
   const isOwn = workout.oderId === currentUser?.id;
   const caption = workout.notes?.trim();
+  const commentsEnabled = Boolean(onAddComment && onDeleteComment);
 
   return (
     <article className="card group animate-fade-in overflow-hidden">
@@ -119,14 +127,45 @@ export default function WorkoutPostCard({
 
         {/* Footer */}
         <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3.5">
-          <RespectButton
-            count={reactions.length}
-            active={hasReacted}
-            disabled={isOwn || !currentUser}
-            onToggle={() => onToggleRespect(workout)}
-          />
+          <div className="flex items-center gap-4">
+            <RespectButton
+              count={reactions.length}
+              active={hasReacted}
+              disabled={isOwn || !currentUser}
+              onToggle={() => onToggleRespect(workout)}
+            />
+            {commentsEnabled && (
+              <button
+                type="button"
+                onClick={() => setShowComments((s) => !s)}
+                aria-expanded={showComments}
+                className="group inline-flex items-center gap-1.5 transition-all duration-150 active:scale-90"
+              >
+                <Icon
+                  name="mode_comment"
+                  fill={showComments}
+                  size={17}
+                  className={`transition-colors ${showComments ? 'text-coral' : 'text-charcoal-light group-hover:text-coral'}`}
+                />
+                <span className="text-[11px] font-medium tabular text-charcoal-muted">
+                  {comments.length > 0 ? comments.length : ''} Comment{comments.length === 1 ? '' : 's'}
+                </span>
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2">{actions}</div>
         </div>
+
+        {commentsEnabled && showComments && (
+          <div className="mt-4 border-t border-white/[0.06] pt-4">
+            <CommentSection
+              comments={comments}
+              currentUser={currentUser}
+              onAdd={(body) => onAddComment!(workout, body)}
+              onDelete={(commentId) => onDeleteComment!(workout, commentId)}
+            />
+          </div>
+        )}
       </div>
     </article>
   );

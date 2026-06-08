@@ -10,8 +10,15 @@ import {
   getWorkoutWeightedScore,
 } from '@/lib/data';
 import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
-import { User, Workout, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
-import { addWorkoutReaction, fetchMultipliers, fetchWorkouts, removeWorkoutReaction } from '@/lib/supabaseData';
+import { User, Workout, WorkoutComment, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
+import {
+  addWorkoutComment,
+  addWorkoutReaction,
+  fetchMultipliers,
+  fetchWorkouts,
+  removeWorkoutComment,
+  removeWorkoutReaction,
+} from '@/lib/supabaseData';
 import { getWeeklySummary } from '@/lib/stats';
 import FeedList from './components/FeedList';
 import WeeklySummaryCard from './components/WeeklySummaryCard';
@@ -89,6 +96,52 @@ export default function FeedPage() {
     if (storyWorkout) toggleRespect(storyWorkout);
   }, [storyWorkout, currentUser]);
 
+  const updateComments = (id: string, updater: (c: WorkoutComment[]) => WorkoutComment[]) => {
+    setWorkouts((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, comments: updater(w.comments ?? []) } : w))
+    );
+  };
+
+  const addComment = async (workout: Workout, body: string): Promise<boolean> => {
+    if (!currentUser) return false;
+    try {
+      const comment = await addWorkoutComment({
+        workoutId: workout.id,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        body,
+      });
+      updateComments(workout.id, (c) => [...c, comment]);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const deleteComment = async (workout: Workout, commentId: string) => {
+    const previous = workout.comments ?? [];
+    updateComments(workout.id, (c) => c.filter((x) => x.id !== commentId));
+    try {
+      await removeWorkoutComment({ commentId });
+    } catch {
+      updateComments(workout.id, () => previous);
+    }
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const addStoryComment = useCallback(
+    (body: string) => (storyWorkout ? addComment(storyWorkout, body) : Promise.resolve(false)),
+    [storyWorkout, currentUser]
+  );
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const deleteStoryComment = useCallback(
+    (commentId: string) => {
+      if (storyWorkout) void deleteComment(storyWorkout, commentId);
+    },
+    [storyWorkout, currentUser]
+  );
+
   const totalPoints = useMemo(
     () => workouts.reduce((sum, w) => sum + getWorkoutWeightedScore(w, configs), 0),
     [workouts, configs]
@@ -160,6 +213,8 @@ export default function FeedPage() {
                 configs={configs}
                 currentUser={currentUser}
                 onToggleRespect={toggleRespect}
+                onAddComment={addComment}
+                onDeleteComment={deleteComment}
               />
             )}
           </div>
@@ -215,10 +270,12 @@ export default function FeedPage() {
         <TrainingStoryModal
           workout={activeStory}
           configs={configs}
-          currentUserId={currentUser?.id}
+          currentUser={currentUser}
           hasReacted={(activeStory.reactions ?? []).some((r) => r.userId === currentUser?.id)}
           respectCount={(activeStory.reactions ?? []).length}
           onToggleRespect={toggleStoryRespect}
+          onAddComment={addStoryComment}
+          onDeleteComment={deleteStoryComment}
           onClose={() => setStoryWorkout(null)}
         />
       )}

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
-import { User, Workout, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
+import { User, Workout, WorkoutComment, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 
 interface SupabaseWorkoutRow {
   id: string;
@@ -23,6 +23,45 @@ interface SupabaseMultiplierRow {
   value: number;
 }
 
+interface SupabaseCommentRow {
+  id: string;
+  workout_id: string;
+  user_id: string;
+  user_name: string | null;
+  body: string;
+  created_at: string;
+}
+
+/**
+ * Comments are fetched separately (not embedded in the workouts query) so a
+ * missing `workout_comments` table degrades gracefully to "no comments"
+ * instead of breaking the entire feed fetch.
+ */
+async function fetchCommentsByWorkout(): Promise<Map<string, WorkoutComment[]>> {
+  const byWorkout = new Map<string, WorkoutComment[]>();
+  try {
+    const { data, error } = await supabase
+      .from('workout_comments')
+      .select('id, workout_id, user_id, user_name, body, created_at')
+      .order('created_at', { ascending: true });
+    if (error || !data) return byWorkout;
+    for (const row of data as SupabaseCommentRow[]) {
+      const list = byWorkout.get(row.workout_id) ?? [];
+      list.push({
+        id: row.id,
+        userId: row.user_id,
+        userName: row.user_name ?? undefined,
+        body: row.body,
+        createdAt: row.created_at,
+      });
+      byWorkout.set(row.workout_id, list);
+    }
+  } catch {
+    // Table may not exist yet — treat as no comments.
+  }
+  return byWorkout;
+}
+
 export async function fetchWorkouts(): Promise<Workout[]> {
   const { data, error } = await supabase
     .from('workouts')
@@ -32,6 +71,8 @@ export async function fetchWorkouts(): Promise<Workout[]> {
   if (error) {
     throw error;
   }
+
+  const commentsByWorkout = await fetchCommentsByWorkout();
 
   return (data as SupabaseWorkoutRow[]).map(row => ({
     id: row.id,
@@ -49,8 +90,51 @@ export async function fetchWorkouts(): Promise<Workout[]> {
       userId: reaction.user_id,
       createdAt: reaction.created_at,
     })) satisfies WorkoutReaction[],
+    comments: commentsByWorkout.get(row.id) ?? [],
     createdAt: row.created_at,
   }));
+}
+
+export async function addWorkoutComment(params: {
+  workoutId: string;
+  userId: string;
+  userName: string;
+  body: string;
+}): Promise<WorkoutComment> {
+  const { data, error } = await supabase
+    .from('workout_comments')
+    .insert({
+      workout_id: params.workoutId,
+      user_id: params.userId,
+      user_name: params.userName,
+      body: params.body,
+    })
+    .select('id, user_id, user_name, body, created_at')
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const row = data as Omit<SupabaseCommentRow, 'workout_id'>;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    userName: row.user_name ?? undefined,
+    body: row.body,
+    createdAt: row.created_at,
+  };
+}
+
+export async function removeWorkoutComment(params: { commentId: string }): Promise<void> {
+  const { error } = await supabase
+    .from('workout_comments')
+    .delete()
+    .eq('id', params.commentId);
+
+  if (error) {
+    throw error;
+  }
 }
 
 export async function createWorkout(params: {

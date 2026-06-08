@@ -2,6 +2,8 @@ Run this SQL in Supabase (SQL Editor) to create tables and policies:
 
 1. `supabase/schema.sql` — workouts, multipliers, workout_reactions (existing).
 2. `supabase/locker_room.sql` — Locker Room posts + reactions + the `locker-media` storage bucket (new).
+3. `supabase/workout_comments.sql` — comments on workout posts. Until this runs, the app
+   simply shows zero comments (it never breaks the feed), and the composer surfaces an error.
 
 Storage buckets used by the app:
 

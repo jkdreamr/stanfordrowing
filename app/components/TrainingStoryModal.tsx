@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Workout, WorkoutType, WorkoutTypeConfig } from '@/lib/types';
+import { User, Workout, WorkoutType, WorkoutTypeConfig } from '@/lib/types';
 import {
   getUserById,
   getWorkoutPrimaryValue,
@@ -12,14 +12,17 @@ import { formatPrimary, timeAgo, workoutIcon } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
 import RespectButton from './RespectButton';
+import CommentSection from './CommentSection';
 
 interface TrainingStoryModalProps {
   workout: Workout;
   configs: Record<WorkoutType, WorkoutTypeConfig>;
-  currentUserId?: string;
+  currentUser: User | null;
   hasReacted: boolean;
   respectCount: number;
   onToggleRespect: () => void;
+  onAddComment: (body: string) => Promise<boolean>;
+  onDeleteComment: (commentId: string) => void;
   onClose: () => void;
 }
 
@@ -28,12 +31,16 @@ const UNIT_LABEL: Record<string, string> = { km: 'km', mins: 'min', pts: 'pts' }
 export default function TrainingStoryModal({
   workout,
   configs,
-  currentUserId,
+  currentUser,
   hasReacted,
   respectCount,
   onToggleRespect,
+  onAddComment,
+  onDeleteComment,
   onClose,
 }: TrainingStoryModalProps) {
+  const currentUserId = currentUser?.id;
+  const comments = workout.comments ?? [];
   const primary = getWorkoutPrimaryValue(workout, configs);
   const points = getWorkoutWeightedScore(workout, configs);
   const displayName = getUserById(workout.oderId)?.name || workout.userName || workout.oderId;
@@ -123,18 +130,29 @@ export default function TrainingStoryModal({
             )}
           </div>
 
-          {/* Bottom — actions */}
-          <div className="flex items-center justify-between rounded-2xl bg-black/30 px-4 py-3 backdrop-blur-sm">
-            <RespectButton
-              count={respectCount}
-              active={hasReacted}
-              disabled={!currentUserId || workout.oderId === currentUserId}
-              onToggle={onToggleRespect}
-              className="[&_span]:text-white/70 [&_.material-symbols-outlined]:text-white"
-            />
-            <span className="text-[11px] font-semibold tabular text-white/50">
-              +{formatPreciseNumber(points)} pts
-            </span>
+          {/* Bottom — actions + comments */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-2xl bg-black/30 px-4 py-3 backdrop-blur-sm">
+              <RespectButton
+                count={respectCount}
+                active={hasReacted}
+                disabled={!currentUserId || workout.oderId === currentUserId}
+                onToggle={onToggleRespect}
+                className="[&_span]:text-white/70 [&_.material-symbols-outlined]:text-white"
+              />
+              <span className="text-[11px] font-semibold tabular text-white/50">
+                +{formatPreciseNumber(points)} pts
+              </span>
+            </div>
+            <div className="max-h-[34dvh] overflow-y-auto rounded-2xl bg-black/30 px-4 py-3 backdrop-blur-sm">
+              <CommentSection
+                comments={comments}
+                currentUser={currentUser}
+                onAdd={onAddComment}
+                onDelete={onDeleteComment}
+                tone="overlay"
+              />
+            </div>
           </div>
         </div>
       </div>
