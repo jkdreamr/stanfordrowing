@@ -22,7 +22,7 @@ export default function FeedList({
   currentUser,
   onToggleRespect,
   allWorkouts,
-  emptyTitle = 'No workouts yet.',
+  emptyTitle = 'No work logged yet.',
   emptyMessage = 'Someone has to start.',
 }: FeedListProps) {
   const byAuthor = useMemo(() => {
@@ -41,7 +41,7 @@ export default function FeedList({
         icon="rowing"
         title={emptyTitle}
         message={emptyMessage}
-        actionLabel="Log the work"
+        actionLabel="Log the first session"
         actionHref="/log"
       />
     );

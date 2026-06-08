@@ -29,14 +29,14 @@ export default function AuthStatus() {
   }, []);
 
   if (isLoading) {
-    return <div className="h-8 w-8 animate-pulse rounded-full bg-stone-light" />;
+    return <div className="skeleton h-9 w-9 animate-shimmer rounded-full" />;
   }
 
   if (!profile) {
     return (
       <Link
         href="/login"
-        className="focus-ring rounded-full bg-charcoal px-3.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-charcoal/90"
+        className="focus-ring rounded-pill bg-coral px-4 py-2 text-[12px] font-semibold text-white shadow-glow transition-colors hover:bg-coral-dark"
       >
         Log in
       </Link>

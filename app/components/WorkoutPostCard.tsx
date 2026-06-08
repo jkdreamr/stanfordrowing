@@ -5,7 +5,6 @@ import { ReactNode } from 'react';
 import { Workout, WorkoutType, WorkoutTypeConfig, User } from '@/lib/types';
 import {
   formatPreciseNumber,
-  getTeamById,
   getUserById,
   getWorkoutLabel,
   getWorkoutPrimaryValue,
@@ -33,6 +32,8 @@ const BADGE_LABELS: Record<string, string> = {
   big_week: 'Big week',
 };
 
+const UNIT_LABEL: Record<string, string> = { km: 'km', mins: 'min', pts: 'pts' };
+
 export default function WorkoutPostCard({
   workout,
   configs,
@@ -48,48 +49,59 @@ export default function WorkoutPostCard({
   const reactions = workout.reactions ?? [];
   const hasReacted = reactions.some((r) => r.userId === currentUser?.id);
   const isOwn = workout.oderId === currentUser?.id;
+  const caption = workout.notes?.trim();
 
   return (
-    <article className="card animate-fade-in overflow-hidden">
+    <article className="card group animate-fade-in overflow-hidden">
       {/* Proof image — full bleed at top if available */}
       {workout.proofUrl && (
-        <ProofPreview url={workout.proofUrl} aspect="aspect-[16/9]" />
+        <div className="relative">
+          <ProofPreview url={workout.proofUrl} aspect="aspect-[16/10]" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#141a18] to-transparent" />
+        </div>
       )}
 
-      <div className="p-4">
+      <div className="p-5">
         {/* Author row */}
         <div className="flex items-center gap-3">
-          <Link href={`/rowers/${workout.oderId}`} className="focus-ring flex min-w-0 flex-1 items-center gap-2.5 rounded-lg">
-            <Avatar name={displayName} size={34} />
+          <Link href={`/rowers/${workout.oderId}`} className="focus-ring flex min-w-0 flex-1 items-center gap-3 rounded-lg">
+            <Avatar name={displayName} size={40} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold text-charcoal">{displayName}</p>
-              <div className="flex items-center gap-2 text-[11px] text-charcoal-muted">
-                <span>{timeAgo(workout.createdAt)}</span>
-                <span className="text-stone-dark">·</span>
-                <span className="flex items-center gap-0.5">
-                  <Icon name={workoutIcon(workout.type)} size={12} />
+              <p className="truncate text-[14px] font-semibold tracking-editorial text-charcoal">{displayName}</p>
+              <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-charcoal-muted">
+                <span className="flex items-center gap-1 text-charcoal-soft">
+                  <Icon name={workoutIcon(workout.type)} size={13} />
                   {getWorkoutLabel(workout, configs)}
                 </span>
+                <span className="text-charcoal-light">·</span>
+                <span>{timeAgo(workout.createdAt)}</span>
               </div>
             </div>
           </Link>
+          <span className="shrink-0 rounded-pill border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold tabular text-charcoal-muted">
+            +{formatPreciseNumber(points)}
+          </span>
         </div>
 
-        {/* Main stat */}
-        <div className="mt-4 flex items-baseline gap-1.5">
-          <span className="font-display text-4xl font-bold tracking-tightest text-charcoal tabular">
+        {/* Main stat — one dominant number */}
+        <div className="mt-4 flex items-end gap-2">
+          <span className="font-display text-[52px] font-bold leading-[0.9] tracking-tightest text-charcoal tabular">
             {formatPrimary(primary.value, primary.unit)}
           </span>
-          <span className="text-sm font-medium text-charcoal-muted">{primary.unit}</span>
+          <span className="pb-1 text-base font-medium text-charcoal-muted">{UNIT_LABEL[primary.unit] ?? primary.unit}</span>
         </div>
 
         {/* Badges — quiet tags */}
         {badges.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {badges.map((b) => (
               <span
                 key={b.kind}
-                className="rounded-md bg-olive-bg px-2 py-0.5 text-[10px] font-medium text-olive"
+                className={`rounded-pill px-2.5 py-1 text-[10px] font-semibold tracking-wide ${
+                  b.kind === 'pr'
+                    ? 'bg-coral-soft text-coral'
+                    : 'bg-olive-bg text-olive-soft'
+                }`}
               >
                 {BADGE_LABELS[b.kind] ?? b.label}
               </span>
@@ -98,27 +110,22 @@ export default function WorkoutPostCard({
         )}
 
         {/* Caption */}
-        {(workout.notes || workout.activityName) && (
-          <p className="mt-3 text-[13px] leading-relaxed text-charcoal-soft">
-            {workout.activityName ? <span className="font-medium text-charcoal">{workout.activityName} — </span> : null}
-            {workout.notes}
+        {(caption || workout.activityName) && (
+          <p className="mt-3 text-[13.5px] leading-relaxed text-charcoal-soft">
+            {workout.activityName ? <span className="font-semibold text-charcoal">{workout.activityName} — </span> : null}
+            {caption}
           </p>
         )}
 
         {/* Footer */}
-        <div className="mt-4 flex items-center justify-between border-t border-stone/30 pt-3">
+        <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3.5">
           <RespectButton
             count={reactions.length}
             active={hasReacted}
             disabled={isOwn || !currentUser}
             onToggle={() => onToggleRespect(workout)}
           />
-          <div className="flex items-center gap-2">
-            {actions}
-            <span className="text-[10px] font-medium tabular text-charcoal-light">
-              +{formatPreciseNumber(points)} pts
-            </span>
-          </div>
+          <div className="flex items-center gap-2">{actions}</div>
         </div>
       </div>
     </article>

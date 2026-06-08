@@ -256,10 +256,10 @@ export default function Admin() {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center px-4">
-        <div className="rounded-3xl border border-[#e9ecef] bg-white/80 p-8 text-center shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
-          <p className="text-sm text-[#5f5e5e]">Checking your session...</p>
-          <div className="mt-4 h-10 w-10 animate-spin rounded-full border-2 border-[#b51c00] border-t-transparent mx-auto" />
+      <div className="min-h-screen bg-bone flex items-center justify-center px-4">
+        <div className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-8 text-center shadow-card">
+          <p className="text-sm text-charcoal-muted">Checking your session...</p>
+          <div className="mt-4 h-10 w-10 animate-spin rounded-full border-2 border-coral border-t-transparent mx-auto" />
         </div>
       </div>
     );
@@ -268,22 +268,22 @@ export default function Admin() {
   if (!isAdmin && isAuthLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-cardinal border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-coral border-t-transparent" />
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] py-12">
+      <div className="min-h-screen bg-bone py-12">
         <div className="max-w-xl mx-auto px-4 sm:px-6">
           <div className="mb-8">
             <h1 className="font-display text-2xl sm:text-3xl">Admin access</h1>
-            <p className="mt-2 text-[#5f5e5e]">This Google account does not have admin access.</p>
+            <p className="mt-2 text-charcoal-muted">This Google account does not have admin access.</p>
           </div>
           <button
             onClick={handleSignOut}
-            className="w-full rounded-full border border-[#191c1d] px-6 py-3 text-sm font-semibold text-[#191c1d] transition-colors duration-200 hover:bg-[#191c1d] hover:text-[#f8f9fa]"
+            className="w-full rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-charcoal transition-colors duration-200 hover:bg-white/10 hover:text-white"
           >
             Sign out
           </button>
@@ -294,39 +294,39 @@ export default function Admin() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] py-12">
+      <div className="min-h-screen bg-bone py-12">
         <div className="max-w-xl mx-auto px-4 sm:px-6">
           <div className="mb-8">
             <h1 className="font-display text-2xl sm:text-3xl">Admin access</h1>
-            <p className="mt-2 text-[#5f5e5e]">Enter the admin password to view and manage the challenge.</p>
+            <p className="mt-2 text-charcoal-muted">Enter the admin password to view and manage the challenge.</p>
           </div>
 
           <form
             onSubmit={handleLogin}
-            className="rounded-3xl border border-[#e9ecef] bg-white/80 p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)]"
+            className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 shadow-card"
           >
-            <label className="block text-sm font-semibold text-[#191c1d] mb-3">Admin password</label>
+            <label className="block text-sm font-semibold text-charcoal mb-3">Admin password</label>
             <input
               type="password"
               value={adminPassword}
               onChange={(event) => setAdminPassword(event.target.value)}
               placeholder="Enter password"
-              className="w-full rounded-2xl border border-[#e9ecef] bg-[#f3f4f5] px-4 py-3 text-[#191c1d] transition-all duration-200 focus-ring"
+              className="w-full rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-4 py-3 text-charcoal transition-all duration-200 focus-ring"
               required
             />
             {adminError && (
-              <p className="mt-3 text-sm text-[#b42318]">{adminError}</p>
+              <p className="mt-3 text-sm text-coral">{adminError}</p>
             )}
             <button
               type="submit"
-              className="mt-5 w-full rounded-full bg-[#191c1d] px-6 py-3 text-base font-semibold text-[#f8f9fa] transition-colors duration-200 hover:bg-[#131315]"
+              className="mt-5 w-full rounded-full bg-coral px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-coral-dark"
             >
               Enter admin view
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-[#5f5e5e]">
-            <Link href="/" className="font-semibold text-[#191c1d] transition-colors duration-200 hover:text-[#b51c00]">
+          <div className="mt-6 text-center text-sm text-charcoal-muted">
+            <Link href="/" className="font-semibold text-charcoal transition-colors duration-200 hover:text-coral">
               Return to dashboard
             </Link>
           </div>
@@ -336,17 +336,17 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] py-10">
+    <div className="min-h-screen bg-bone py-10">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-2xl sm:text-3xl">Admin dashboard</h1>
-            <p className="mt-2 text-[#5f5e5e]">Review all workouts, notes, and scoring multipliers.</p>
+            <p className="mt-2 text-charcoal-muted">Review all workouts, notes, and scoring multipliers.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleLogout}
-              className="rounded-full border border-[#191c1d] px-4 py-2 text-xs font-semibold text-[#191c1d] transition-colors duration-200 hover:bg-[#191c1d] hover:text-[#f8f9fa]"
+              className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-charcoal transition-colors duration-200 hover:bg-white/10 hover:text-white"
             >
               Log out of admin view
             </button>
@@ -354,31 +354,31 @@ export default function Admin() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3 mb-10">
-          <div className="rounded-3xl border border-[#e9ecef] bg-white/80 p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
-            <p className="text-[11px] uppercase tracking-[0.3em] text-[#5f5e5e]">Workouts logged</p>
+          <div className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 shadow-card">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-charcoal-muted">Workouts logged</p>
             <p className="font-display mt-3 text-4xl">{workouts.length}</p>
-            <p className="mt-4 text-sm text-[#5f5e5e]">Every entry across the challenge.</p>
+            <p className="mt-4 text-sm text-charcoal-muted">Every entry across the challenge.</p>
           </div>
-          <div className="rounded-3xl border border-[#e9ecef] bg-white/80 p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
-            <p className="text-[11px] uppercase tracking-[0.3em] text-[#5f5e5e]">Total minutes</p>
+          <div className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 shadow-card">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-charcoal-muted">Total minutes</p>
             <p className="font-display mt-3 text-4xl">{totalMinutes.toLocaleString()}</p>
-            <p className="mt-4 text-sm text-[#5f5e5e]">Sum of all logged effort.</p>
+            <p className="mt-4 text-sm text-charcoal-muted">Sum of all logged effort.</p>
           </div>
-          <div className="rounded-3xl border border-[#e9ecef] bg-white/80 p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
-            <p className="text-[11px] uppercase tracking-[0.3em] text-[#5f5e5e]">Total points</p>
+          <div className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 shadow-card">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-charcoal-muted">Total points</p>
             <p className="font-display mt-3 text-4xl">{formatPreciseNumber(totalPoints)}</p>
-            <p className="mt-4 text-sm text-[#5f5e5e]">Based on current multipliers.</p>
+            <p className="mt-4 text-sm text-charcoal-muted">Based on current multipliers.</p>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3 mb-10">
-          <div className="lg:col-span-2 rounded-3xl border border-[#e9ecef] bg-white/80 p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
+          <div className="lg:col-span-2 rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 shadow-card">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[#191c1d]">Workout log</h2>
-              <span className="text-xs text-[#5f5e5e]">Showing notes and optional fields</span>
+              <h2 className="text-xl font-semibold text-charcoal">Workout log</h2>
+              <span className="text-xs text-charcoal-muted">Showing notes and optional fields</span>
             </div>
             {loadError && (
-              <div className="mb-4 rounded-2xl border border-[#e9ecef] bg-white/70 p-3 text-sm text-[#5f5e5e]">
+              <div className="mb-4 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-3 text-sm text-charcoal-muted">
                 {loadError}
               </div>
             )}
@@ -390,7 +390,7 @@ export default function Admin() {
                 return (
                   <div
                     key={workout.id}
-                    className="rounded-2xl border border-[#e9ecef] bg-[#f3f4f5] p-4"
+                    className="rounded-2xl border border-white/[0.07] bg-bone-dark/40 p-4"
                   >
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="flex items-start gap-3">
@@ -400,17 +400,17 @@ export default function Admin() {
                         />
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-[#191c1d]">{getUserName(workout.oderId)}</p>
-                            <span className="text-xs text-[#5f5e5e]">{team?.name || 'Unknown team'}</span>
-                            <span className="rounded-full border border-[#e9ecef] px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-[#5f5e5e]">
+                            <p className="font-semibold text-charcoal">{getUserName(workout.oderId)}</p>
+                            <span className="text-xs text-charcoal-muted">{team?.name || 'Unknown team'}</span>
+                            <span className="rounded-full border border-white/[0.07] px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-charcoal-muted">
                               {getWorkoutLabel(workout, workoutTypeConfigs)}
                             </span>
                           </div>
-                          <p className="text-xs text-[#8a8786]">{formatPstDate(workout.date)}</p>
+                          <p className="text-xs text-charcoal-light">{formatPstDate(workout.date)}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-[#b51c00]">
+                        <p className="text-sm font-semibold text-coral">
                           {formatPreciseNumber(getWorkoutWeightedScore(workout, workoutTypeConfigs))} pts
                         </p>
                       </div>
@@ -418,58 +418,58 @@ export default function Admin() {
 
                     <div className="mt-3 grid gap-3 sm:grid-cols-3">
                       <div>
-                        <p className="text-[11px] uppercase tracking-[0.2em] text-[#8a8786]">Time (mins)</p>
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-charcoal-light">Time (mins)</p>
                         {isEditing ? (
                           <input
                             type="number"
                             min="1"
                             value={editValues.minutes}
                             onChange={(event) => setEditValues(prev => ({ ...prev, minutes: event.target.value }))}
-                            className="mt-2 w-full rounded-2xl border border-[#e9ecef] bg-white px-3 py-2 text-sm text-[#191c1d]"
+                            className="mt-2 w-full rounded-2xl border border-white/[0.07] bg-white/[0.04] px-3 py-2 text-sm text-charcoal"
                           />
                         ) : (
-                          <p className="mt-2 text-base font-semibold text-[#191c1d]">{workout.minutes}</p>
+                          <p className="mt-2 text-base font-semibold text-charcoal">{workout.minutes}</p>
                         )}
                       </div>
                       <div>
-                        <p className="text-[11px] uppercase tracking-[0.2em] text-[#8a8786]">Distance (km)</p>
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-charcoal-light">Distance (km)</p>
                         {isEditing ? (
                           <input
                             type="number"
                             min="0"
                             value={editValues.distance}
                             onChange={(event) => setEditValues(prev => ({ ...prev, distance: event.target.value }))}
-                            className="mt-2 w-full rounded-2xl border border-[#e9ecef] bg-white px-3 py-2 text-sm text-[#191c1d]"
+                            className="mt-2 w-full rounded-2xl border border-white/[0.07] bg-white/[0.04] px-3 py-2 text-sm text-charcoal"
                           />
                         ) : (
-                          <p className="mt-2 text-base font-semibold text-[#191c1d]">
+                          <p className="mt-2 text-base font-semibold text-charcoal">
                             {workout.distance ? workout.distance : '—'}
                           </p>
                         )}
                       </div>
                       <div>
-                        <p className="text-[11px] uppercase tracking-[0.2em] text-[#8a8786]">Notes</p>
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-charcoal-light">Notes</p>
                         {isEditing ? (
                           <textarea
                             rows={2}
                             value={editValues.notes}
                             onChange={(event) => setEditValues(prev => ({ ...prev, notes: event.target.value }))}
-                            className="mt-2 w-full rounded-2xl border border-[#e9ecef] bg-white px-3 py-2 text-sm text-[#191c1d]"
+                            className="mt-2 w-full rounded-2xl border border-white/[0.07] bg-white/[0.04] px-3 py-2 text-sm text-charcoal"
                           />
                         ) : (
-                          <div className="mt-2 space-y-1 text-sm text-[#5f5e5e]">
+                          <div className="mt-2 space-y-1 text-sm text-charcoal-muted">
                             <p>{workout.notes || '—'}</p>
                             {workout.proofUrl ? (
                               <a
                                 href={workout.proofUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-xs font-semibold text-[#191c1d] transition-colors duration-200 hover:text-[#b51c00]"
+                                className="text-xs font-semibold text-charcoal transition-colors duration-200 hover:text-coral"
                               >
                                 View proof
                               </a>
                             ) : (
-                              <p className="text-xs text-[#8a8786]">No proof uploaded</p>
+                              <p className="text-xs text-charcoal-light">No proof uploaded</p>
                             )}
                           </div>
                         )}
@@ -481,13 +481,13 @@ export default function Admin() {
                         <>
                           <button
                             onClick={() => saveEdit(workout)}
-                            className="rounded-full bg-[#191c1d] px-4 py-2 text-xs font-semibold text-[#f8f9fa]"
+                            className="rounded-full bg-coral px-4 py-2 text-xs font-semibold text-white"
                           >
                             Save changes
                           </button>
                           <button
                             onClick={cancelEdit}
-                            className="rounded-full border border-[#191c1d] px-4 py-2 text-xs font-semibold text-[#191c1d]"
+                            className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-charcoal"
                           >
                             Cancel
                           </button>
@@ -496,13 +496,13 @@ export default function Admin() {
                         <>
                           <button
                             onClick={() => startEdit(workout)}
-                            className="rounded-full border border-[#191c1d] px-4 py-2 text-xs font-semibold text-[#191c1d]"
+                            className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-charcoal"
                           >
                             Edit numbers
                           </button>
                           <button
                             onClick={() => handleDelete(workout.id)}
-                            className="rounded-full border border-[#ef4444] px-4 py-2 text-xs font-semibold text-[#ef4444] transition-colors duration-200 hover:bg-[#ef4444] hover:text-white"
+                            className="rounded-full border border-coral px-4 py-2 text-xs font-semibold text-coral transition-colors duration-200 hover:bg-coral hover:text-white"
                           >
                             Delete
                           </button>
@@ -514,7 +514,7 @@ export default function Admin() {
               })}
 
               {sortedWorkouts.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-[#d7cdc2] bg-white/60 p-6 text-center text-sm text-[#5f5e5e]">
+                <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-6 text-center text-sm text-charcoal-muted">
                   No workouts logged yet.
                 </div>
               )}
@@ -522,14 +522,14 @@ export default function Admin() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-3xl border border-[#e9ecef] bg-white/80 p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
-              <h3 className="text-lg font-semibold text-[#191c1d] mb-4">Workout type multipliers</h3>
+            <div className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 shadow-card">
+              <h3 className="text-lg font-semibold text-charcoal mb-4">Workout type multipliers</h3>
               <div className="space-y-3">
                 {(Object.entries(workoutTypeConfigs) as [WorkoutType, WorkoutTypeConfig][]).map(([type, config]) => (
                   <div key={type} className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-[#191c1d]">{config.label}</p>
-                      <p className="text-xs text-[#5f5e5e]">{config.description}</p>
+                      <p className="text-sm font-semibold text-charcoal">{config.label}</p>
+                      <p className="text-xs text-charcoal-muted">{config.description}</p>
                     </div>
                     <input
                       type="number"
@@ -538,24 +538,24 @@ export default function Admin() {
                       onChange={(event) =>
                         setWorkoutMultiplierInputs(prev => ({ ...prev, [type]: event.target.value }))
                       }
-                      className="w-24 rounded-2xl border border-[#e9ecef] bg-[#f3f4f5] px-3 py-2 text-sm text-[#191c1d]"
+                      className="w-24 rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-3 py-2 text-sm text-charcoal"
                     />
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-3xl border border-[#e9ecef] bg-white/80 p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
-              <h3 className="text-lg font-semibold text-[#191c1d] mb-2">Plan mileage by date</h3>
-              <p className="mb-5 text-xs text-[#5f5e5e]">Set mileage for training sessions (points equal mileage).</p>
+            <div className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 shadow-card">
+              <h3 className="text-lg font-semibold text-charcoal mb-2">Plan mileage by date</h3>
+              <p className="mb-5 text-xs text-charcoal-muted">Set mileage for training sessions (points equal mileage).</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {getChallengeDates().map(date => (
-                  <div key={date} className="rounded-2xl border border-[#e9ecef] bg-white/70 px-4 py-4 text-sm">
-                    <p className="text-xs uppercase tracking-[0.2em] text-[#8a8786]">Date</p>
-                    <p className="mt-1 font-semibold text-[#191c1d] text-sm sm:text-base leading-tight break-words">
+                  <div key={date} className="rounded-2xl border border-white/[0.07] bg-white/[0.04] px-4 py-4 text-sm">
+                    <p className="text-xs uppercase tracking-[0.2em] text-charcoal-light">Date</p>
+                    <p className="mt-1 font-semibold text-charcoal text-sm sm:text-base leading-tight break-words">
                       {formatPstDate(date, { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
-                    <label className="mt-4 block text-xs font-semibold text-[#5f5e5e]">Mileage (pts)</label>
+                    <label className="mt-4 block text-xs font-semibold text-charcoal-muted">Mileage (pts)</label>
                     <input
                       type="number"
                       step="0.1"
@@ -563,21 +563,21 @@ export default function Admin() {
                       onChange={(event) =>
                         setPlanMileageInputs(prev => ({ ...prev, [date]: event.target.value }))
                       }
-                      className="mt-2 w-full rounded-2xl border border-[#e9ecef] bg-[#f3f4f5] px-3 py-2 text-sm text-[#191c1d]"
+                      className="mt-2 w-full rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-3 py-2 text-sm text-charcoal"
                     />
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-3xl border border-[#e9ecef] bg-white/80 p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
-              <h3 className="text-lg font-semibold text-[#191c1d] mb-4">Team multipliers</h3>
+            <div className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 shadow-card">
+              <h3 className="text-lg font-semibold text-charcoal mb-4">Team multipliers</h3>
               <div className="space-y-3">
                 {TEAMS.map(team => (
                   <div key={team.id} className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <span className="h-3 w-3 rounded-full" style={{ backgroundColor: team.color }} />
-                      <span className="text-sm font-semibold text-[#191c1d]">{team.name}</span>
+                      <span className="text-sm font-semibold text-charcoal">{team.name}</span>
                     </div>
                     <input
                       type="number"
@@ -586,7 +586,7 @@ export default function Admin() {
                       onChange={(event) =>
                         setTeamMultiplierInputs(prev => ({ ...prev, [team.id]: event.target.value }))
                       }
-                      className="w-24 rounded-2xl border border-[#e9ecef] bg-[#f3f4f5] px-3 py-2 text-sm text-[#191c1d]"
+                      className="w-24 rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-3 py-2 text-sm text-charcoal"
                     />
                   </div>
                 ))}
@@ -594,19 +594,19 @@ export default function Admin() {
 
               <button
                 onClick={handleSaveMultipliers}
-                className="mt-5 w-full rounded-full bg-[#b51c00] px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_40px_rgba(255,90,31,0.2)] transition-all duration-200 hover:-translate-y-0.5"
+                className="mt-5 w-full rounded-full bg-coral px-6 py-3 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5"
               >
                 Save multipliers
               </button>
 
-              <p className="mt-3 text-xs text-[#5f5e5e]">
+              <p className="mt-3 text-xs text-charcoal-muted">
                 Updates apply to scoring across the dashboard and leaderboard.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-3xl border border-[#e9ecef] bg-white/80 p-6 text-sm text-[#5f5e5e]">
+        <div className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 text-sm text-charcoal-muted">
           <p>
             Tip: If you update multipliers, revisit the leaderboard to see the recalculated totals.
           </p>

@@ -18,7 +18,9 @@ import WeeklySummaryCard from './components/WeeklySummaryCard';
 import TrainingStories from './components/TrainingStories';
 import TrainingStoryModal from './components/TrainingStoryModal';
 import LoadingState from './components/LoadingState';
+import LoggedOutFeed from './components/LoggedOutFeed';
 import Avatar from './components/Avatar';
+import Icon from './components/Icon';
 
 export default function FeedPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -118,6 +120,11 @@ export default function FeedPage() {
 
   const daysLeft = getDaysRemaining();
 
+  // Signed-out visitors get a cinematic product preview, not a dead empty state.
+  if (signedOut && !loading) {
+    return <LoggedOutFeed configs={configs} />;
+  }
+
   return (
     <>
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -145,15 +152,6 @@ export default function FeedPage() {
               </div>
             )}
 
-            {signedOut && !loading && (
-              <div className="card mb-5 p-4 text-[13px] text-charcoal-muted">
-                Sign in to see the latest workouts.{' '}
-                <Link href="/login" className="font-semibold text-coral hover:underline">
-                  Log in
-                </Link>
-              </div>
-            )}
-
             {loading ? (
               <LoadingState count={3} />
             ) : (
@@ -171,30 +169,41 @@ export default function FeedPage() {
             {myWeek && <WeeklySummaryCard summary={myWeek} />}
 
             {/* Top rowers */}
-            <div className="card p-4">
+            <div className="card p-5">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Top rowers</p>
+                <p className="label-caps text-charcoal-muted">Top rowers</p>
                 <Link href="/leaderboard" className="text-[11px] font-medium text-coral hover:underline">
                   All
                 </Link>
               </div>
-              <div className="mt-3 space-y-2.5">
+              <div className="mt-4 space-y-3">
                 {topRowers.map(({ user, total }, i) => (
-                  <Link key={user.id} href={`/rowers/${user.id}`} className="flex items-center gap-2.5">
-                    <span className="w-3 text-[11px] font-bold tabular text-charcoal-light">{i + 1}</span>
-                    <Avatar name={user.name} size={26} />
-                    <span className="flex-1 truncate text-[12px] font-medium text-charcoal">{user.name}</span>
-                    <span className="text-[12px] font-semibold tabular text-charcoal-soft">{formatPreciseNumber(total)}</span>
+                  <Link key={user.id} href={`/rowers/${user.id}`} className="focus-ring flex items-center gap-2.5 rounded-lg">
+                    <span className={`w-4 text-[12px] font-bold tabular ${i === 0 ? 'text-coral' : 'text-charcoal-light'}`}>{i + 1}</span>
+                    <Avatar name={user.name} size={28} />
+                    <span className="flex-1 truncate text-[12.5px] font-medium text-charcoal">{user.name}</span>
+                    <span className="text-[12.5px] font-semibold tabular text-charcoal-soft">{formatPreciseNumber(total)}</span>
                   </Link>
                 ))}
                 {topRowers.length === 0 && <p className="text-[12px] text-charcoal-muted">No scores yet.</p>}
               </div>
             </div>
 
+            {/* Locker highlight */}
+            <Link href="/locker-room" className="panel-cinematic focus-ring group block p-5">
+              <div className="relative">
+                <p className="label-caps text-charcoal-muted">Locker Room</p>
+                <p className="mt-2 font-display text-[15px] font-semibold tracking-editorial text-charcoal">For when you need a push.</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-coral">
+                  Open the wall <Icon name="arrow_forward" size={14} className="transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </div>
+            </Link>
+
             {/* Squad total */}
-            <div className="rounded-xl bg-bone-dark/60 p-4">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-charcoal-muted">All rowers, all summer</p>
-              <p className="mt-1 text-2xl font-bold tabular text-charcoal">{formatPreciseNumber(totalPoints)}</p>
+            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5">
+              <p className="label-caps text-charcoal-muted">All rowers, all summer</p>
+              <p className="mt-2 font-display text-3xl font-bold tracking-tightest tabular text-charcoal">{formatPreciseNumber(totalPoints)}</p>
               <p className="mt-0.5 text-[12px] text-charcoal-muted">{workouts.length} workouts logged</p>
             </div>
           </aside>
