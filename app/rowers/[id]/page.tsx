@@ -10,12 +10,14 @@ import {
   getWorkoutLabel,
 } from '@/lib/data';
 import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
-import { User, Workout, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
+import { User, Workout, WorkoutComment, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import {
+  addWorkoutComment,
   addWorkoutReaction,
   deleteWorkoutRow,
   fetchMultipliers,
   fetchWorkouts,
+  removeWorkoutComment,
   removeWorkoutReaction,
   updateWorkoutRow,
 } from '@/lib/supabaseData';
@@ -130,6 +132,36 @@ export default function RowerProfilePage() {
     }
   };
 
+  const updateComments = (id: string, updater: (c: WorkoutComment[]) => WorkoutComment[]) => {
+    setAllWorkouts((prev) => prev.map((w) => (w.id === id ? { ...w, comments: updater(w.comments ?? []) } : w)));
+  };
+
+  const addComment = async (workout: Workout, body: string): Promise<boolean> => {
+    if (!currentUser) return false;
+    try {
+      const comment = await addWorkoutComment({
+        workoutId: workout.id,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        body,
+      });
+      updateComments(workout.id, (c) => [...c, comment]);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const deleteComment = async (workout: Workout, commentId: string) => {
+    const previous = workout.comments ?? [];
+    updateComments(workout.id, (c) => c.filter((x) => x.id !== commentId));
+    try {
+      await removeWorkoutComment({ commentId });
+    } catch {
+      updateComments(workout.id, () => previous);
+    }
+  };
+
   const startEdit = (w: Workout) => {
     setEditing(w);
     setEditValues({
@@ -235,6 +267,8 @@ export default function RowerProfilePage() {
               configs={configs}
               currentUser={currentUser}
               onToggleRespect={toggleRespect}
+              onAddComment={addComment}
+              onDeleteComment={deleteComment}
               actions={
                 isSelf ? (
                   <div className="flex items-center gap-1">

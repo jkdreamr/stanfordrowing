@@ -11,6 +11,8 @@ interface FeedListProps {
   configs: Record<WorkoutType, WorkoutTypeConfig>;
   currentUser: User | null;
   onToggleRespect: (workout: Workout) => void;
+  onAddComment?: (workout: Workout, body: string) => Promise<boolean>;
+  onDeleteComment?: (workout: Workout, commentId: string) => void;
   allWorkouts?: Workout[];
   emptyTitle?: string;
   emptyMessage?: string;
@@ -21,6 +23,8 @@ export default function FeedList({
   configs,
   currentUser,
   onToggleRespect,
+  onAddComment,
+  onDeleteComment,
   allWorkouts,
   emptyTitle = 'No work logged yet.',
   emptyMessage = 'Someone has to start.',
@@ -57,6 +61,8 @@ export default function FeedList({
           badges={getWorkoutBadges(w, byAuthor.get(w.oderId) ?? [w], configs)}
           currentUser={currentUser}
           onToggleRespect={onToggleRespect}
+          onAddComment={onAddComment}
+          onDeleteComment={onDeleteComment}
         />
       ))}
     </div>
