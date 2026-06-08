@@ -22,6 +22,7 @@ interface WorkoutPostCardProps {
   configs: Record<WorkoutType, WorkoutTypeConfig>;
   badges?: Badge[];
   currentUser: User | null;
+  avatarById?: Record<string, string>;
   onToggleRespect: (workout: Workout) => void;
   onAddComment?: (workout: Workout, body: string, parentId?: string) => Promise<boolean>;
   onDeleteComment?: (workout: Workout, commentId: string) => void;
@@ -42,6 +43,7 @@ export default function WorkoutPostCard({
   configs,
   badges = [],
   currentUser,
+  avatarById,
   onToggleRespect,
   onAddComment,
   onDeleteComment,
@@ -75,7 +77,7 @@ export default function WorkoutPostCard({
         {/* Author row */}
         <div className="flex items-center gap-3">
           <Link href={`/rowers/${workout.oderId}`} className="focus-ring flex min-w-0 flex-1 items-center gap-3 rounded-lg">
-            <Avatar name={displayName} size={40} />
+            <Avatar name={displayName} size={40} src={avatarById?.[workout.oderId]} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[14px] font-semibold tracking-editorial text-charcoal">{displayName}</p>
               <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-charcoal-muted">
@@ -163,6 +165,7 @@ export default function WorkoutPostCard({
             <CommentSection
               comments={comments}
               currentUser={currentUser}
+              avatarById={avatarById}
               onAdd={(body, parentId) => onAddComment!(workout, body, parentId)}
               onDelete={(commentId) => onDeleteComment!(workout, commentId)}
             />

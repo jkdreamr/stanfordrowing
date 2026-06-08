@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
-import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
+import { getAllProfiles, getProfileByAuthId, profileToUser } from '@/lib/userProfile';
 import { LockerComment, LockerPost, LockerReaction, User } from '@/lib/types';
 import {
   addLockerComment,
@@ -33,6 +33,7 @@ export default function LockerRoomPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [needsSchema, setNeedsSchema] = useState(false);
+  const [avatarById, setAvatarById] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -44,6 +45,14 @@ export default function LockerRoomPage() {
         else setError('Sign in to see the Locker Room.');
       } finally {
         setLoading(false);
+      }
+      try {
+        const profiles = await getAllProfiles();
+        const map: Record<string, string> = {};
+        for (const p of profiles) if (p.avatarUrl) map[p.id] = p.avatarUrl;
+        setAvatarById(map);
+      } catch {
+        /* no profiles yet */
       }
     };
     const loadSession = async (authId: string | undefined) => {
@@ -181,6 +190,7 @@ export default function LockerRoomPage() {
               key={post.id}
               post={post}
               currentUser={currentUser}
+              avatarById={avatarById}
               isAdmin={isAdmin}
               onToggleReaction={toggleReaction}
               onAddComment={addComment}

@@ -79,7 +79,7 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
   return (
     <div className="card p-4">
       <div className="flex items-start gap-3">
-        <Avatar name={user.name} size={36} />
+        <Avatar name={user.name} size={36} src={user.avatarUrl} />
         <div className="min-w-0 flex-1">
           {!open ? (
             <button

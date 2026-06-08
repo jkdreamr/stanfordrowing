@@ -19,7 +19,7 @@ export default function RowerCard({ user, aggregate, latestWorkout }: RowerCardP
       className="card focus-ring group block p-4 transition-all duration-200 hover:shadow-card-hover"
     >
       <div className="flex items-center gap-3">
-        <Avatar name={user.name} size={42} />
+        <Avatar name={user.name} size={42} src={user.avatarUrl} />
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[14px] font-semibold text-charcoal">{user.name}</h3>
           {latestWorkout && (

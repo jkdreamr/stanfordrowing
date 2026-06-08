@@ -11,11 +11,12 @@ interface StoryViewerProps {
   /** One author's stories, newest-first. */
   stories: Story[];
   currentUser: User | null;
+  authorAvatarUrl?: string;
   onDelete?: (id: string) => void;
   onClose: () => void;
 }
 
-export default function TrainingStoryModal({ stories, currentUser, onDelete, onClose }: StoryViewerProps) {
+export default function TrainingStoryModal({ stories, currentUser, authorAvatarUrl, onDelete, onClose }: StoryViewerProps) {
   // Play oldest → newest for a natural sequence.
   const ordered = [...stories].reverse();
   const [index, setIndex] = useState(0);
@@ -109,7 +110,7 @@ export default function TrainingStoryModal({ stories, currentUser, onDelete, onC
         {/* Header */}
         <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between p-4 pt-6">
           <div className="flex items-center gap-2.5">
-            <Avatar name={story.userName} size={36} />
+            <Avatar name={story.userName} size={36} src={authorAvatarUrl} />
             <div>
               <p className="text-sm font-semibold text-white">{story.userName}</p>
               <p className="mt-0.5 text-[11px] text-white/55">{timeAgo(story.createdAt)}</p>

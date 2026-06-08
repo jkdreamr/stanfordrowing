@@ -15,6 +15,7 @@ interface CommentSectionProps {
   onDelete: (commentId: string) => void;
   /** 'card' for the dark feed card; 'overlay' for the story modal over media. */
   tone?: 'card' | 'overlay';
+  avatarById?: Record<string, string>;
 }
 
 const MAX_LENGTH = 280;
@@ -29,6 +30,7 @@ export default function CommentSection({
   onAdd,
   onDelete,
   tone = 'card',
+  avatarById,
 }: CommentSectionProps) {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -87,7 +89,7 @@ export default function CommentSection({
     const mine = currentUser?.id === c.userId;
     return (
       <li key={c.id} className="group flex items-start gap-2.5">
-        <Avatar name={name} size={isReply ? 24 : 28} />
+        <Avatar name={name} size={isReply ? 24 : 28} src={avatarById?.[c.userId]} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className={`text-[12.5px] font-semibold tracking-editorial ${nameClass}`}>{name}</span>

@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { formatPreciseNumber, getDaysRemaining, getWorkoutWeightedScore } from '@/lib/data';
-import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
+import { getAllProfiles, getProfileByAuthId, profileToUser } from '@/lib/userProfile';
+import { getSeenMap, markSeen } from '@/lib/storySeen';
 import { Story, User, Workout, WorkoutComment, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import {
   addWorkoutComment,
@@ -35,6 +36,8 @@ export default function FeedPage() {
   const [viewerAuthor, setViewerAuthor] = useState<string | null>(null);
   const [uploadingStory, setUploadingStory] = useState(false);
   const [storyError, setStoryError] = useState('');
+  const [seenMap, setSeenMap] = useState<Record<string, string>>({});
+  const [avatarById, setAvatarById] = useState<Record<string, string>>({});
 
   const loadUser = async (authId: string | undefined) => {
     if (!authId) { setCurrentUser(null); return; }
@@ -61,6 +64,15 @@ export default function FeedPage() {
       } catch {
         /* no stories backend yet */
       }
+      // Avatars by user id, for feed + comment + rail avatars.
+      try {
+        const profiles = await getAllProfiles();
+        const map: Record<string, string> = {};
+        for (const p of profiles) if (p.avatarUrl) map[p.id] = p.avatarUrl;
+        setAvatarById(map);
+      } catch {
+        /* no profiles yet */
+      }
     };
     load();
     supabase.auth.getSession().then(({ data }) => loadUser(data.session?.user.id));
@@ -69,6 +81,19 @@ export default function FeedPage() {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  // Load this user's story seen-state once we know who they are.
+  useEffect(() => {
+    if (currentUser) setSeenMap(getSeenMap(currentUser.id));
+  }, [currentUser]);
+
+  const openViewer = (authorId: string) => {
+    const latest = stories
+      .filter((s) => s.userId === authorId)
+      .reduce((acc, s) => (s.createdAt > acc ? s.createdAt : acc), '');
+    if (currentUser && latest) setSeenMap(markSeen(currentUser.id, authorId, latest));
+    setViewerAuthor(authorId);
+  };
 
   // ---- reactions ----
   const updateReactions = (id: string, updater: (r: WorkoutReaction[]) => WorkoutReaction[]) => {
@@ -210,7 +235,9 @@ export default function FeedPage() {
                 <TrainingStories
                   stories={stories}
                   currentUser={currentUser}
-                  onView={(authorId) => setViewerAuthor(authorId)}
+                  currentUserAvatarUrl={currentUser?.avatarUrl ?? avatarById[currentUser?.id ?? '']}
+                  seenMap={seenMap}
+                  onView={openViewer}
                   onUpload={handleUploadStory}
                   uploading={uploadingStory}
                 />
@@ -225,6 +252,7 @@ export default function FeedPage() {
                 workouts={workouts}
                 configs={configs}
                 currentUser={currentUser}
+                avatarById={avatarById}
                 onToggleRespect={toggleRespect}
                 onAddComment={addComment}
                 onDeleteComment={deleteComment}
@@ -246,7 +274,7 @@ export default function FeedPage() {
                 {topRowers.map((r, i) => (
                   <Link key={r.id} href={`/rowers/${r.id}`} className="focus-ring flex items-center gap-2.5 rounded-lg">
                     <span className={`w-4 text-[12px] font-bold tabular ${i === 0 ? 'text-coral' : 'text-charcoal-light'}`}>{i + 1}</span>
-                    <Avatar name={r.name} size={28} />
+                    <Avatar name={r.name} size={28} src={avatarById[r.id]} />
                     <span className="flex-1 truncate text-[12.5px] font-medium text-charcoal">{r.name}</span>
                     <span className="text-[12.5px] font-semibold tabular text-charcoal-soft">{formatPreciseNumber(r.total)}</span>
                   </Link>
@@ -281,6 +309,7 @@ export default function FeedPage() {
         <TrainingStoryModal
           stories={viewerStories}
           currentUser={currentUser}
+          authorAvatarUrl={viewerAuthor ? avatarById[viewerAuthor] : undefined}
           onDelete={handleDeleteStory}
           onClose={() => setViewerAuthor(null)}
         />

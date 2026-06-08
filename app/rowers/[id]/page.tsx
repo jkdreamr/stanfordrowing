@@ -8,7 +8,7 @@ import {
   getTeamById,
   getWorkoutLabel,
 } from '@/lib/data';
-import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
+import { getProfileByAuthId, profileToUser, uploadAvatar } from '@/lib/userProfile';
 import { User, Workout, WorkoutComment, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import {
   addWorkoutComment,
@@ -62,6 +62,7 @@ export default function RowerProfilePage() {
   const [filter, setFilter] = useState('all');
   const [editing, setEditing] = useState<Workout | null>(null);
   const [editValues, setEditValues] = useState({ type: 'rowing_no_pieces' as WorkoutType, minutes: '', distance: '', notes: '' });
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -215,6 +216,20 @@ export default function RowerProfilePage() {
     } catch { /* no-op */ }
   };
 
+  const handleAvatarSelected = async (file: File) => {
+    if (!currentUser) return;
+    setUploadingAvatar(true);
+    try {
+      const url = await uploadAvatar(file, currentUser.id);
+      setLoadedProfile((prev) => (prev ? { ...prev, avatarUrl: url } : { id: currentUser.id, name: currentUser.name, teamId: currentUser.teamId, avatarUrl: url }));
+      setCurrentUser((prev) => (prev ? { ...prev, avatarUrl: url } : prev));
+    } catch {
+      window.alert('Could not update your photo. Please try a different image.');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   if (!profileUser) {
     return (
       <div className="mx-auto max-w-feed px-4 py-16 sm:px-6">
@@ -232,7 +247,14 @@ export default function RowerProfilePage() {
       </div>
 
       <div className="mt-4">
-        <RowerProfileHeader user={profileUser} team={team} aggregate={aggregate} isSelf={isSelf} />
+        <RowerProfileHeader
+          user={profileUser}
+          team={team}
+          aggregate={aggregate}
+          isSelf={isSelf}
+          onAvatarSelected={isSelf ? handleAvatarSelected : undefined}
+          uploadingAvatar={uploadingAvatar}
+        />
       </div>
 
       <div className="mt-6">
@@ -277,6 +299,7 @@ export default function RowerProfilePage() {
               workout={w}
               configs={configs}
               currentUser={currentUser}
+              avatarById={profileUser.avatarUrl ? { [profileUser.id]: profileUser.avatarUrl } : undefined}
               onToggleRespect={toggleRespect}
               onAddComment={addComment}
               onDeleteComment={deleteComment}

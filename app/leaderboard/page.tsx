@@ -129,6 +129,7 @@ export default function LeaderboardPage() {
                 unit={m.unit}
                 percentage={m.pct}
                 avatarName={r.user.name}
+                avatarUrl={r.user.avatarUrl}
                 highlight={i === 0}
                 badge={
                   i === 0 && view === 'weekly' ? (

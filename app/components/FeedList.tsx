@@ -10,6 +10,7 @@ interface FeedListProps {
   workouts: Workout[];
   configs: Record<WorkoutType, WorkoutTypeConfig>;
   currentUser: User | null;
+  avatarById?: Record<string, string>;
   onToggleRespect: (workout: Workout) => void;
   onAddComment?: (workout: Workout, body: string, parentId?: string) => Promise<boolean>;
   onDeleteComment?: (workout: Workout, commentId: string) => void;
@@ -22,6 +23,7 @@ export default function FeedList({
   workouts,
   configs,
   currentUser,
+  avatarById,
   onToggleRespect,
   onAddComment,
   onDeleteComment,
@@ -60,6 +62,7 @@ export default function FeedList({
           configs={configs}
           badges={getWorkoutBadges(w, byAuthor.get(w.oderId) ?? [w], configs)}
           currentUser={currentUser}
+          avatarById={avatarById}
           onToggleRespect={onToggleRespect}
           onAddComment={onAddComment}
           onDeleteComment={onDeleteComment}

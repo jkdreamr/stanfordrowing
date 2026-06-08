@@ -58,7 +58,7 @@ export default function AuthStatus() {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <Avatar name={profile.name} size={32} />
+        <Avatar name={profile.name} size={32} src={profile.avatarUrl} />
       </button>
       {open && (
         <>

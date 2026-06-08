@@ -13,6 +13,7 @@ interface LeaderboardCardProps {
   percentage: number;
   color?: string;
   avatarName?: string;
+  avatarUrl?: string;
   badge?: ReactNode;
   highlight?: boolean;
 }
@@ -27,6 +28,7 @@ export default function LeaderboardCard({
   percentage,
   color = '#8c8680',
   avatarName,
+  avatarUrl,
   badge,
   highlight = false,
 }: LeaderboardCardProps) {
@@ -52,7 +54,7 @@ export default function LeaderboardCard({
       </span>
 
       {avatarName ? (
-        <Avatar name={avatarName} size={36} />
+        <Avatar name={avatarName} size={36} src={avatarUrl} />
       ) : (
         <span className="h-9 w-9 shrink-0 rounded-lg bg-stone-light" />
       )}

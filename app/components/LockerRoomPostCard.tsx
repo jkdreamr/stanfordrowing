@@ -11,6 +11,7 @@ import CommentSection from './CommentSection';
 interface LockerRoomPostCardProps {
   post: LockerPost;
   currentUser: User | null;
+  avatarById?: Record<string, string>;
   isAdmin?: boolean;
   onToggleReaction: (post: LockerPost, emoji: string) => void;
   onAddComment: (post: LockerPost, body: string, parentId?: string) => Promise<boolean>;
@@ -41,6 +42,7 @@ function getVideoEmbed(url: string): string | null {
 export default function LockerRoomPostCard({
   post,
   currentUser,
+  avatarById,
   isAdmin = false,
   onToggleReaction,
   onAddComment,
@@ -87,7 +89,7 @@ export default function LockerRoomPostCard({
         {/* Header */}
         <div className="flex items-center justify-between gap-3">
           <Link href={`/rowers/${post.authorId}`} className="focus-ring flex min-w-0 items-center gap-2.5 rounded-lg">
-            <Avatar name={post.authorName} size={32} />
+            <Avatar name={post.authorName} size={32} src={avatarById?.[post.authorId]} />
             <div className="min-w-0">
               <p className="truncate text-[13px] font-semibold text-charcoal">{post.authorName}</p>
               <p className="text-[10px] text-charcoal-muted">{timeAgo(post.createdAt)}</p>
@@ -154,6 +156,7 @@ export default function LockerRoomPostCard({
           <CommentSection
             comments={post.comments ?? []}
             currentUser={currentUser}
+            avatarById={avatarById}
             onAdd={(body, parentId) => onAddComment(post, body, parentId)}
             onDelete={(commentId) => onDeleteComment(post, commentId)}
             tone="card"
