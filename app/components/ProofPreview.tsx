@@ -28,10 +28,12 @@ export default function ProofPreview({ url, className = '', aspect = 'aspect-vid
       <div className={`relative w-full overflow-hidden bg-black ${aspect} ${className}`}>
         <video
           src={url}
-          controls
-          playsInline
+          autoPlay
           muted
-          preload="metadata"
+          loop
+          playsInline
+          controls
+          preload="auto"
           className="h-full w-full object-cover"
         />
       </div>
