@@ -131,6 +131,22 @@ export async function addWorkoutComment(params: {
   };
 }
 
+/**
+ * Retroactively set the distance (= points) of every training-session workout
+ * logged on a given date. Used when an admin edits that date's plan mileage.
+ */
+export async function updateTrainingSessionDistanceForDate(
+  date: string,
+  distance: number
+): Promise<void> {
+  const { error } = await supabase
+    .from('workouts')
+    .update({ distance })
+    .eq('type', 'training_session')
+    .eq('date', date);
+  if (error) throw error;
+}
+
 export async function removeWorkoutComment(params: { commentId: string }): Promise<void> {
   const { error } = await supabase
     .from('workout_comments')

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   DEFAULT_PLAN_MILEAGES,
@@ -15,7 +15,14 @@ import {
 import { getProfileByAuthId } from '@/lib/userProfile';
 import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { supabase } from '@/lib/supabaseClient';
-import { deleteWorkoutRow, fetchMultipliers, fetchWorkouts, saveMultipliers, updateWorkoutRow } from '@/lib/supabaseData';
+import {
+  deleteWorkoutRow,
+  fetchMultipliers,
+  fetchWorkouts,
+  saveMultipliers,
+  updateTrainingSessionDistanceForDate,
+  updateWorkoutRow,
+} from '@/lib/supabaseData';
 
 const emptyEdit = {
   minutes: '',
@@ -35,6 +42,19 @@ export default function Admin() {
   const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState(emptyEdit);
   const [loadError, setLoadError] = useState('');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  // Refs mirror the latest inputs so debounced autosave never reads stale state.
+  const workoutInputsRef = useRef(workoutMultiplierInputs);
+  const teamInputsRef = useRef(teamMultiplierInputs);
+  const planInputsRef = useRef(planMileageInputs);
+  useEffect(() => { workoutInputsRef.current = workoutMultiplierInputs; }, [workoutMultiplierInputs]);
+  useEffect(() => { teamInputsRef.current = teamMultiplierInputs; }, [teamMultiplierInputs]);
+  useEffect(() => { planInputsRef.current = planMileageInputs; }, [planMileageInputs]);
+
+  const multTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const planTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const savedResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const checkAdmin = async (authId: string | undefined) => {
@@ -169,59 +189,104 @@ export default function Admin() {
     }
   };
 
-  const handleSaveMultipliers = () => {
-    const nextWorkoutMultipliers = (Object.keys(WORKOUT_TYPES) as WorkoutType[]).reduce(
-      (acc, type) => {
-        const value = Number(workoutMultiplierInputs[type]);
-        if (Number.isFinite(value)) {
-          acc[type] = value;
-        }
-        return acc;
-      },
-      {} as Partial<Record<WorkoutType, number>>
-    );
+  // Clear any pending autosave timers on unmount.
+  const multTimerForCleanup = multTimer;
+  const savedTimerForCleanup = savedResetTimer;
+  const planTimersForCleanup = planTimers;
+  useEffect(() => {
+    const mult = multTimerForCleanup;
+    const saved = savedTimerForCleanup;
+    const plans = planTimersForCleanup;
+    return () => {
+      if (mult.current) clearTimeout(mult.current);
+      if (saved.current) clearTimeout(saved.current);
+      Object.values(plans.current).forEach((t) => clearTimeout(t));
+    };
+  }, [multTimerForCleanup, savedTimerForCleanup, planTimersForCleanup]);
 
-    const nextTeamMultipliers = TEAMS.reduce((acc, team) => {
-      const value = Number(teamMultiplierInputs[team.id]);
+  const buildPayload = () => {
+    const workoutMultipliers = (Object.keys(WORKOUT_TYPES) as WorkoutType[]).reduce((acc, type) => {
+      const raw = workoutInputsRef.current[type];
+      const value = Number(raw);
+      if (raw !== undefined && raw !== '' && Number.isFinite(value)) acc[type] = value;
+      return acc;
+    }, {} as Partial<Record<WorkoutType, number>>);
+
+    const teamMultipliers = TEAMS.reduce((acc, team) => {
+      const value = Number(teamInputsRef.current[team.id]);
       acc[team.id] = Number.isFinite(value) ? value : team.scoreMultiplier;
       return acc;
     }, {} as Record<string, number>);
 
-    const nextPlanMileages = Object.entries(planMileageInputs).reduce((acc, [date, value]) => {
+    const planMileages = Object.entries(planInputsRef.current).reduce((acc, [date, value]) => {
       const numeric = Number(value);
-      if (Number.isFinite(numeric) && numeric > 0) {
-        acc[date] = numeric;
-      }
+      if (value !== '' && Number.isFinite(numeric) && numeric > 0) acc[date] = numeric;
       return acc;
     }, {} as Record<string, number>);
 
-    saveMultipliers({ workoutMultipliers: nextWorkoutMultipliers, teamMultipliers: nextTeamMultipliers, planMileages: nextPlanMileages })
-      .then(async () => {
-        const multiplierData = await fetchMultipliers();
-        setWorkoutTypeConfigs(multiplierData.workoutTypeConfigs);
-        setWorkoutMultiplierInputs(
-          (Object.entries(multiplierData.workoutTypeConfigs) as [WorkoutType, WorkoutTypeConfig][]).reduce((acc, [type, config]) => {
-            acc[type] = config.multiplier.toString();
-            return acc;
-          }, {} as Record<WorkoutType, string>)
-        );
-        const mergedPlanMileages = { ...DEFAULT_PLAN_MILEAGES, ...multiplierData.planMileages };
-        setPlanMileageInputs(
-          getChallengeDates().reduce((acc, date) => {
-            acc[date] = mergedPlanMileages[date]?.toString() || '';
-            return acc;
-          }, {} as Record<string, string>)
-        );
-        setTeamMultiplierInputs(
-          TEAMS.reduce((acc, team) => {
-            acc[team.id] = (nextTeamMultipliers[team.id] ?? team.scoreMultiplier).toString();
-            return acc;
-          }, {} as Record<string, string>)
-        );
-      })
-      .catch(() => {
-        setLoadError('Unable to save multipliers.');
-      });
+    return { workoutMultipliers, teamMultipliers, planMileages };
+  };
+
+  const flashSaved = () => {
+    setSaveStatus('saved');
+    if (savedResetTimer.current) clearTimeout(savedResetTimer.current);
+    savedResetTimer.current = setTimeout(() => setSaveStatus('idle'), 1600);
+  };
+
+  /** Persist all multiplier inputs, then refresh the live config (inputs untouched). */
+  const persistMultipliers = async () => {
+    setSaveStatus('saving');
+    setLoadError('');
+    try {
+      await saveMultipliers(buildPayload());
+      const data = await fetchMultipliers();
+      setWorkoutTypeConfigs(data.workoutTypeConfigs);
+      flashSaved();
+    } catch {
+      setSaveStatus('error');
+      setLoadError('Unable to save. Check your connection.');
+    }
+  };
+
+  const handleWorkoutMultiplierChange = (type: WorkoutType, value: string) => {
+    setWorkoutMultiplierInputs((prev) => ({ ...prev, [type]: value }));
+    if (multTimer.current) clearTimeout(multTimer.current);
+    multTimer.current = setTimeout(() => { void persistMultipliers(); }, 700);
+  };
+
+  const handleTeamMultiplierChange = (teamId: string, value: string) => {
+    setTeamMultiplierInputs((prev) => ({ ...prev, [teamId]: value }));
+    if (multTimer.current) clearTimeout(multTimer.current);
+    multTimer.current = setTimeout(() => { void persistMultipliers(); }, 700);
+  };
+
+  // Editing a date's plan mileage autosaves AND retroactively updates the
+  // points of every training session logged on that date.
+  const handlePlanMileageChange = (date: string, value: string) => {
+    setPlanMileageInputs((prev) => ({ ...prev, [date]: value }));
+    if (planTimers.current[date]) clearTimeout(planTimers.current[date]);
+    planTimers.current[date] = setTimeout(async () => {
+      setSaveStatus('saving');
+      setLoadError('');
+      try {
+        await saveMultipliers(buildPayload());
+        const numeric = Number(planInputsRef.current[date]);
+        if (planInputsRef.current[date] !== '' && Number.isFinite(numeric) && numeric > 0) {
+          await updateTrainingSessionDistanceForDate(date, numeric);
+          setWorkouts((prev) =>
+            prev.map((w) =>
+              w.type === 'training_session' && w.date === date ? { ...w, distance: numeric } : w
+            )
+          );
+        }
+        const data = await fetchMultipliers();
+        setWorkoutTypeConfigs(data.workoutTypeConfigs);
+        flashSaved();
+      } catch {
+        setSaveStatus('error');
+        setLoadError('Unable to update plan mileage for that date.');
+      }
+    }, 800);
   };
 
   if (isAuthLoading) {
@@ -482,9 +547,7 @@ export default function Admin() {
                       type="number"
                       step="0.05"
                       value={workoutMultiplierInputs[type] || ''}
-                      onChange={(event) =>
-                        setWorkoutMultiplierInputs(prev => ({ ...prev, [type]: event.target.value }))
-                      }
+                      onChange={(event) => handleWorkoutMultiplierChange(type, event.target.value)}
                       className="w-24 rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-3 py-2 text-sm text-charcoal"
                     />
                   </div>
@@ -507,9 +570,7 @@ export default function Admin() {
                       type="number"
                       step="0.1"
                       value={planMileageInputs[date] || ''}
-                      onChange={(event) =>
-                        setPlanMileageInputs(prev => ({ ...prev, [date]: event.target.value }))
-                      }
+                      onChange={(event) => handlePlanMileageChange(date, event.target.value)}
                       className="mt-2 w-full rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-3 py-2 text-sm text-charcoal"
                     />
                   </div>
@@ -530,24 +591,40 @@ export default function Admin() {
                       type="number"
                       step="0.05"
                       value={teamMultiplierInputs[team.id] || ''}
-                      onChange={(event) =>
-                        setTeamMultiplierInputs(prev => ({ ...prev, [team.id]: event.target.value }))
-                      }
+                      onChange={(event) => handleTeamMultiplierChange(team.id, event.target.value)}
                       className="w-24 rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-3 py-2 text-sm text-charcoal"
                     />
                   </div>
                 ))}
               </div>
 
-              <button
-                onClick={handleSaveMultipliers}
-                className="mt-5 w-full rounded-full bg-coral px-6 py-3 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5"
-              >
-                Save multipliers
-              </button>
+              {TEAMS.length === 0 && (
+                <p className="text-xs text-charcoal-muted">No teams yet — groupings come later.</p>
+              )}
+
+              <div className="mt-5 flex items-center gap-2 text-xs font-medium" aria-live="polite">
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    saveStatus === 'saving'
+                      ? 'animate-pulse bg-charcoal-light'
+                      : saveStatus === 'error'
+                        ? 'bg-coral'
+                        : 'bg-success'
+                  }`}
+                />
+                <span className={saveStatus === 'error' ? 'text-coral' : 'text-charcoal-muted'}>
+                  {saveStatus === 'saving'
+                    ? 'Saving…'
+                    : saveStatus === 'error'
+                      ? 'Couldn’t save — change again to retry.'
+                      : saveStatus === 'saved'
+                        ? 'All changes saved'
+                        : 'Changes save automatically'}
+                </span>
+              </div>
 
               <p className="mt-3 text-xs text-charcoal-muted">
-                Updates apply to scoring across the dashboard and leaderboard.
+                Editing a date&apos;s mileage updates points for every session logged that day.
               </p>
             </div>
           </div>
