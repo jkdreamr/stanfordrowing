@@ -19,5 +19,11 @@ if (!isSupabaseConfigured && typeof window !== 'undefined') {
 // Use harmless placeholders when unset so createClient() doesn't throw at import.
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-anon-key'
+  supabaseAnonKey || 'placeholder-anon-key',
+  {
+    auth: {
+      detectSessionInUrl: true,
+      persistSession: true,
+    },
+  }
 );
