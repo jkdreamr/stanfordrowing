@@ -30,10 +30,10 @@ export default function FilterTabs({ tabs, active, onChange, className = '' }: F
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(tab.key)}
-            className={`focus-ring flex shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold tracking-wide transition-all duration-200 active:scale-95 ${
+            className={`focus-ring flex shrink-0 items-center gap-1 rounded-lg px-3.5 py-1.5 text-[11px] font-semibold tracking-wide transition-all duration-200 active:scale-95 ${
               isActive
-                ? 'bg-charcoal text-white'
-                : 'text-charcoal-muted hover:bg-stone-light hover:text-charcoal'
+                ? 'bg-charcoal text-bone shadow-sm'
+                : 'border border-white/10 text-charcoal-muted hover:bg-white/5 hover:text-charcoal'
             }`}
           >
             {tab.icon && <Icon name={tab.icon} size={14} fill={isActive} />}

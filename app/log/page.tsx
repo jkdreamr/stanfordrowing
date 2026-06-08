@@ -267,10 +267,10 @@ export default function LogWorkout() {
         {/* Sub-options — only when relevant */}
         {category && (category === 'erg' || category === 'row') && (
           <div className="flex gap-2">
-            <button type="button" onClick={() => setHasPieces(false)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${!hasPieces ? 'bg-charcoal text-white' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setHasPieces(false)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${!hasPieces ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               Steady state
             </button>
-            <button type="button" onClick={() => setHasPieces(true)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${hasPieces ? 'bg-charcoal text-white' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setHasPieces(true)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${hasPieces ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               With pieces
             </button>
           </div>
@@ -278,10 +278,10 @@ export default function LogWorkout() {
 
         {category === 'lift' && (
           <div className="flex gap-2">
-            <button type="button" onClick={() => setLiftPlan(true)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${liftPlan ? 'bg-charcoal text-white' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setLiftPlan(true)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${liftPlan ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               Team plan
             </button>
-            <button type="button" onClick={() => setLiftPlan(false)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${!liftPlan ? 'bg-charcoal text-white' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setLiftPlan(false)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${!liftPlan ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               Own workout
             </button>
           </div>
@@ -289,10 +289,10 @@ export default function LogWorkout() {
 
         {category === 'bike' && (
           <div className="flex gap-2">
-            <button type="button" onClick={() => setBikeOutdoor(false)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${!bikeOutdoor ? 'bg-charcoal text-white' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setBikeOutdoor(false)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${!bikeOutdoor ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               Stationary
             </button>
-            <button type="button" onClick={() => setBikeOutdoor(true)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${bikeOutdoor ? 'bg-charcoal text-white' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setBikeOutdoor(true)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${bikeOutdoor ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               Outdoor
             </button>
           </div>

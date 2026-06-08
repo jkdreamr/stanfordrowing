@@ -42,6 +42,7 @@ export interface WorkoutComment {
   userId: string;
   userName?: string;
   body: string;
+  parentId?: string;
   createdAt: string;
 }
 
@@ -174,6 +175,7 @@ export interface LockerComment {
   userId: string;
   userName?: string;
   body: string;
+  parentId?: string;
   createdAt: string;
 }
 

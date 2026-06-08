@@ -11,7 +11,7 @@ interface FeedListProps {
   configs: Record<WorkoutType, WorkoutTypeConfig>;
   currentUser: User | null;
   onToggleRespect: (workout: Workout) => void;
-  onAddComment?: (workout: Workout, body: string) => Promise<boolean>;
+  onAddComment?: (workout: Workout, body: string, parentId?: string) => Promise<boolean>;
   onDeleteComment?: (workout: Workout, commentId: string) => void;
   allWorkouts?: Workout[];
   emptyTitle?: string;

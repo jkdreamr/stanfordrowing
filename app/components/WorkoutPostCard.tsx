@@ -23,7 +23,7 @@ interface WorkoutPostCardProps {
   badges?: Badge[];
   currentUser: User | null;
   onToggleRespect: (workout: Workout) => void;
-  onAddComment?: (workout: Workout, body: string) => Promise<boolean>;
+  onAddComment?: (workout: Workout, body: string, parentId?: string) => Promise<boolean>;
   onDeleteComment?: (workout: Workout, commentId: string) => void;
   actions?: ReactNode;
 }
@@ -161,7 +161,7 @@ export default function WorkoutPostCard({
             <CommentSection
               comments={comments}
               currentUser={currentUser}
-              onAdd={(body) => onAddComment!(workout, body)}
+              onAdd={(body, parentId) => onAddComment!(workout, body, parentId)}
               onDelete={(commentId) => onDeleteComment!(workout, commentId)}
             />
           </div>

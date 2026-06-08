@@ -100,10 +100,10 @@ export default function FeedPage() {
     setWorkouts((prev) => prev.map((w) => (w.id === id ? { ...w, comments: updater(w.comments ?? []) } : w)));
   };
 
-  const addComment = async (workout: Workout, body: string): Promise<boolean> => {
+  const addComment = async (workout: Workout, body: string, parentId?: string): Promise<boolean> => {
     if (!currentUser) return false;
     try {
-      const comment = await addWorkoutComment({ workoutId: workout.id, userId: currentUser.id, userName: currentUser.name, body });
+      const comment = await addWorkoutComment({ workoutId: workout.id, userId: currentUser.id, userName: currentUser.name, body, parentId });
       updateComments(workout.id, (c) => [...c, comment]);
       return true;
     } catch {
@@ -259,9 +259,9 @@ export default function FeedPage() {
             <Link href="/locker-room" className="panel-cinematic focus-ring group block p-5">
               <div className="relative">
                 <p className="label-caps text-charcoal-muted">Locker Room</p>
-                <p className="mt-2 font-display text-[15px] font-semibold tracking-editorial text-charcoal">For when you need a push.</p>
+                <p className="mt-2 font-display text-[15px] font-semibold tracking-editorial text-charcoal">Get some motivation</p>
                 <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-coral">
-                  Open the wall <Icon name="arrow_forward" size={14} className="transition-transform group-hover:translate-x-0.5" />
+                  Enter <Icon name="arrow_forward" size={14} className="transition-transform group-hover:translate-x-0.5" />
                 </span>
               </div>
             </Link>

@@ -134,7 +134,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="focus-ring flex w-full items-center justify-center gap-2 rounded-full bg-charcoal px-5 py-3 text-[13px] font-semibold text-white transition-colors hover:bg-charcoal/90"
+                className="focus-ring flex w-full items-center justify-center gap-2 rounded-full bg-charcoal px-5 py-3 text-[13px] font-semibold text-bone transition-colors hover:bg-charcoal/90"
               >
                 <Icon name="login" size={18} />
                 Continue with Google

@@ -83,10 +83,10 @@ export default function LockerRoomPage() {
     setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, comments: updater(p.comments) } : p)));
   };
 
-  const addComment = async (post: LockerPost, body: string): Promise<boolean> => {
+  const addComment = async (post: LockerPost, body: string, parentId?: string): Promise<boolean> => {
     if (!currentUser) return false;
     try {
-      const c = await addLockerComment({ postId: post.id, userId: currentUser.id, userName: currentUser.name, body });
+      const c = await addLockerComment({ postId: post.id, userId: currentUser.id, userName: currentUser.name, body, parentId });
       updateComments(post.id, (cs) => [...cs, c]);
       return true;
     } catch {
@@ -121,7 +121,7 @@ export default function LockerRoomPage() {
         <h1 className="font-display text-xl font-semibold tracking-editorial text-charcoal sm:text-2xl">
           Locker Room
         </h1>
-        <p className="mt-1 text-[13px] text-charcoal-muted">For when you need a push.</p>
+        <p className="mt-1 text-[13px] text-charcoal-muted">Get some motivation.</p>
       </div>
 
       {currentUser && !needsSchema && (

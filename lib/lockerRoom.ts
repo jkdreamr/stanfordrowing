@@ -12,11 +12,11 @@ interface LockerPostRow {
   link_url: string | null;
   created_at: string;
   locker_room_reactions?: { user_id: string; emoji: string | null; created_at: string }[];
-  locker_room_comments?: { id: string; user_id: string; user_name: string; body: string; created_at: string }[];
+  locker_room_comments?: { id: string; user_id: string; user_name: string; body: string; parent_id: string | null; created_at: string }[];
 }
 
 const SELECT =
-  '*, locker_room_reactions(user_id, emoji, created_at), locker_room_comments(id, user_id, user_name, body, created_at)';
+  '*, locker_room_reactions(user_id, emoji, created_at), locker_room_comments(id, user_id, user_name, body, parent_id, created_at)';
 
 function mapRow(row: LockerPostRow): LockerPost {
   return {
@@ -34,7 +34,14 @@ function mapRow(row: LockerPostRow): LockerPost {
       createdAt: r.created_at,
     })) satisfies LockerReaction[],
     comments: (row.locker_room_comments ?? [])
-      .map((c) => ({ id: c.id, userId: c.user_id, userName: c.user_name, body: c.body, createdAt: c.created_at }))
+      .map((c) => ({
+        id: c.id,
+        userId: c.user_id,
+        userName: c.user_name,
+        body: c.body,
+        parentId: c.parent_id ?? undefined,
+        createdAt: c.created_at,
+      }))
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt)) satisfies LockerComment[],
     createdAt: row.created_at,
   };
@@ -111,15 +118,22 @@ export async function addLockerComment(params: {
   userId: string;
   userName: string;
   body: string;
+  parentId?: string;
 }): Promise<LockerComment> {
   const { data, error } = await supabase
     .from('locker_room_comments')
-    .insert({ post_id: params.postId, user_id: params.userId, user_name: params.userName, body: params.body })
-    .select('id, user_id, user_name, body, created_at')
+    .insert({
+      post_id: params.postId,
+      user_id: params.userId,
+      user_name: params.userName,
+      body: params.body,
+      parent_id: params.parentId ?? null,
+    })
+    .select('id, user_id, user_name, body, parent_id, created_at')
     .single();
   if (error) throw error;
-  const row = data as { id: string; user_id: string; user_name: string; body: string; created_at: string };
-  return { id: row.id, userId: row.user_id, userName: row.user_name, body: row.body, createdAt: row.created_at };
+  const row = data as { id: string; user_id: string; user_name: string; body: string; parent_id: string | null; created_at: string };
+  return { id: row.id, userId: row.user_id, userName: row.user_name, body: row.body, parentId: row.parent_id ?? undefined, createdAt: row.created_at };
 }
 
 export async function removeLockerComment(params: { commentId: string }): Promise<void> {

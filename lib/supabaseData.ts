@@ -29,6 +29,7 @@ interface SupabaseCommentRow {
   user_id: string;
   user_name: string | null;
   body: string;
+  parent_id: string | null;
   created_at: string;
 }
 
@@ -42,7 +43,7 @@ async function fetchCommentsByWorkout(): Promise<Map<string, WorkoutComment[]>> 
   try {
     const { data, error } = await supabase
       .from('workout_comments')
-      .select('id, workout_id, user_id, user_name, body, created_at')
+      .select('id, workout_id, user_id, user_name, body, parent_id, created_at')
       .order('created_at', { ascending: true });
     if (error || !data) return byWorkout;
     for (const row of data as SupabaseCommentRow[]) {
@@ -52,6 +53,7 @@ async function fetchCommentsByWorkout(): Promise<Map<string, WorkoutComment[]>> 
         userId: row.user_id,
         userName: row.user_name ?? undefined,
         body: row.body,
+        parentId: row.parent_id ?? undefined,
         createdAt: row.created_at,
       });
       byWorkout.set(row.workout_id, list);
@@ -100,6 +102,7 @@ export async function addWorkoutComment(params: {
   userId: string;
   userName: string;
   body: string;
+  parentId?: string;
 }): Promise<WorkoutComment> {
   const { data, error } = await supabase
     .from('workout_comments')
@@ -108,8 +111,9 @@ export async function addWorkoutComment(params: {
       user_id: params.userId,
       user_name: params.userName,
       body: params.body,
+      parent_id: params.parentId ?? null,
     })
-    .select('id, user_id, user_name, body, created_at')
+    .select('id, user_id, user_name, body, parent_id, created_at')
     .single();
 
   if (error) {
@@ -122,6 +126,7 @@ export async function addWorkoutComment(params: {
     userId: row.user_id,
     userName: row.user_name ?? undefined,
     body: row.body,
+    parentId: row.parent_id ?? undefined,
     createdAt: row.created_at,
   };
 }

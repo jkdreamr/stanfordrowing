@@ -13,7 +13,7 @@ interface LockerRoomPostCardProps {
   currentUser: User | null;
   isAdmin?: boolean;
   onToggleReaction: (post: LockerPost, emoji: string) => void;
-  onAddComment: (post: LockerPost, body: string) => Promise<boolean>;
+  onAddComment: (post: LockerPost, body: string, parentId?: string) => Promise<boolean>;
   onDeleteComment: (post: LockerPost, commentId: string) => void;
   onDelete?: (post: LockerPost) => void;
 }
@@ -123,7 +123,7 @@ export default function LockerRoomPostCard({
           <CommentSection
             comments={post.comments ?? []}
             currentUser={currentUser}
-            onAdd={(body) => onAddComment(post, body)}
+            onAdd={(body, parentId) => onAddComment(post, body, parentId)}
             onDelete={(commentId) => onDeleteComment(post, commentId)}
             tone="card"
           />

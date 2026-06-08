@@ -58,7 +58,7 @@ export default function AuthCallback() {
           <p className="mt-1 text-[11px] text-charcoal-muted">{error}</p>
           <button
             onClick={() => router.replace('/login')}
-            className="focus-ring mt-4 rounded-full bg-charcoal px-4 py-1.5 text-[11px] font-semibold text-white hover:bg-charcoal/90"
+            className="focus-ring mt-4 rounded-full bg-charcoal px-4 py-1.5 text-[11px] font-semibold text-bone hover:bg-charcoal/90"
           >
             Back to login
           </button>
