@@ -5,13 +5,16 @@ import { LockerPost, User } from '@/lib/types';
 import { timeAgo } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
-import RespectButton from './RespectButton';
+import EmojiReactionBar from './EmojiReactionBar';
+import CommentSection from './CommentSection';
 
 interface LockerRoomPostCardProps {
   post: LockerPost;
   currentUser: User | null;
   isAdmin?: boolean;
-  onToggleRespect: (post: LockerPost) => void;
+  onToggleReaction: (post: LockerPost, emoji: string) => void;
+  onAddComment: (post: LockerPost, body: string) => Promise<boolean>;
+  onDeleteComment: (post: LockerPost, commentId: string) => void;
   onDelete?: (post: LockerPost) => void;
 }
 
@@ -38,11 +41,11 @@ export default function LockerRoomPostCard({
   post,
   currentUser,
   isAdmin = false,
-  onToggleRespect,
+  onToggleReaction,
+  onAddComment,
+  onDeleteComment,
   onDelete,
 }: LockerRoomPostCardProps) {
-  const reactions = post.reactions ?? [];
-  const hasReacted = reactions.some((r) => r.userId === currentUser?.id);
   const canDelete = !!onDelete && (isAdmin || post.authorId === currentUser?.id);
   const embed = post.linkUrl ? getVideoEmbed(post.linkUrl) : null;
 
@@ -82,7 +85,7 @@ export default function LockerRoomPostCard({
               aria-label="Delete post"
               className="focus-ring rounded-lg p-1.5 text-charcoal-light transition-colors hover:text-coral"
             >
-              <Icon name="close" size={16} />
+              <Icon name="delete" size={16} />
             </button>
           )}
         </div>
@@ -106,13 +109,23 @@ export default function LockerRoomPostCard({
           </a>
         )}
 
-        {/* Footer */}
-        <div className="mt-3 pt-3 border-t border-stone/30">
-          <RespectButton
-            count={reactions.length}
-            active={hasReacted}
-            disabled={!currentUser}
-            onToggle={() => onToggleRespect(post)}
+        {/* Reactions */}
+        <div className="mt-3.5">
+          <EmojiReactionBar
+            reactions={post.reactions ?? []}
+            currentUserId={currentUser?.id}
+            onToggle={(emoji) => onToggleReaction(post, emoji)}
+          />
+        </div>
+
+        {/* Comments */}
+        <div className="mt-3 border-t border-stone/30 pt-3">
+          <CommentSection
+            comments={post.comments ?? []}
+            currentUser={currentUser}
+            onAdd={(body) => onAddComment(post, body)}
+            onDelete={(commentId) => onDeleteComment(post, commentId)}
+            tone="card"
           />
         </div>
       </div>

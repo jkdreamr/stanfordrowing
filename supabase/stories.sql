@@ -45,3 +45,24 @@ create policy "story media insert" on storage.objects
 drop policy if exists "story media delete" on storage.objects;
 create policy "story media delete" on storage.objects
   for delete using (bucket_id = 'story-media' and auth.role() = 'authenticated');
+
+-- ---------------------------------------------------------------------------
+-- Story comments (Instagram-style replies shown bottom-left)
+-- ---------------------------------------------------------------------------
+create table if not exists public.story_comments (
+  id uuid primary key default gen_random_uuid(),
+  story_id uuid not null references public.stories (id) on delete cascade,
+  user_id text not null,
+  user_name text not null,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists story_comments_story_idx on public.story_comments (story_id, created_at);
+alter table public.story_comments enable row level security;
+
+drop policy if exists "story comments read" on public.story_comments;
+create policy "story comments read" on public.story_comments for select using (auth.role() = 'authenticated');
+drop policy if exists "story comments insert" on public.story_comments;
+create policy "story comments insert" on public.story_comments for insert with check (auth.role() = 'authenticated');
+drop policy if exists "story comments delete" on public.story_comments;
+create policy "story comments delete" on public.story_comments for delete using (auth.role() = 'authenticated');

@@ -165,6 +165,15 @@ export type LockerMediaType = 'image' | 'video' | 'link' | null;
 
 export interface LockerReaction {
   userId: string;
+  emoji: string;
+  createdAt: string;
+}
+
+export interface LockerComment {
+  id: string;
+  userId: string;
+  userName?: string;
+  body: string;
   createdAt: string;
 }
 
@@ -178,8 +187,12 @@ export interface LockerPost {
   mediaType: LockerMediaType;
   linkUrl?: string; // external link or video URL (YouTube/Vimeo/etc)
   reactions: LockerReaction[];
+  comments: LockerComment[];
   createdAt: string;
 }
+
+/** Emoji presets shown in the reaction picker (first is the default). */
+export const REACTION_EMOJIS = ['🔥', '❤️', '👍', '😂', '💪', '👏', '🙌', '😮'];
 
 // ---- Stories (Instagram-style photo/video posts) ----
 
@@ -192,5 +205,13 @@ export interface Story {
   mediaUrl: string;
   mediaType: StoryMediaType;
   caption?: string;
+  createdAt: string;
+}
+
+export interface StoryComment {
+  id: string;
+  userId: string;
+  userName?: string;
+  body: string;
   createdAt: string;
 }

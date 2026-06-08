@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
-import { Story, StoryMediaType, User } from '@/lib/types';
+import { Story, StoryComment, StoryMediaType, User } from '@/lib/types';
 
 interface StoryRow {
   id: string;
@@ -56,6 +56,45 @@ export async function createStory(params: {
 
 export async function deleteStory(storyId: string): Promise<void> {
   const { error } = await supabase.from('stories').delete().eq('id', storyId);
+  if (error) throw error;
+}
+
+// ---- story comments ----
+
+export async function fetchStoryComments(storyId: string): Promise<StoryComment[]> {
+  const { data, error } = await supabase
+    .from('story_comments')
+    .select('id, user_id, user_name, body, created_at')
+    .eq('story_id', storyId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data as { id: string; user_id: string; user_name: string; body: string; created_at: string }[]).map((c) => ({
+    id: c.id,
+    userId: c.user_id,
+    userName: c.user_name,
+    body: c.body,
+    createdAt: c.created_at,
+  }));
+}
+
+export async function addStoryComment(params: {
+  storyId: string;
+  userId: string;
+  userName: string;
+  body: string;
+}): Promise<StoryComment> {
+  const { data, error } = await supabase
+    .from('story_comments')
+    .insert({ story_id: params.storyId, user_id: params.userId, user_name: params.userName, body: params.body })
+    .select('id, user_id, user_name, body, created_at')
+    .single();
+  if (error) throw error;
+  const row = data as { id: string; user_id: string; user_name: string; body: string; created_at: string };
+  return { id: row.id, userId: row.user_id, userName: row.user_name, body: row.body, createdAt: row.created_at };
+}
+
+export async function deleteStoryComment(commentId: string): Promise<void> {
+  const { error } = await supabase.from('story_comments').delete().eq('id', commentId);
   if (error) throw error;
 }
 

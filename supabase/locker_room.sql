@@ -74,3 +74,38 @@ create policy "locker media read" on storage.objects
 drop policy if exists "locker media insert" on storage.objects;
 create policy "locker media insert" on storage.objects
   for insert with check (bucket_id = 'locker-media' and auth.role() = 'authenticated');
+
+-- ---------------------------------------------------------------------------
+-- Emoji reactions: any emoji, multiple distinct per user per post
+-- ---------------------------------------------------------------------------
+alter table public.locker_room_reactions add column if not exists emoji text not null default '🔥';
+do $$
+declare c record;
+begin
+  for c in select conname from pg_constraint
+           where conrelid = 'public.locker_room_reactions'::regclass and contype = 'u'
+  loop execute format('alter table public.locker_room_reactions drop constraint %I', c.conname); end loop;
+end $$;
+create unique index if not exists locker_room_reactions_post_user_emoji_key
+  on public.locker_room_reactions (post_id, user_id, emoji);
+
+-- ---------------------------------------------------------------------------
+-- Comments on Locker Room posts
+-- ---------------------------------------------------------------------------
+create table if not exists public.locker_room_comments (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.locker_room_posts (id) on delete cascade,
+  user_id text not null,
+  user_name text not null,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists locker_room_comments_post_idx on public.locker_room_comments (post_id, created_at);
+alter table public.locker_room_comments enable row level security;
+
+drop policy if exists "locker comments read" on public.locker_room_comments;
+create policy "locker comments read" on public.locker_room_comments for select using (auth.role() = 'authenticated');
+drop policy if exists "locker comments insert" on public.locker_room_comments;
+create policy "locker comments insert" on public.locker_room_comments for insert with check (auth.role() = 'authenticated');
+drop policy if exists "locker comments delete" on public.locker_room_comments;
+create policy "locker comments delete" on public.locker_room_comments for delete using (auth.role() = 'authenticated');

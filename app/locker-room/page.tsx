@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
-import { LockerPost, LockerReaction, User } from '@/lib/types';
+import { LockerComment, LockerPost, LockerReaction, User } from '@/lib/types';
 import {
+  addLockerComment,
   addLockerReaction,
   deleteLockerPost,
   fetchLockerPosts,
+  removeLockerComment,
   removeLockerReaction,
 } from '@/lib/lockerRoom';
 import LockerRoomComposer from '../components/LockerRoomComposer';
@@ -36,43 +38,69 @@ export default function LockerRoomPage() {
         setLoading(false);
       }
     };
-    const loadSession = async (authId: string | undefined, isAdm: boolean) => {
+    const loadSession = async (authId: string | undefined) => {
       if (!authId) { setCurrentUser(null); setIsAdmin(false); return; }
       const profile = await getProfileByAuthId(authId);
       setCurrentUser(profile ? profileToUser(profile) : null);
-      setIsAdmin(isAdm || (profile?.isAdmin ?? false));
+      setIsAdmin(profile?.isAdmin ?? false);
     };
     load();
-    supabase.auth.getSession().then(({ data }) =>
-      loadSession(data.session?.user.id, false)
-    );
+    supabase.auth.getSession().then(({ data }) => loadSession(data.session?.user.id));
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      loadSession(session?.user.id, false);
+      loadSession(session?.user.id);
     });
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  // ---- reactions ----
   const updateReactions = (id: string, updater: (r: LockerReaction[]) => LockerReaction[]) => {
     setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, reactions: updater(p.reactions) } : p)));
   };
 
-  const toggleRespect = async (post: LockerPost) => {
+  const toggleReaction = async (post: LockerPost, emoji: string) => {
     if (!currentUser) return;
-    const hasReacted = post.reactions.some((r) => r.userId === currentUser.id);
+    const uid = currentUser.id;
+    const mine = post.reactions.some((r) => r.userId === uid && r.emoji === emoji);
+    updateReactions(post.id, (r) =>
+      mine
+        ? r.filter((x) => !(x.userId === uid && x.emoji === emoji))
+        : [...r, { userId: uid, emoji, createdAt: new Date().toISOString() }]
+    );
     try {
-      if (hasReacted) {
-        updateReactions(post.id, (r) => r.filter((x) => x.userId !== currentUser.id));
-        await removeLockerReaction({ postId: post.id, userId: currentUser.id });
-      } else {
-        updateReactions(post.id, (r) => [...r, { userId: currentUser.id, createdAt: new Date().toISOString() }]);
-        await addLockerReaction({ postId: post.id, userId: currentUser.id });
-      }
+      if (mine) await removeLockerReaction({ postId: post.id, userId: uid, emoji });
+      else await addLockerReaction({ postId: post.id, userId: uid, emoji });
     } catch {
       updateReactions(post.id, (r) =>
-        hasReacted
-          ? [...r, { userId: currentUser.id, createdAt: new Date().toISOString() }]
-          : r.filter((x) => x.userId !== currentUser.id)
+        mine
+          ? [...r, { userId: uid, emoji, createdAt: new Date().toISOString() }]
+          : r.filter((x) => !(x.userId === uid && x.emoji === emoji))
       );
+    }
+  };
+
+  // ---- comments ----
+  const updateComments = (id: string, updater: (c: LockerComment[]) => LockerComment[]) => {
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, comments: updater(p.comments) } : p)));
+  };
+
+  const addComment = async (post: LockerPost, body: string): Promise<boolean> => {
+    if (!currentUser) return false;
+    try {
+      const c = await addLockerComment({ postId: post.id, userId: currentUser.id, userName: currentUser.name, body });
+      updateComments(post.id, (cs) => [...cs, c]);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const deleteComment = async (post: LockerPost, commentId: string) => {
+    const previous = post.comments;
+    updateComments(post.id, (cs) => cs.filter((c) => c.id !== commentId));
+    try {
+      await removeLockerComment({ commentId });
+    } catch {
+      updateComments(post.id, () => previous);
     }
   };
 
@@ -135,7 +163,9 @@ export default function LockerRoomPage() {
               post={post}
               currentUser={currentUser}
               isAdmin={isAdmin}
-              onToggleRespect={toggleRespect}
+              onToggleReaction={toggleReaction}
+              onAddComment={addComment}
+              onDeleteComment={deleteComment}
               onDelete={handleDelete}
             />
           ))}

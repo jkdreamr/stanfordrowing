@@ -280,7 +280,7 @@ export default function FeedPage() {
       {viewerStories.length > 0 && (
         <TrainingStoryModal
           stories={viewerStories}
-          currentUserId={currentUser?.id}
+          currentUser={currentUser}
           onDelete={handleDeleteStory}
           onClose={() => setViewerAuthor(null)}
         />
