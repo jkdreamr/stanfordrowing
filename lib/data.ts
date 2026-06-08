@@ -84,14 +84,9 @@ export const USER_EMAILS: Record<string, string> = {
 };
 
 export const ADMIN_EMAILS = [
-  'joskoo@stanford.edu',
-  'jamesp26@stanford.edu',
-  'kjalford@stanford.edu',
-  'vbern@stanford.edu',
-  'zammit@stanford.edu',
-  'nilesg@stanford.edu',
-  'pojednic@stanford.edu',
-  'tsobolew@stanford.edu',
+  'joskoo@stanford.edu', // Koo
+  'kjalford@stanford.edu', // Kannan Alford
+  'sandrosc@stanford.edu', // Sandro Scalfi
 ];
 
 export const APP_TIME_ZONE = 'America/Los_Angeles';

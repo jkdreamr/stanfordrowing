@@ -6,21 +6,18 @@ import {
   ALL_USERS,
   DEFAULT_PLAN_MILEAGES,
   TEAMS,
-  clearAdminAuth,
   formatPreciseNumber,
   formatPstDate,
-  getAdminAuth,
   getChallengeDates,
   getWorkoutLabel,
   getWorkoutWeightedScore,
-  setAdminAuth,
+  isAdminEmail,
 } from '@/lib/data';
 import { getProfileByAuthId } from '@/lib/userProfile';
 import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { supabase } from '@/lib/supabaseClient';
 import { deleteWorkoutRow, fetchMultipliers, fetchWorkouts, saveMultipliers, updateWorkoutRow } from '@/lib/supabaseData';
 
-const ADMIN_PASSWORD = 'rowing123';
 const emptyEdit = {
   minutes: '',
   distance: '',
@@ -28,9 +25,8 @@ const emptyEdit = {
 };
 
 export default function Admin() {
-  const [adminPassword, setAdminPassword] = useState('');
-  const [adminError, setAdminError] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [workoutTypeConfigs, setWorkoutTypeConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
@@ -42,16 +38,16 @@ export default function Admin() {
   const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    if (getAdminAuth()) {
-      setIsAdmin(true);
-    }
-  }, []);
-
-  useEffect(() => {
     const checkAdmin = async (authId: string | undefined) => {
-      if (!authId) { setIsAuthLoading(false); return; }
+      if (!authId) {
+        setSignedIn(false);
+        setIsAdmin(false);
+        setIsAuthLoading(false);
+        return;
+      }
+      setSignedIn(true);
       const p = await getProfileByAuthId(authId);
-      if (p?.isAdmin) setIsAdmin(true);
+      setIsAdmin(isAdminEmail(p?.email));
       setIsAuthLoading(false);
     };
     supabase.auth.getSession().then(({ data }) => checkAdmin(data.session?.user.id));
@@ -106,28 +102,6 @@ export default function Admin() {
     [workouts, workoutTypeConfigs]
   );
 
-  const handleLogin = (event: React.FormEvent) => {
-    event.preventDefault();
-    const normalized = adminPassword.trim();
-    if (!normalized) {
-      setAdminError('Enter the admin password to continue.');
-      return;
-    }
-    if (normalized !== ADMIN_PASSWORD) {
-      setAdminError('Incorrect admin password.');
-      return;
-    }
-    setAdminError('');
-    setAdminAuth(true);
-    setAdminPassword('');
-    setIsAdmin(true);
-  };
-
-  const handleLogout = () => {
-    clearAdminAuth();
-    setIsAdmin(false);
-  };
-
   const handleGoogleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -138,9 +112,9 @@ export default function Admin() {
   };
 
   const handleSignOut = async () => {
-    clearAdminAuth();
-    setIsAdmin(false);
     await supabase.auth.signOut();
+    setIsAdmin(false);
+    setSignedIn(false);
   };
 
   const getUserName = (userId: string) => ALL_USERS.find(u => u.id === userId)?.name || 'Unknown';
@@ -265,70 +239,47 @@ export default function Admin() {
     );
   }
 
-  if (!isAdmin && isAuthLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-coral border-t-transparent" />
-      </div>
-    );
-  }
-
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-bone py-12">
-        <div className="max-w-xl mx-auto px-4 sm:px-6">
-          <div className="mb-8">
-            <h1 className="font-display text-2xl sm:text-3xl">Admin access</h1>
-            <p className="mt-2 text-charcoal-muted">This Google account does not have admin access.</p>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="w-full rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-charcoal transition-colors duration-200 hover:bg-white/10 hover:text-white"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-bone py-12">
-        <div className="max-w-xl mx-auto px-4 sm:px-6">
-          <div className="mb-8">
-            <h1 className="font-display text-2xl sm:text-3xl">Admin access</h1>
-            <p className="mt-2 text-charcoal-muted">Enter the admin password to view and manage the challenge.</p>
-          </div>
-
-          <form
-            onSubmit={handleLogin}
-            className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 shadow-card"
-          >
-            <label className="block text-sm font-semibold text-charcoal mb-3">Admin password</label>
-            <input
-              type="password"
-              value={adminPassword}
-              onChange={(event) => setAdminPassword(event.target.value)}
-              placeholder="Enter password"
-              className="w-full rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-4 py-3 text-charcoal transition-all duration-200 focus-ring"
-              required
-            />
-            {adminError && (
-              <p className="mt-3 text-sm text-coral">{adminError}</p>
-            )}
-            <button
-              type="submit"
-              className="mt-5 w-full rounded-full bg-coral px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-coral-dark"
-            >
-              Enter admin view
-            </button>
-          </form>
-
-          <div className="mt-6 text-center text-sm text-charcoal-muted">
-            <Link href="/" className="font-semibold text-charcoal transition-colors duration-200 hover:text-coral">
-              Return to dashboard
-            </Link>
+      <div className="min-h-screen bg-bone py-16">
+        <div className="mx-auto max-w-md px-4 sm:px-6">
+          <div className="panel-cinematic p-8 text-center">
+            <div className="absolute inset-0 bg-grain opacity-[0.05]" />
+            <div className="relative">
+              <span className="label-caps text-charcoal-muted">Cardinal Row · Admin</span>
+              {signedIn ? (
+                <>
+                  <h1 className="mt-4 font-display text-2xl font-bold tracking-tightest text-charcoal">Not your wall.</h1>
+                  <p className="mt-2 text-[13.5px] leading-relaxed text-charcoal-muted">
+                    This account doesn&rsquo;t have admin access. Switch to an admin account to manage the squad.
+                  </p>
+                  <button
+                    onClick={handleSignOut}
+                    className="focus-ring mt-6 w-full rounded-pill border border-white/15 px-6 py-3 text-sm font-semibold text-charcoal transition-colors hover:bg-white/10"
+                  >
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h1 className="mt-4 font-display text-2xl font-bold tracking-tightest text-charcoal">Admins only.</h1>
+                  <p className="mt-2 text-[13.5px] leading-relaxed text-charcoal-muted">
+                    Sign in with your Stanford Google account to manage workouts and scoring.
+                  </p>
+                  <button
+                    onClick={handleGoogleSignIn}
+                    className="focus-ring mt-6 w-full rounded-pill bg-coral px-6 py-3 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-coral-dark active:scale-95"
+                  >
+                    Sign in with Google
+                  </button>
+                </>
+              )}
+              <div className="mt-5 text-[12px]">
+                <Link href="/" className="font-semibold text-charcoal-muted transition-colors hover:text-coral">
+                  Back to the feed
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -345,10 +296,10 @@ export default function Admin() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={handleLogout}
-              className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-charcoal transition-colors duration-200 hover:bg-white/10 hover:text-white"
+              onClick={handleSignOut}
+              className="focus-ring rounded-pill border border-white/15 px-4 py-2 text-xs font-semibold text-charcoal transition-colors hover:bg-white/10"
             >
-              Log out of admin view
+              Sign out
             </button>
           </div>
         </div>

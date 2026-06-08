@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { getProfileByAuthId } from '@/lib/userProfile';
+import { isAdminEmail } from '@/lib/data';
 import AuthStatus from './AuthStatus';
 
 const NAV = [
@@ -47,7 +48,7 @@ export default function TopNav() {
     const checkAdmin = async (authId: string | undefined) => {
       if (!authId) { setIsAdmin(false); return; }
       const p = await getProfileByAuthId(authId);
-      setIsAdmin(p?.isAdmin ?? false);
+      setIsAdmin(isAdminEmail(p?.email));
     };
     supabase.auth.getSession().then(({ data }) => checkAdmin(data.session?.user.id));
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
