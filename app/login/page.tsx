@@ -17,15 +17,29 @@ export default function Login() {
   const [emailWarning, setEmailWarning] = useState('');
 
   useEffect(() => {
-    const loadSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSessionEmail(data.session?.user.email ?? null);
-      setIsLoading(false);
-    };
-    loadSession();
+    const hasCode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('code');
+
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSessionEmail(session?.user.email ?? null);
+      setIsLoading(false);
     });
+
+    if (!hasCode) {
+      // No OAuth code — just read the existing session directly
+      supabase.auth.getSession().then(({ data }) => {
+        setSessionEmail(data.session?.user.email ?? null);
+        setIsLoading(false);
+      });
+    } else {
+      // ?code= present — detectSessionInUrl will exchange it and fire onAuthStateChange.
+      // Fallback: if it takes more than 5s, stop the spinner.
+      const t = setTimeout(() => setIsLoading(false), 5000);
+      return () => {
+        clearTimeout(t);
+        authListener.subscription.unsubscribe();
+      };
+    }
+
     return () => authListener.subscription.unsubscribe();
   }, []);
 
