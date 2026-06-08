@@ -125,7 +125,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="focus-ring rounded-lg border border-stone/40 px-3 py-1.5 text-[11px] font-medium text-charcoal-muted hover:text-charcoal"
+                  className="focus-ring min-h-[40px] rounded-lg border border-stone/40 px-4 py-2 text-[13px] font-medium text-charcoal-muted hover:text-charcoal touch-manipulation"
                 >
                   Sign out
                 </button>
@@ -134,9 +134,9 @@ export default function Login() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="focus-ring flex w-full items-center justify-center gap-2 rounded-full bg-charcoal px-5 py-3 text-[13px] font-semibold text-bone transition-colors hover:bg-charcoal/90"
+                className="focus-ring flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-charcoal px-5 py-4 text-[15px] font-semibold text-bone transition-colors hover:bg-charcoal/90 touch-manipulation"
               >
-                <Icon name="login" size={18} />
+                <Icon name="login" size={20} />
                 Continue with Google
               </button>
             )}

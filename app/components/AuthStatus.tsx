@@ -36,7 +36,7 @@ export default function AuthStatus() {
     return (
       <Link
         href="/login"
-        className="focus-ring rounded-pill bg-coral px-4 py-2 text-[12px] font-semibold text-white shadow-glow transition-colors hover:bg-coral-dark"
+        className="focus-ring inline-flex min-h-[36px] items-center justify-center rounded-pill bg-coral px-5 py-2 text-[13px] font-semibold text-white shadow-glow transition-colors hover:bg-coral-dark touch-manipulation"
       >
         Log in
       </Link>
@@ -54,7 +54,7 @@ export default function AuthStatus() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="focus-ring rounded-full p-0.5 transition-transform active:scale-95"
+        className="focus-ring flex h-10 w-10 items-center justify-center rounded-full p-0.5 transition-transform active:scale-95 touch-manipulation"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -72,25 +72,25 @@ export default function AuthStatus() {
             <Link
               href={`/rowers/${profile.id}`}
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-charcoal hover:bg-stone-light"
+              className="flex min-h-[40px] items-center gap-2 rounded-lg px-3 py-2.5 text-[14px] font-medium text-charcoal hover:bg-stone-light touch-manipulation"
             >
-              <Icon name="person" size={16} className="text-charcoal-muted" />
+              <Icon name="person" size={18} className="text-charcoal-muted" />
               Profile
             </Link>
             <Link
               href="/log"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-charcoal hover:bg-stone-light"
+              className="flex min-h-[40px] items-center gap-2 rounded-lg px-3 py-2.5 text-[14px] font-medium text-charcoal hover:bg-stone-light touch-manipulation"
             >
-              <Icon name="edit_note" size={16} className="text-charcoal-muted" />
+              <Icon name="edit_note" size={18} className="text-charcoal-muted" />
               Log a workout
             </Link>
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] font-medium text-charcoal hover:bg-stone-light"
+              className="flex min-h-[40px] w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-[14px] font-medium text-charcoal hover:bg-stone-light touch-manipulation"
             >
-              <Icon name="logout" size={16} className="text-charcoal-muted" />
+              <Icon name="logout" size={18} className="text-charcoal-muted" />
               Sign out
             </button>
           </div>

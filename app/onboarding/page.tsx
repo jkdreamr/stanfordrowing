@@ -82,12 +82,13 @@ export default function OnboardingPage() {
             <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Your name</label>
             <input
               type="text"
+              enterKeyHint="done"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Josh Koo"
               autoFocus
               required
-              className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-4 py-3 text-[14px] text-charcoal placeholder:text-charcoal-light"
+              className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-4 py-3.5 text-[15px] text-charcoal placeholder:text-charcoal-light"
             />
             <p className="mt-1.5 text-[11px] text-charcoal-muted">How you appear on the feed.</p>
           </div>
@@ -97,7 +98,7 @@ export default function OnboardingPage() {
           <button
             type="submit"
             disabled={!name.trim() || isSubmitting}
-            className="focus-ring w-full rounded-full bg-coral py-3.5 text-[14px] font-semibold text-white transition-all hover:bg-coral-dark active:scale-[0.99] disabled:opacity-40"
+            className="focus-ring min-h-[52px] w-full rounded-full bg-coral py-4 text-[15px] font-semibold text-white transition-all hover:bg-coral-dark active:scale-[0.99] disabled:opacity-40 touch-manipulation"
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">

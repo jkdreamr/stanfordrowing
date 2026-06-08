@@ -101,11 +101,11 @@ export default function LockerRoomPostCard({
                 aria-label={post.pinned ? 'Unpin post' : 'Pin post'}
                 aria-pressed={post.pinned}
                 title={post.pinned ? 'Unpin' : 'Pin to top'}
-                className={`focus-ring rounded-lg p-1.5 transition-colors ${
+                className={`focus-ring flex h-9 w-9 items-center justify-center rounded-lg transition-colors touch-manipulation ${
                   post.pinned ? 'text-coral' : 'text-charcoal-light hover:text-charcoal'
                 }`}
               >
-                <Icon name="push_pin" size={16} fill={post.pinned} />
+                <Icon name="push_pin" size={18} fill={post.pinned} />
               </button>
             )}
             {canDelete && (
@@ -113,9 +113,9 @@ export default function LockerRoomPostCard({
                 type="button"
                 onClick={() => onDelete?.(post)}
                 aria-label="Delete post"
-                className="focus-ring rounded-lg p-1.5 text-charcoal-light transition-colors hover:text-coral"
+                className="focus-ring flex h-9 w-9 items-center justify-center rounded-lg text-charcoal-light transition-colors hover:text-coral touch-manipulation"
               >
-                <Icon name="delete" size={16} />
+                <Icon name="delete" size={18} />
               </button>
             )}
           </div>
@@ -132,11 +132,11 @@ export default function LockerRoomPostCard({
             href={post.linkUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-3 flex items-center gap-2 rounded-xl border border-stone/50 bg-bone-dark/40 px-3 py-2.5 text-[12px] font-medium text-charcoal-soft transition-colors hover:border-coral hover:text-coral"
+            className="mt-3 flex min-h-[44px] items-center gap-2 rounded-xl border border-stone/50 bg-bone-dark/40 px-3 py-3 text-[13px] font-medium text-charcoal-soft transition-colors hover:border-coral hover:text-coral touch-manipulation"
           >
-            <Icon name="link" size={14} />
+            <Icon name="link" size={16} />
             <span className="truncate">{post.linkUrl}</span>
-            <Icon name="open_in_new" size={12} className="ml-auto shrink-0 text-charcoal-light" />
+            <Icon name="open_in_new" size={14} className="ml-auto shrink-0 text-charcoal-light" />
           </a>
         )}
 
