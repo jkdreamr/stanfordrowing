@@ -18,13 +18,10 @@ export default function Login() {
   const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const errorParam = searchParams.get('error');
-    if (errorParam === 'not_stanford') {
+    if (searchParams.get('error') === 'not_stanford') {
       setState('not_stanford');
       return;
     }
-
-    const hasCode = new URLSearchParams(window.location.search).has('code');
 
     const handleSession = async (sessionEmail: string | undefined, authId: string | undefined) => {
       if (!sessionEmail || !authId) {
@@ -46,21 +43,37 @@ export default function Login() {
       }
     };
 
+    const hasCode = new URLSearchParams(window.location.search).has('code');
+
+    if (hasCode) {
+      // supabase-js exchanges the PKCE code automatically on client load.
+      // Poll getSession until the exchange completes (usually <1s).
+      let attempts = 0;
+      const poll = async () => {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          await handleSession(data.session.user.email, data.session.user.id);
+          return;
+        }
+        attempts++;
+        if (attempts < 20) {
+          setTimeout(poll, 300);
+        } else {
+          setState('signed_out');
+        }
+      };
+      poll();
+      return;
+    }
+
+    // No code — check existing session, then listen for changes
+    supabase.auth.getSession().then(({ data }) => {
+      handleSession(data.session?.user.email, data.session?.user.id);
+    });
+
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       handleSession(session?.user.email, session?.user.id);
     });
-
-    if (!hasCode) {
-      supabase.auth.getSession().then(({ data }) => {
-        handleSession(data.session?.user.email, data.session?.user.id);
-      });
-    } else {
-      const t = setTimeout(() => setState('signed_out'), 6000);
-      return () => {
-        clearTimeout(t);
-        authListener.subscription.unsubscribe();
-      };
-    }
 
     return () => authListener.subscription.unsubscribe();
   }, [searchParams]);
