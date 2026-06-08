@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import { User } from './types';
-import { ADMIN_EMAILS } from './data';
+import { isAdminEmail } from './data';
 
 export interface Profile {
   id: string;
@@ -58,7 +58,7 @@ export async function createProfile({
   email: string;
   name: string;
 }): Promise<Profile | null> {
-  const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+  const isAdmin = isAdminEmail(email);
   const { data, error } = await supabase
     .from('profiles')
     .insert({
