@@ -11,40 +11,44 @@ export default function AuthCallback() {
 
   useEffect(() => {
     let cancelled = false;
-    let attempts = 0;
 
-    const finish = async () => {
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
+    const run = async () => {
+      const code = new URLSearchParams(window.location.search).get('code');
 
-      if (!session) {
-        attempts++;
-        if (attempts < 30 && !cancelled) {
-          setTimeout(finish, 200);
+      if (!code) {
+        // No code — maybe already has a session (e.g. navigated back)
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          const profile = await getProfileByAuthId(data.session.user.id);
+          if (!cancelled) router.replace(profile ? '/' : '/onboarding');
         } else {
-          setError('Sign-in timed out. Please try again.');
+          if (!cancelled) setError('No sign-in code found. Please try again.');
         }
+        return;
+      }
+
+      // PKCE flow: explicitly exchange the code for a session
+      const { data, error: exchError } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (exchError || !data.session) {
+        if (!cancelled) setError(exchError?.message ?? 'Sign-in failed. Please try again.');
         return;
       }
 
       if (cancelled) return;
 
-      const email = session.user.email ?? '';
+      const email = data.session.user.email ?? '';
       if (!isStanfordEmail(email)) {
         await supabase.auth.signOut();
         router.replace('/login?error=not_stanford');
         return;
       }
 
-      const profile = await getProfileByAuthId(session.user.id);
-      if (!profile) {
-        router.replace('/onboarding');
-      } else {
-        router.replace('/');
-      }
+      const profile = await getProfileByAuthId(data.session.user.id);
+      router.replace(profile ? '/' : '/onboarding');
     };
 
-    finish();
+    run();
     return () => { cancelled = true; };
   }, [router]);
 

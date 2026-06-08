@@ -22,7 +22,8 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder-anon-key',
   {
     auth: {
-      detectSessionInUrl: true,
+      flowType: 'pkce',
+      detectSessionInUrl: false,
       persistSession: true,
     },
   }
