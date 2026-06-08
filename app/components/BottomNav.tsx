@@ -22,14 +22,8 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav
-      className="glass fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.07] sm:hidden"
-      style={{ height: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
-    >
-      <div
-        className="flex h-full items-stretch justify-around px-2 pt-2"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}
-      >
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.07] bg-[#0d1110]/90 sm:hidden">
+      <div className="flex items-end justify-around px-2 pb-safe">
         {ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
 
@@ -39,7 +33,7 @@ export default function BottomNav() {
                 key={item.href}
                 href={item.href}
                 aria-label="Log the work"
-                className="flex flex-col items-center justify-center gap-1 touch-manipulation"
+                className="flex min-h-[64px] flex-col items-center justify-center gap-1 px-2 touch-manipulation"
               >
                 <span
                   className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-coral text-white shadow-glow transition-all duration-200 active:scale-90 ${
@@ -60,7 +54,7 @@ export default function BottomNav() {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors active:scale-95 touch-manipulation ${
+              className={`flex min-h-[64px] flex-1 flex-col items-center justify-center gap-1 px-2 transition-colors active:scale-95 touch-manipulation ${
                 active ? 'text-charcoal' : 'text-charcoal-muted'
               }`}
             >
