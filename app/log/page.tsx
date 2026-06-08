@@ -10,11 +10,11 @@ import Icon from '../components/Icon';
 
 type Category = 'training_session' | 'rowing_erging' | 'cross_training' | 'lifting';
 
-const CATEGORIES: { value: Category; label: string; icon: string }[] = [
-  { value: 'rowing_erging', label: 'Rowing / Erg', icon: 'rowing' },
-  { value: 'lifting', label: 'Lift', icon: 'fitness_center' },
-  { value: 'cross_training', label: 'Cross', icon: 'directions_run' },
-  { value: 'training_session', label: 'Session', icon: 'event_available' },
+const CATEGORIES: { value: Category; label: string; icon: string; sub: string }[] = [
+  { value: 'rowing_erging', label: 'Row / Erg', icon: 'rowing', sub: 'On water or erg' },
+  { value: 'lifting', label: 'Lift', icon: 'fitness_center', sub: 'Weights' },
+  { value: 'cross_training', label: 'Cross', icon: 'directions_run', sub: 'Run, bike, swim…' },
+  { value: 'training_session', label: 'Session', icon: 'event_available', sub: 'Full team practice' },
 ];
 
 const inputClass =
@@ -274,7 +274,7 @@ export default function LogWorkout() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form id="log-form" onSubmit={handleSubmit} className="space-y-5 pb-32 sm:pb-0">
         {!isLoggedIn && (
           <div className="card rounded-2xl p-6 text-center">
             <p className="font-semibold text-ink">Sign in to log a workout</p>
@@ -291,9 +291,9 @@ export default function LogWorkout() {
         )}
 
         {/* Category */}
-        <div className="card rounded-2xl p-5">
+        <div className="card rounded-2xl p-4">
           <label className="label-caps mb-3 block text-ink-soft">What did you do?</label>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2">
             {CATEGORIES.map((c) => {
               const active = category === c.value;
               return (
@@ -302,14 +302,17 @@ export default function LogWorkout() {
                   type="button"
                   disabled={!isLoggedIn}
                   onClick={() => setCategory(c.value)}
-                  className={`focus-ring flex flex-col items-center gap-1.5 rounded-xl px-3 py-3 text-xs font-semibold transition-all disabled:opacity-50 ${
+                  className={`focus-ring flex items-center gap-3 rounded-xl px-4 py-4 text-left transition-all disabled:opacity-50 ${
                     active
                       ? 'bg-cardinal text-white shadow-cardinal'
-                      : 'border border-line bg-surface text-ink-soft hover:border-ink/30'
+                      : 'border border-line bg-surface hover:border-ink/20'
                   }`}
                 >
-                  <Icon name={c.icon} size={22} fill={active} />
-                  {c.label}
+                  <Icon name={c.icon} size={22} fill={active} className={active ? 'text-white' : 'text-ink-muted'} />
+                  <div>
+                    <p className={`text-sm font-bold leading-tight ${active ? 'text-white' : 'text-ink'}`}>{c.label}</p>
+                    <p className={`mt-0.5 text-[11px] leading-tight ${active ? 'text-white/70' : 'text-ink-muted'}`}>{c.sub}</p>
+                  </div>
                 </button>
               );
             })}
@@ -508,8 +511,13 @@ export default function LogWorkout() {
           </div>
         </div>
 
+      </form>
+
+      {/* Sticky submit — mobile (sits above bottom nav ~72px) */}
+      <div className="glass fixed inset-x-0 bottom-[72px] z-30 border-t border-line px-4 pb-3 pt-3 sm:hidden">
         <button
           type="submit"
+          form="log-form"
           disabled={!isFormReady || isSubmitting}
           className="focus-ring w-full rounded-full bg-cardinal px-6 py-4 text-base font-semibold text-white shadow-cardinal transition-all duration-200 hover:bg-cardinal-dark active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -525,7 +533,29 @@ export default function LogWorkout() {
             </span>
           )}
         </button>
-      </form>
+      </div>
+
+      {/* Desktop submit (inline) */}
+      <div className="hidden sm:block">
+        <button
+          type="submit"
+          form="log-form"
+          disabled={!isFormReady || isSubmitting}
+          className="focus-ring w-full rounded-full bg-cardinal px-6 py-4 text-base font-semibold text-white shadow-cardinal transition-all duration-200 hover:bg-cardinal-dark active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              Logging…
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              <Icon name="check" size={20} />
+              Log it{isFormReady ? ` · +${formatPreciseNumber(calculateWeightedScore())} pts` : ''}
+            </span>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

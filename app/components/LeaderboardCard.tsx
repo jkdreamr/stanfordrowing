@@ -40,14 +40,14 @@ export default function LeaderboardCard({
     >
       {/* Rank */}
       <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base font-bold tabular ${
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold tabular ${
           rank === 1
             ? 'bg-cardinal text-white'
             : rank === 2
-              ? 'bg-container-highest text-ink'
+              ? 'bg-[#c0a96e] text-white'
               : rank === 3
-                ? 'bg-container-high text-ink'
-                : 'bg-container-low text-ink-soft'
+                ? 'bg-[#a07855] text-white'
+                : 'bg-container-low text-ink-muted'
         }`}
       >
         {rank}

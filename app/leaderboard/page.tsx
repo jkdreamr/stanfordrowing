@@ -101,7 +101,7 @@ export default function LeaderboardPage() {
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
       <div className="pb-5 pt-6">
         <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Leaderboard</h1>
-        <p className="mt-1 text-sm text-ink-soft">Who&apos;s putting in the work. Teams join later.</p>
+        <p className="mt-1 text-sm text-ink-soft">The work shows up here.</p>
       </div>
 
       <FilterTabs tabs={TABS} active={view} onChange={(k) => setView(k as View)} className="mb-6" />

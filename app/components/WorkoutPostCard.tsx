@@ -54,44 +54,40 @@ export default function WorkoutPostCard({
   return (
     <article className="card animate-fade-in overflow-hidden rounded-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 p-4">
-        <Link href={`/rowers/${workout.oderId}`} className="focus-ring flex min-w-0 items-center gap-3 rounded-lg">
-          <Avatar name={author?.name ?? 'Unknown'} color={teamColor} size={42} />
+      <div className="flex items-center gap-3 p-4 pb-3">
+        <Link href={`/rowers/${workout.oderId}`} className="focus-ring flex min-w-0 flex-1 items-center gap-3 rounded-lg">
+          <Avatar name={author?.name ?? 'Unknown'} color={teamColor} size={40} />
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-bold leading-tight text-ink">
+            <p className="truncate text-[15px] font-bold leading-snug text-ink">
               {author?.name ?? 'Unknown'}
             </p>
-            {team && (
-              <p className="label-caps mt-0.5 flex items-center gap-1.5 text-ink-muted">
-                <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: teamColor }} />
-                <span className="truncate normal-case tracking-normal">{team.name}</span>
-              </p>
-            )}
+            <p className="label-caps mt-0.5 text-ink-muted">{timeAgo(workout.createdAt)}</p>
           </div>
         </Link>
-        <span className="label-caps shrink-0 text-ink-muted">{timeAgo(workout.createdAt)}</span>
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-container-low px-2.5 py-1 text-[11px] font-semibold text-ink-soft">
+          <Icon name={workoutIcon(workout.type)} size={13} />
+          {getWorkoutLabel(workout, configs)}
+        </span>
       </div>
 
       {/* Main stat */}
-      <div className="px-4 pb-4">
-        <p className="label-caps mb-1 text-ink-muted">{getWorkoutLabel(workout, configs)}</p>
-        <div className="flex items-baseline gap-2">
-          <span className="font-display text-4xl font-bold tracking-tightest text-ink tabular">
+      <div className="px-4 pb-3">
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-display text-[42px] font-bold leading-none tracking-tightest text-ink tabular">
             {formatPrimary(primary.value, primary.unit)}
           </span>
-          <span className="text-lg font-semibold text-ink-muted">{primary.unit}</span>
-          <Icon name={workoutIcon(workout.type)} className="ml-auto text-cardinal" size={26} />
+          <span className="text-base font-semibold text-ink-muted">{primary.unit}</span>
         </div>
 
         {/* Badges */}
         {badges.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
             {badges.map((b) => (
               <span
                 key={b.kind}
                 className="inline-flex items-center gap-1 rounded-full bg-cardinal/8 px-2.5 py-1 text-[11px] font-semibold text-cardinal"
               >
-                <Icon name={BADGE_ICON[b.kind] ?? 'bolt'} size={14} fill />
+                <Icon name={BADGE_ICON[b.kind] ?? 'bolt'} size={13} fill />
                 {b.label}
               </span>
             ))}
@@ -99,14 +95,11 @@ export default function WorkoutPostCard({
         )}
 
         {/* Caption */}
-        {workout.notes && (
-          <p className="mt-3 text-[15px] leading-relaxed text-ink">
-            {workout.activityName ? <span className="font-semibold">{workout.activityName} · </span> : null}
+        {(workout.notes || workout.activityName) && (
+          <p className="mt-2.5 text-[15px] leading-relaxed text-ink-soft">
+            {workout.activityName ? <span className="font-semibold text-ink">{workout.activityName} · </span> : null}
             {workout.notes}
           </p>
-        )}
-        {!workout.notes && workout.activityName && (
-          <p className="mt-3 text-[15px] font-semibold text-ink">{workout.activityName}</p>
         )}
       </div>
 
@@ -123,9 +116,7 @@ export default function WorkoutPostCard({
         />
         <div className="flex items-center gap-2">
           {actions}
-          <span className="inline-flex items-center gap-1 rounded-full border border-cardinal/30 bg-cardinal/8 px-3 py-1 text-xs font-semibold text-cardinal">
-            +{formatPreciseNumber(points)} pts
-          </span>
+          <span className="label-caps tabular text-ink-muted">+{formatPreciseNumber(points)} pts</span>
         </div>
       </div>
     </article>

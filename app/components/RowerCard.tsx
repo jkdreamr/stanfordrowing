@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { User } from '@/lib/types';
+import { User, Workout } from '@/lib/types';
 import { formatPreciseNumber, getTeamById } from '@/lib/data';
-import { RowerAggregate } from '@/lib/stats';
+import { RowerAggregate, timeAgo } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
 import Sparkline from './Sparkline';
@@ -10,9 +10,10 @@ interface RowerCardProps {
   user: User;
   aggregate: RowerAggregate;
   sparkValues: number[];
+  latestWorkout?: Workout;
 }
 
-export default function RowerCard({ user, aggregate, sparkValues }: RowerCardProps) {
+export default function RowerCard({ user, aggregate, sparkValues, latestWorkout }: RowerCardProps) {
   const team = getTeamById(user.teamId);
   const color = team?.color ?? '#b51c00';
 
@@ -43,16 +44,25 @@ export default function RowerCard({ user, aggregate, sparkValues }: RowerCardPro
         </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-line bg-container-low/60 p-3">
-          <span className="label-caps text-ink-muted">Points</span>
-          <p className="mt-1 text-xl font-bold tabular text-ink">{formatPreciseNumber(aggregate.totalPoints)}</p>
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        <div className="rounded-xl bg-container-low/60 p-3">
+          <span className="label-caps text-ink-muted">Pts</span>
+          <p className="mt-1 text-base font-bold tabular text-ink">{formatPreciseNumber(aggregate.totalPoints)}</p>
         </div>
-        <div className="rounded-xl border border-line bg-container-low/60 p-3">
-          <span className="label-caps text-ink-muted">Workouts</span>
-          <p className="mt-1 text-xl font-bold tabular text-ink">{aggregate.totalWorkouts}</p>
+        <div className="rounded-xl bg-container-low/60 p-3">
+          <span className="label-caps text-ink-muted">Sessions</span>
+          <p className="mt-1 text-base font-bold tabular text-ink">{aggregate.totalWorkouts}</p>
+        </div>
+        <div className="rounded-xl bg-container-low/60 p-3">
+          <span className="label-caps text-ink-muted">Km</span>
+          <p className="mt-1 text-base font-bold tabular text-ink">{formatPreciseNumber(aggregate.totalKm)}</p>
         </div>
       </div>
+      {latestWorkout && (
+        <p className="mb-3 truncate text-xs text-ink-muted">
+          Last · {timeAgo(latestWorkout.createdAt)}{latestWorkout.notes ? ` — ${latestWorkout.notes}` : ''}
+        </p>
+      )}
 
       <div>
         <div className="mb-1 flex items-center justify-between">

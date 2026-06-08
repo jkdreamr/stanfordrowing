@@ -23,7 +23,7 @@ export default function BottomNav() {
 
   return (
     <nav className="glass pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line shadow-nav sm:hidden">
-      <div className="flex items-stretch justify-around px-2 pt-2">
+      <div className="flex items-end justify-around px-1 pt-2">
         {ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
 
@@ -33,10 +33,13 @@ export default function BottomNav() {
                 key={item.href}
                 href={item.href}
                 aria-label="Log a workout"
-                className="flex flex-1 items-center justify-center"
+                className="flex flex-1 flex-col items-center pb-1"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cardinal text-white shadow-cardinal transition-transform duration-200 active:scale-90">
-                  <Icon name={item.icon} size={26} />
+                <span className="mb-0.5 flex h-14 w-14 -translate-y-3 items-center justify-center rounded-2xl bg-cardinal text-white shadow-cardinal transition-transform duration-150 active:scale-90">
+                  <Icon name={item.icon} size={28} />
+                </span>
+                <span className={`-mt-3 text-[10px] font-semibold leading-none ${active ? 'text-cardinal' : 'text-ink-muted'}`}>
+                  {item.label}
                 </span>
               </Link>
             );
@@ -47,7 +50,7 @@ export default function BottomNav() {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-1 transition-colors active:scale-95 ${
+              className={`flex flex-1 flex-col items-center gap-1 pb-1 pt-0.5 transition-colors active:scale-95 ${
                 active ? 'text-cardinal' : 'text-ink-muted'
               }`}
             >

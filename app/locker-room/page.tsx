@@ -88,9 +88,9 @@ export default function LockerRoomPage() {
 
   return (
     <div className="mx-auto max-w-feed px-4 sm:px-6">
-      <div className="pb-2 pt-6 text-center">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Locker Room</h1>
-        <p className="mt-1 text-sm text-ink-soft">For when you need a push.</p>
+      <div className="pb-4 pt-6">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Locker Room</h1>
+        <p className="mt-1 text-sm text-ink-soft">Race clips, race goals, whatever fires you up.</p>
       </div>
 
       {currentUser && !needsSchema && (

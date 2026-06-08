@@ -50,8 +50,8 @@
 
   .card {
     background: #ffffff;
-    border: 1px solid #e9ecef;
-    box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.04);
+    border: 1px solid #eaecee;
+    box-shadow: 0 2px 12px -1px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
   }
 
   .focus-ring {

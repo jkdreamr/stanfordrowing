@@ -47,10 +47,12 @@ export default function RowersPage() {
     const q = query.trim().toLowerCase();
     return ALL_USERS.map((user) => {
       const userWorkouts = byUser.get(user.id) ?? [];
+      const sorted = [...userWorkouts].sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
       return {
         user,
         aggregate: aggregateRower(userWorkouts, configs),
         spark: last7Counts(userWorkouts),
+        latestWorkout: sorted[0],
       };
     })
       .filter((r) => (q ? r.user.name.toLowerCase().includes(q) : true))
@@ -92,8 +94,8 @@ export default function RowersPage() {
         <EmptyState icon="search_off" title="No rowers match that." message="Try a different name or team." />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {rowers.map(({ user, aggregate, spark }) => (
-            <RowerCard key={user.id} user={user} aggregate={aggregate} sparkValues={spark} />
+          {rowers.map(({ user, aggregate, spark, latestWorkout }) => (
+            <RowerCard key={user.id} user={user} aggregate={aggregate} sparkValues={spark} latestWorkout={latestWorkout} />
           ))}
         </div>
       )}
