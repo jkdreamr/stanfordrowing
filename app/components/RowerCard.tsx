@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { User, Workout } from '@/lib/types';
-import { formatPreciseNumber, getTeamById } from '@/lib/data';
+import { formatPreciseNumber } from '@/lib/data';
 import { RowerAggregate, timeAgo } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
-import Sparkline from './Sparkline';
 
 interface RowerCardProps {
   user: User;
@@ -13,65 +12,43 @@ interface RowerCardProps {
   latestWorkout?: Workout;
 }
 
-export default function RowerCard({ user, aggregate, sparkValues, latestWorkout }: RowerCardProps) {
-  const team = getTeamById(user.teamId);
-  const color = team?.color ?? '#b51c00';
-
+export default function RowerCard({ user, aggregate, latestWorkout }: RowerCardProps) {
   return (
     <Link
       href={`/rowers/${user.id}`}
-      className="card focus-ring group block rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-lg"
+      className="card focus-ring group block p-4 transition-all duration-200 hover:shadow-card-hover"
     >
-      <div className="mb-4 flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <Avatar name={user.name} color={color} size={48} />
-          <div>
-            <h3 className="text-base font-bold leading-tight text-ink">{user.name}</h3>
-            {team && (
-              <p className="label-caps mt-1 flex items-center gap-1.5 text-ink-muted">
-                <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                <span className="normal-case tracking-normal">{team.name}</span>
-              </p>
-            )}
-          </div>
+      <div className="flex items-center gap-3">
+        <Avatar name={user.name} size={42} />
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[14px] font-semibold text-charcoal">{user.name}</h3>
+          {latestWorkout && (
+            <p className="mt-0.5 truncate text-[11px] text-charcoal-muted">
+              Last active {timeAgo(latestWorkout.createdAt)}
+            </p>
+          )}
         </div>
-        <div className="text-right">
-          <span className="label-caps text-ink-muted">Streak</span>
-          <div className="mt-0.5 flex items-center justify-end gap-1 text-cardinal">
-            <Icon name="local_fire_department" size={16} fill={aggregate.streak > 0} />
-            <span className="text-lg font-bold leading-none tabular">{aggregate.streak}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-4 grid grid-cols-3 gap-2">
-        <div className="rounded-xl bg-container-low/60 p-3">
-          <span className="label-caps text-ink-muted">Pts</span>
-          <p className="mt-1 text-base font-bold tabular text-ink">{formatPreciseNumber(aggregate.totalPoints)}</p>
-        </div>
-        <div className="rounded-xl bg-container-low/60 p-3">
-          <span className="label-caps text-ink-muted">Sessions</span>
-          <p className="mt-1 text-base font-bold tabular text-ink">{aggregate.totalWorkouts}</p>
-        </div>
-        <div className="rounded-xl bg-container-low/60 p-3">
-          <span className="label-caps text-ink-muted">Km</span>
-          <p className="mt-1 text-base font-bold tabular text-ink">{formatPreciseNumber(aggregate.totalKm)}</p>
-        </div>
-      </div>
-      {latestWorkout && (
-        <p className="mb-3 truncate text-xs text-ink-muted">
-          Last · {timeAgo(latestWorkout.createdAt)}{latestWorkout.notes ? ` — ${latestWorkout.notes}` : ''}
-        </p>
-      )}
-
-      <div>
-        <div className="mb-1 flex items-center justify-between">
-          <span className="label-caps text-ink-muted">Last 7 days</span>
-          <span className="label-caps text-cardinal opacity-0 transition-opacity group-hover:opacity-100">
-            View →
+        {aggregate.streak > 0 && (
+          <span className="flex items-center gap-0.5 text-coral">
+            <Icon name="local_fire_department" size={14} fill />
+            <span className="text-[12px] font-bold tabular">{aggregate.streak}</span>
           </span>
+        )}
+      </div>
+
+      <div className="mt-3 flex gap-4 text-center">
+        <div className="flex-1">
+          <p className="text-[16px] font-bold tabular text-charcoal">{formatPreciseNumber(aggregate.totalPoints)}</p>
+          <p className="text-[9px] font-medium uppercase tracking-wider text-charcoal-light">Pts</p>
         </div>
-        <Sparkline values={sparkValues} color={color} height={28} />
+        <div className="flex-1">
+          <p className="text-[16px] font-bold tabular text-charcoal">{aggregate.totalWorkouts}</p>
+          <p className="text-[9px] font-medium uppercase tracking-wider text-charcoal-light">Sessions</p>
+        </div>
+        <div className="flex-1">
+          <p className="text-[16px] font-bold tabular text-charcoal">{formatPreciseNumber(aggregate.totalKm)}</p>
+          <p className="text-[9px] font-medium uppercase tracking-wider text-charcoal-light">Km</p>
+        </div>
       </div>
     </Link>
   );

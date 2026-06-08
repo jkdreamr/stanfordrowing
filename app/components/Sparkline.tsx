@@ -7,12 +7,11 @@ interface SparklineProps {
   height?: number;
 }
 
-/** Tiny inline activity trend line. */
 export default function Sparkline({
   values,
   className = '',
-  color = '#b51c00',
-  height = 30,
+  color = '#8c8680',
+  height = 28,
 }: SparklineProps) {
   const hasData = values.some((v) => v > 0);
   const path = sparklinePath(values, 100, height, 3);
@@ -40,8 +39,8 @@ export default function Sparkline({
           y1={height - 3}
           x2="100"
           y2={height - 3}
-          stroke="#e1e3e4"
-          strokeWidth={2}
+          stroke="#d4cfc8"
+          strokeWidth={1.5}
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
         />

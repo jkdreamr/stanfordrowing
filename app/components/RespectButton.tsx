@@ -8,15 +8,10 @@ interface RespectButtonProps {
   active: boolean;
   disabled?: boolean;
   onToggle: () => void | Promise<void>;
-  /** show the word "Respect" next to the count */
   showLabel?: boolean;
   className?: string;
 }
 
-/**
- * Heart / "Respect" reaction button with optimistic press animation.
- * The parent owns the count + active state (optimistic updates live there).
- */
 export default function RespectButton({
   count,
   active,
@@ -42,24 +37,27 @@ export default function RespectButton({
       onClick={handleClick}
       disabled={disabled}
       aria-pressed={active}
-      aria-label={active ? 'Remove respect' : 'Give respect'}
-      title={disabled ? 'You can’t respect your own work' : undefined}
-      className={`group inline-flex items-center gap-1.5 transition-transform duration-150 active:scale-90 ${
-        disabled ? 'cursor-not-allowed opacity-50' : ''
+      aria-label={active ? 'Remove respect' : 'Respect'}
+      title={disabled ? 'Your own work speaks for itself' : undefined}
+      className={`group inline-flex items-center gap-1.5 transition-all duration-150 active:scale-90 ${
+        disabled ? 'cursor-not-allowed opacity-40' : ''
       } ${className}`}
     >
       <Icon
         name="favorite"
         fill={active}
-        size={22}
+        size={18}
         className={`${popping ? 'animate-respect-pop' : ''} ${
-          active ? 'text-cardinal' : 'text-ink-soft group-hover:text-cardinal'
+          active ? 'text-coral' : 'text-charcoal-light group-hover:text-coral'
         } transition-colors`}
       />
-      <span className="label-caps tabular text-ink-soft">
-        {count}
-        {showLabel ? ' Respect' : ''}
-      </span>
+      {(count > 0 || showLabel) && (
+        <span className="text-[11px] font-medium tabular text-charcoal-muted">
+          {count > 0 && count}
+          {count > 0 && showLabel && ' '}
+          {showLabel && 'Respect'}
+        </span>
+      )}
     </button>
   );
 }

@@ -16,7 +16,6 @@ export default function AuthCallback() {
       const code = new URLSearchParams(window.location.search).get('code');
 
       if (!code) {
-        // No code — maybe already has a session (e.g. navigated back)
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           const profile = await getProfileByAuthId(data.session.user.id);
@@ -27,7 +26,6 @@ export default function AuthCallback() {
         return;
       }
 
-      // PKCE flow: explicitly exchange the code for a session
       const { data, error: exchError } = await supabase.auth.exchangeCodeForSession(code);
 
       if (exchError || !data.session) {
@@ -55,12 +53,12 @@ export default function AuthCallback() {
   if (error) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <div className="card rounded-2xl p-8 text-center">
-          <p className="text-sm font-semibold text-ink">Couldn&apos;t sign you in</p>
-          <p className="mt-1 text-xs text-ink-muted">{error}</p>
+        <div className="card-solid p-6 text-center shadow-modal" style={{borderRadius: '16px'}}>
+          <p className="text-[13px] font-semibold text-charcoal">Couldn&apos;t sign you in</p>
+          <p className="mt-1 text-[11px] text-charcoal-muted">{error}</p>
           <button
             onClick={() => router.replace('/login')}
-            className="focus-ring mt-4 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white hover:bg-ink-900"
+            className="focus-ring mt-4 rounded-full bg-charcoal px-4 py-1.5 text-[11px] font-semibold text-white hover:bg-charcoal/90"
           >
             Back to login
           </button>
@@ -71,9 +69,9 @@ export default function AuthCallback() {
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-cardinal border-t-transparent" />
-        <p className="text-sm text-ink-soft">Signing you in…</p>
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-coral border-t-transparent" />
+        <p className="text-[13px] text-charcoal-muted">Signing you in...</p>
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { ALL_USERS } from '@/lib/data';
 import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
@@ -61,24 +60,24 @@ export default function RowersPage() {
 
   return (
     <div className="mx-auto max-w-container px-4 sm:px-6 lg:px-8">
-      <div className="pb-6 pt-6">
-        <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Rowers</h1>
-        <p className="mt-1 text-sm text-ink-soft">Every name. Every session. Find your people.</p>
+      <div className="pb-4 pt-6 sm:pt-8">
+        <h1 className="font-display text-xl font-semibold tracking-editorial text-charcoal sm:text-2xl">
+          Rowers
+        </h1>
+        <p className="mt-1 text-[13px] text-charcoal-muted">The roster. Every name, every session.</p>
       </div>
 
       {/* Search */}
-      <div className="relative mb-4 max-w-md">
-        <Icon name="search" size={20} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted" />
+      <div className="relative mb-5 max-w-sm">
+        <Icon name="search" size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-light" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search the roster…"
-          className="focus-ring w-full rounded-full border border-line bg-surface py-2.5 pl-11 pr-4 text-sm text-ink placeholder:text-ink-muted"
+          placeholder="Search..."
+          className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 py-2 pl-9 pr-4 text-[13px] text-charcoal placeholder:text-charcoal-light"
         />
       </div>
-
-      <div className="mb-6" />
 
       {loading ? (
         <LoadingState count={6} variant="list" />
@@ -91,20 +90,14 @@ export default function RowersPage() {
           actionHref="/login"
         />
       ) : rowers.length === 0 ? (
-        <EmptyState icon="search_off" title="No rowers match that." message="Try a different name or team." />
+        <EmptyState icon="search_off" title="No match." message="Try a different name." />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {rowers.map(({ user, aggregate, spark, latestWorkout }) => (
             <RowerCard key={user.id} user={user} aggregate={aggregate} sparkValues={spark} latestWorkout={latestWorkout} />
           ))}
         </div>
       )}
-
-      <p className="mt-8 text-center">
-        <Link href="/leaderboard" className="text-sm font-semibold text-cardinal hover:underline">
-          See the full leaderboard →
-        </Link>
-      </p>
     </div>
   );
 }

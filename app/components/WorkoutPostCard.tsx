@@ -23,15 +23,14 @@ interface WorkoutPostCardProps {
   badges?: Badge[];
   currentUser: User | null;
   onToggleRespect: (workout: Workout) => void;
-  /** owner-only controls (edit/delete) shown in the footer */
   actions?: ReactNode;
 }
 
-const BADGE_ICON: Record<string, string> = {
-  pr: 'trophy',
-  long: 'timeline',
-  early: 'wb_twilight',
-  big_week: 'local_fire_department',
+const BADGE_LABELS: Record<string, string> = {
+  pr: 'PR',
+  long: 'Big session',
+  early: 'Early',
+  big_week: 'Big week',
 };
 
 export default function WorkoutPostCard({
@@ -44,8 +43,6 @@ export default function WorkoutPostCard({
 }: WorkoutPostCardProps) {
   const author = getUserById(workout.oderId);
   const displayName = author?.name ?? workout.userName ?? 'Unknown';
-  const team = author ? getTeamById(author.teamId) : (workout.teamId ? getTeamById(workout.teamId) : undefined);
-  const teamColor = team?.color ?? '#b51c00';
   const primary = getWorkoutPrimaryValue(workout, configs);
   const points = getWorkoutWeightedScore(workout, configs);
   const reactions = workout.reactions ?? [];
@@ -53,43 +50,48 @@ export default function WorkoutPostCard({
   const isOwn = workout.oderId === currentUser?.id;
 
   return (
-    <article className="card animate-fade-in overflow-hidden rounded-2xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 pb-3">
-        <Link href={`/rowers/${workout.oderId}`} className="focus-ring flex min-w-0 flex-1 items-center gap-3 rounded-lg">
-          <Avatar name={displayName} color={teamColor} size={40} />
-          <div className="min-w-0">
-            <p className="truncate text-[15px] font-bold leading-snug text-ink">
-              {displayName}
-            </p>
-            <p className="label-caps mt-0.5 text-ink-muted">{timeAgo(workout.createdAt)}</p>
-          </div>
-        </Link>
-        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-container-low px-2.5 py-1 text-[11px] font-semibold text-ink-soft">
-          <Icon name={workoutIcon(workout.type)} size={13} />
-          {getWorkoutLabel(workout, configs)}
-        </span>
-      </div>
+    <article className="card animate-fade-in overflow-hidden">
+      {/* Proof image — full bleed at top if available */}
+      {workout.proofUrl && (
+        <ProofPreview url={workout.proofUrl} aspect="aspect-[16/9]" />
+      )}
 
-      {/* Main stat */}
-      <div className="px-4 pb-3">
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-display text-[42px] font-bold leading-none tracking-tightest text-ink tabular">
-            {formatPrimary(primary.value, primary.unit)}
-          </span>
-          <span className="text-base font-semibold text-ink-muted">{primary.unit}</span>
+      <div className="p-4">
+        {/* Author row */}
+        <div className="flex items-center gap-3">
+          <Link href={`/rowers/${workout.oderId}`} className="focus-ring flex min-w-0 flex-1 items-center gap-2.5 rounded-lg">
+            <Avatar name={displayName} size={34} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-semibold text-charcoal">{displayName}</p>
+              <div className="flex items-center gap-2 text-[11px] text-charcoal-muted">
+                <span>{timeAgo(workout.createdAt)}</span>
+                <span className="text-stone-dark">·</span>
+                <span className="flex items-center gap-0.5">
+                  <Icon name={workoutIcon(workout.type)} size={12} />
+                  {getWorkoutLabel(workout, configs)}
+                </span>
+              </div>
+            </div>
+          </Link>
         </div>
 
-        {/* Badges */}
+        {/* Main stat */}
+        <div className="mt-4 flex items-baseline gap-1.5">
+          <span className="font-display text-4xl font-bold tracking-tightest text-charcoal tabular">
+            {formatPrimary(primary.value, primary.unit)}
+          </span>
+          <span className="text-sm font-medium text-charcoal-muted">{primary.unit}</span>
+        </div>
+
+        {/* Badges — quiet tags */}
         {badges.length > 0 && (
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {badges.map((b) => (
               <span
                 key={b.kind}
-                className="inline-flex items-center gap-1 rounded-full bg-cardinal/8 px-2.5 py-1 text-[11px] font-semibold text-cardinal"
+                className="rounded-md bg-olive-bg px-2 py-0.5 text-[10px] font-medium text-olive"
               >
-                <Icon name={BADGE_ICON[b.kind] ?? 'bolt'} size={13} fill />
-                {b.label}
+                {BADGE_LABELS[b.kind] ?? b.label}
               </span>
             ))}
           </div>
@@ -97,27 +99,26 @@ export default function WorkoutPostCard({
 
         {/* Caption */}
         {(workout.notes || workout.activityName) && (
-          <p className="mt-2.5 text-[15px] leading-relaxed text-ink-soft">
-            {workout.activityName ? <span className="font-semibold text-ink">{workout.activityName} · </span> : null}
+          <p className="mt-3 text-[13px] leading-relaxed text-charcoal-soft">
+            {workout.activityName ? <span className="font-medium text-charcoal">{workout.activityName} — </span> : null}
             {workout.notes}
           </p>
         )}
-      </div>
 
-      {/* Proof image (full-bleed) */}
-      {workout.proofUrl && <ProofPreview url={workout.proofUrl} />}
-
-      {/* Footer */}
-      <div className="flex items-center justify-between gap-3 border-t border-line px-4 py-3">
-        <RespectButton
-          count={reactions.length}
-          active={hasReacted}
-          disabled={isOwn || !currentUser}
-          onToggle={() => onToggleRespect(workout)}
-        />
-        <div className="flex items-center gap-2">
-          {actions}
-          <span className="label-caps tabular text-ink-muted">+{formatPreciseNumber(points)} pts</span>
+        {/* Footer */}
+        <div className="mt-4 flex items-center justify-between border-t border-stone/30 pt-3">
+          <RespectButton
+            count={reactions.length}
+            active={hasReacted}
+            disabled={isOwn || !currentUser}
+            onToggle={() => onToggleRespect(workout)}
+          />
+          <div className="flex items-center gap-2">
+            {actions}
+            <span className="text-[10px] font-medium tabular text-charcoal-light">
+              +{formatPreciseNumber(points)} pts
+            </span>
+          </div>
         </div>
       </div>
     </article>

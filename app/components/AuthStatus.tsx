@@ -29,21 +29,19 @@ export default function AuthStatus() {
   }, []);
 
   if (isLoading) {
-    return <div className="h-9 w-9 animate-pulse rounded-full bg-container-high" />;
+    return <div className="h-8 w-8 animate-pulse rounded-full bg-stone-light" />;
   }
 
   if (!profile) {
     return (
       <Link
         href="/login"
-        className="focus-ring inline-flex items-center rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-ink-900"
+        className="focus-ring rounded-full bg-charcoal px-3.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-charcoal/90"
       >
         Log in
       </Link>
     );
   }
-
-  const team = getTeamById(profile.teamId);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -56,43 +54,43 @@ export default function AuthStatus() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="focus-ring flex items-center gap-2 rounded-full p-0.5 transition-transform active:scale-95"
+        className="focus-ring rounded-full p-0.5 transition-transform active:scale-95"
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <Avatar name={profile.name} color={team?.color ?? '#b51c00'} size={36} />
+        <Avatar name={profile.name} size={32} />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
-          <div className="card absolute right-0 z-50 mt-2 w-60 rounded-2xl p-2 shadow-card-lg">
+          <div className="card-solid absolute right-0 z-50 mt-2 w-56 p-2 shadow-modal" style={{borderRadius: '14px'}}>
             <div className="px-3 py-2">
-              <p className="text-sm font-semibold text-ink">{profile.name}</p>
-              <p className="truncate text-xs text-ink-muted">{profile.email}</p>
+              <p className="text-[13px] font-semibold text-charcoal">{profile.name}</p>
+              <p className="truncate text-[11px] text-charcoal-muted">{profile.email}</p>
             </div>
-            <div className="my-1 h-px bg-line" />
+            <div className="my-1 h-px bg-stone/40" />
             <Link
               href={`/rowers/${profile.id}`}
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-container-low"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-charcoal hover:bg-stone-light"
             >
-              <Icon name="person" size={18} className="text-ink-soft" />
-              My profile
+              <Icon name="person" size={16} className="text-charcoal-muted" />
+              Profile
             </Link>
             <Link
               href="/log"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-container-low"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-charcoal hover:bg-stone-light"
             >
-              <Icon name="add" size={18} className="text-ink-soft" />
+              <Icon name="edit_note" size={16} className="text-charcoal-muted" />
               Log a workout
             </Link>
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-ink hover:bg-container-low"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] font-medium text-charcoal hover:bg-stone-light"
             >
-              <Icon name="logout" size={18} className="text-ink-soft" />
+              <Icon name="logout" size={16} className="text-charcoal-muted" />
               Sign out
             </button>
           </div>

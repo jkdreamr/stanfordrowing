@@ -32,15 +32,20 @@ function categoryOf(type: WorkoutType): string {
   if (type.startsWith('rowing')) return 'row';
   if (type === 'training_session') return 'session';
   if (type.startsWith('lifting')) return 'lift';
-  return 'cross';
+  if (type === 'cross_run') return 'run';
+  if (type.startsWith('cross_bike')) return 'bike';
+  if (type === 'cross_swim') return 'swim';
+  return 'other';
 }
 
 const CATEGORY_TABS: FilterTab[] = [
   { key: 'all', label: 'All' },
-  { key: 'row', label: 'Rowing' },
-  { key: 'lift', label: 'Lifting' },
-  { key: 'cross', label: 'Cross' },
-  { key: 'session', label: 'Sessions' },
+  { key: 'row', label: 'Erg/Row' },
+  { key: 'lift', label: 'Lift' },
+  { key: 'run', label: 'Run' },
+  { key: 'bike', label: 'Bike' },
+  { key: 'swim', label: 'Swim' },
+  { key: 'other', label: 'Other' },
 ];
 
 export default function RowerProfilePage() {
@@ -155,7 +160,7 @@ export default function RowerProfilePage() {
       setAllWorkouts((prev) => prev.map((w) => (w.id === updated.id ? { ...w, ...updated } : w)));
       setEditing(null);
     } catch {
-      /* keep modal open on failure */
+      /* keep modal open */
     }
   };
 
@@ -164,25 +169,22 @@ export default function RowerProfilePage() {
     try {
       await deleteWorkoutRow(w.id);
       setAllWorkouts((prev) => prev.filter((x) => x.id !== w.id));
-    } catch {
-      /* no-op */
-    }
+    } catch { /* no-op */ }
   };
 
-  // ---- render guards ----
   if (!profileUser) {
     return (
       <div className="mx-auto max-w-feed px-4 py-16 sm:px-6">
-        <EmptyState icon="person_off" title="Rower not found" message="That profile doesn’t exist." actionLabel="Back to rowers" actionHref="/rowers" />
+        <EmptyState icon="person_off" title="Rower not found" actionLabel="Back to rowers" actionHref="/rowers" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-      <div className="pt-6">
-        <Link href="/rowers" className="label-caps inline-flex items-center gap-1 text-ink-muted hover:text-ink">
-          <Icon name="arrow_back" size={16} /> Rowers
+    <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
+      <div className="pt-5">
+        <Link href="/rowers" className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-charcoal-muted hover:text-charcoal">
+          <Icon name="arrow_back" size={14} /> Rowers
         </Link>
       </div>
 
@@ -194,14 +196,14 @@ export default function RowerProfilePage() {
         <WeeklySummaryCard summary={weekly} />
       </div>
 
-      <div className="mb-4 mt-8 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold tracking-tight text-ink">Training log</h2>
+      <div className="mb-3 mt-8 flex items-center justify-between gap-3">
+        <h2 className="text-[15px] font-semibold text-charcoal">Training log</h2>
         {isSelf && (
           <Link
             href="/log"
-            className="focus-ring inline-flex items-center gap-1.5 rounded-full bg-cardinal px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-cardinal-dark"
+            className="focus-ring inline-flex items-center gap-1 rounded-full bg-coral px-3.5 py-1.5 text-[11px] font-semibold text-white hover:bg-coral-dark"
           >
-            <Icon name="add" size={16} /> Log
+            <Icon name="edit_note" size={14} /> Log
           </Link>
         )}
       </div>
@@ -218,16 +220,14 @@ export default function RowerProfilePage() {
           title={userWorkouts.length === 0 ? 'No workouts yet.' : 'Nothing in this filter.'}
           message={
             userWorkouts.length === 0
-              ? isSelf
-                ? 'Log your first one. It starts now.'
-                : 'Nothing logged here yet.'
-              : 'Try another category.'
+              ? isSelf ? 'Log your first one.' : 'Waiting on the first session.'
+              : 'Try a different filter.'
           }
           actionLabel={isSelf && userWorkouts.length === 0 ? 'Log the work' : undefined}
           actionHref={isSelf && userWorkouts.length === 0 ? '/log' : undefined}
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {filtered.map((w) => (
             <WorkoutPostCard
               key={w.id}
@@ -237,23 +237,14 @@ export default function RowerProfilePage() {
               onToggleRespect={toggleRespect}
               actions={
                 isSelf ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(w)}
-                      className="focus-ring rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink transition-colors hover:border-ink/30"
-                    >
-                      Edit
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => startEdit(w)} className="focus-ring rounded-lg p-1 text-charcoal-light hover:text-charcoal">
+                      <Icon name="edit" size={15} />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(w)}
-                      aria-label="Delete workout"
-                      className="focus-ring rounded-full border border-line p-1.5 text-ink-muted transition-colors hover:border-cardinal hover:text-cardinal"
-                    >
-                      <Icon name="delete" size={16} />
+                    <button type="button" onClick={() => handleDelete(w)} className="focus-ring rounded-lg p-1 text-charcoal-light hover:text-coral">
+                      <Icon name="delete" size={15} />
                     </button>
-                  </>
+                  </div>
                 ) : undefined
               }
             />
@@ -263,65 +254,41 @@ export default function RowerProfilePage() {
 
       {/* Edit modal */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={() => setEditing(null)}>
-          <div className="card w-full max-w-md rounded-t-3xl p-5 sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-ink">Edit workout</h3>
-              <button onClick={() => setEditing(null)} className="focus-ring rounded-full p-1 text-ink-muted hover:text-ink" aria-label="Close">
-                <Icon name="close" size={22} />
-              </button>
-            </div>
-            <div className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setEditing(null)}>
+          <div className="absolute inset-0 bg-charcoal/60 backdrop-blur-sm" />
+          <div className="card-solid relative z-10 w-full max-w-md p-6 shadow-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-charcoal">Edit workout</h3>
+            <div className="mt-4 space-y-3">
               <div>
-                <label className="label-caps mb-1.5 block text-ink-soft">Type</label>
+                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Type</label>
                 <select
                   value={editValues.type}
                   onChange={(e) => setEditValues((v) => ({ ...v, type: e.target.value as WorkoutType }))}
-                  className="focus-ring w-full rounded-xl border border-line bg-container-low/60 px-3 py-2.5 text-sm text-ink"
+                  className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal"
                 >
-                  {(Object.entries(configs) as [WorkoutType, WorkoutTypeConfig][]).map(([t, c]) => (
-                    <option key={t} value={t}>{c.label}</option>
+                  {(Object.entries(WORKOUT_TYPES) as [WorkoutType, WorkoutTypeConfig][]).map(([k, c]) => (
+                    <option key={k} value={k}>{c.label}</option>
                   ))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label-caps mb-1.5 block text-ink-soft">Minutes</label>
-                  <input
-                    type="number" inputMode="numeric" min="0"
-                    value={editValues.minutes}
-                    onChange={(e) => setEditValues((v) => ({ ...v, minutes: e.target.value }))}
-                    className="focus-ring w-full rounded-xl border border-line bg-container-low/60 px-3 py-2.5 text-sm text-ink"
-                  />
+                  <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Minutes</label>
+                  <input type="number" value={editValues.minutes} onChange={(e) => setEditValues((v) => ({ ...v, minutes: e.target.value }))} className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
                 </div>
                 <div>
-                  <label className="label-caps mb-1.5 block text-ink-soft">Distance (km)</label>
-                  <input
-                    type="number" inputMode="decimal" min="0" step="0.1"
-                    value={editValues.distance}
-                    onChange={(e) => setEditValues((v) => ({ ...v, distance: e.target.value }))}
-                    className="focus-ring w-full rounded-xl border border-line bg-container-low/60 px-3 py-2.5 text-sm text-ink"
-                  />
+                  <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (km)</label>
+                  <input type="number" value={editValues.distance} onChange={(e) => setEditValues((v) => ({ ...v, distance: e.target.value }))} step="0.1" className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
                 </div>
               </div>
               <div>
-                <label className="label-caps mb-1.5 block text-ink-soft">Notes</label>
-                <textarea
-                  rows={2}
-                  value={editValues.notes}
-                  onChange={(e) => setEditValues((v) => ({ ...v, notes: e.target.value }))}
-                  className="focus-ring w-full resize-none rounded-xl border border-line bg-container-low/60 px-3 py-2.5 text-sm text-ink"
-                />
+                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Notes</label>
+                <textarea value={editValues.notes} onChange={(e) => setEditValues((v) => ({ ...v, notes: e.target.value }))} rows={2} className="focus-ring w-full resize-none rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
               </div>
-              <p className="text-xs text-ink-muted">{getWorkoutLabel(editing, configs)}</p>
-              <div className="flex gap-2">
-                <button onClick={saveEdit} className="focus-ring flex-1 rounded-full bg-cardinal px-4 py-2.5 text-sm font-semibold text-white hover:bg-cardinal-dark">
-                  Save changes
-                </button>
-                <button onClick={() => setEditing(null)} className="focus-ring rounded-full border border-line px-4 py-2.5 text-sm font-semibold text-ink hover:border-ink/30">
-                  Cancel
-                </button>
-              </div>
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setEditing(null)} className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-charcoal-muted hover:text-charcoal">Cancel</button>
+              <button type="button" onClick={saveEdit} className="rounded-full bg-coral px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-coral-dark">Save</button>
             </div>
           </div>
         </div>

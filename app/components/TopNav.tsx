@@ -11,8 +11,8 @@ const NAV = [
   { href: '/', label: 'Feed' },
   { href: '/rowers', label: 'Rowers' },
   { href: '/log', label: 'Log' },
-  { href: '/locker-room', label: 'Locker Room' },
-  { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/locker-room', label: 'Locker' },
+  { href: '/leaderboard', label: 'Board' },
 ];
 
 function isActive(pathname: string | null, href: string): boolean {
@@ -24,11 +24,8 @@ function isActive(pathname: string | null, href: string): boolean {
 export function Wordmark() {
   return (
     <Link href="/" className="focus-ring flex items-center gap-2 rounded-md">
-      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-cardinal text-[13px] font-extrabold text-white">
-        S
-      </span>
-      <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.18em] text-cardinal">
-        Cardinal&nbsp;Row
+      <span className="font-display text-[15px] font-semibold tracking-editorial text-charcoal">
+        Cardinal Row
       </span>
     </Link>
   );
@@ -52,12 +49,12 @@ export default function TopNav() {
   }, []);
 
   return (
-    <header className="glass fixed top-0 inset-x-0 z-40 h-16 border-b border-line">
+    <header className="fixed top-0 inset-x-0 z-40 h-14 border-b border-stone/30 bg-bone/80 backdrop-blur-xl">
       <div className="mx-auto flex h-full max-w-container items-center justify-between gap-4 px-5 lg:px-8">
         <Wordmark />
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-1 sm:flex">
+        {/* Desktop nav — quiet pills */}
+        <nav className="hidden items-center gap-0.5 sm:flex">
           {NAV.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -65,8 +62,10 @@ export default function TopNav() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`focus-ring rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
-                  active ? 'bg-ink text-white' : 'text-ink-soft hover:bg-container-low hover:text-ink'
+                className={`focus-ring rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                  active
+                    ? 'bg-charcoal/8 text-charcoal'
+                    : 'text-charcoal-muted hover:text-charcoal'
                 }`}
               >
                 {item.label}
@@ -77,10 +76,10 @@ export default function TopNav() {
             <Link
               href="/admin"
               aria-current={isActive(pathname, '/admin') ? 'page' : undefined}
-              className={`focus-ring rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
+              className={`focus-ring rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
                 isActive(pathname, '/admin')
-                  ? 'bg-ink text-white'
-                  : 'text-ink-soft hover:bg-container-low hover:text-ink'
+                  ? 'bg-charcoal/8 text-charcoal'
+                  : 'text-charcoal-muted hover:text-charcoal'
               }`}
             >
               Admin

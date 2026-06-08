@@ -7,11 +7,10 @@ import WorkoutPostCard from './WorkoutPostCard';
 import EmptyState from './EmptyState';
 
 interface FeedListProps {
-  workouts: Workout[]; // already sorted newest-first
+  workouts: Workout[];
   configs: Record<WorkoutType, WorkoutTypeConfig>;
   currentUser: User | null;
   onToggleRespect: (workout: Workout) => void;
-  /** all workouts (used to derive badges accurately); defaults to `workouts` */
   allWorkouts?: Workout[];
   emptyTitle?: string;
   emptyMessage?: string;
@@ -24,7 +23,7 @@ export default function FeedList({
   onToggleRespect,
   allWorkouts,
   emptyTitle = 'No workouts yet.',
-  emptyMessage = 'Someone has to start. Log the work.',
+  emptyMessage = 'Someone has to start.',
 }: FeedListProps) {
   const byAuthor = useMemo(() => {
     const map = new Map<string, Workout[]>();
@@ -49,7 +48,7 @@ export default function FeedList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {workouts.map((w) => (
         <WorkoutPostCard
           key={w.id}

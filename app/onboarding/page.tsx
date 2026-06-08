@@ -58,60 +58,58 @@ export default function OnboardingPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-cardinal border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-coral border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 pb-10 pt-10 sm:px-6">
-      <div className="mb-8 text-center">
-        <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-cardinal text-lg font-extrabold text-white">
-          S
-        </span>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Set up your profile</h1>
-        <p className="mt-1 text-sm text-ink-soft">One step. You&apos;re on the team.</p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="card rounded-2xl p-6">
-          <div className="mb-4 rounded-xl border border-line bg-container-low/60 px-4 py-3 text-sm text-ink-soft">
-            Signed in as <span className="font-semibold text-ink">{email}</span>
-          </div>
-
-          <label className="label-caps mb-2 block text-ink-soft">Your name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Josh Koo"
-            autoFocus
-            required
-            className="focus-ring w-full rounded-xl border border-line bg-container-low/60 px-4 py-3 text-ink placeholder:text-ink-muted"
-          />
-          <p className="mt-2 text-xs text-ink-muted">This is how you&apos;ll appear on the feed and leaderboard.</p>
+    <div className="flex min-h-[70vh] items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <h1 className="font-display text-xl font-semibold tracking-editorial text-charcoal">
+            Set up your profile
+          </h1>
+          <p className="mt-1 text-[13px] text-charcoal-muted">One step. You&apos;re on the team.</p>
         </div>
 
-        {error && <p className="text-sm text-cardinal">{error}</p>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="card-solid p-5">
+            <div className="mb-4 rounded-lg bg-bone-dark/60 px-3 py-2.5 text-[13px] text-charcoal-soft">
+              Signed in as <span className="font-medium text-charcoal">{email}</span>
+            </div>
 
-        <button
-          type="submit"
-          disabled={!name.trim() || isSubmitting}
-          className="focus-ring w-full rounded-full bg-cardinal px-6 py-4 text-base font-semibold text-white shadow-cardinal transition-all duration-200 hover:bg-cardinal-dark active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isSubmitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-              Setting up…
-            </span>
-          ) : (
-            <span className="flex items-center justify-center gap-2">
-              <Icon name="check" size={20} />
-              Join the squad
-            </span>
-          )}
-        </button>
-      </form>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Your name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Josh Koo"
+              autoFocus
+              required
+              className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-4 py-3 text-[14px] text-charcoal placeholder:text-charcoal-light"
+            />
+            <p className="mt-1.5 text-[11px] text-charcoal-muted">How you appear on the feed.</p>
+          </div>
+
+          {error && <p className="text-[12px] text-coral">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={!name.trim() || isSubmitting}
+            className="focus-ring w-full rounded-full bg-coral py-3.5 text-[14px] font-semibold text-white transition-all hover:bg-coral-dark active:scale-[0.99] disabled:opacity-40"
+          >
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                Setting up...
+              </span>
+            ) : (
+              'Join the squad'
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

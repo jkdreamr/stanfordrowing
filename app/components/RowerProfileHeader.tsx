@@ -12,29 +12,21 @@ interface RowerProfileHeaderProps {
 }
 
 export default function RowerProfileHeader({ user, team, aggregate, isSelf }: RowerProfileHeaderProps) {
-  const color = team?.color ?? '#b51c00';
-
   return (
     <section>
-      <div className="flex items-center gap-5">
-        <Avatar name={user.name} color={color} size={80} className="!text-2xl shrink-0" />
+      <div className="flex items-center gap-4">
+        <Avatar name={user.name} size={64} className="!text-xl" />
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          <h1 className="font-display text-xl font-bold tracking-editorial text-charcoal sm:text-2xl">
             {user.name}
             {isSelf && (
-              <span className="ml-2 align-middle text-xs font-medium text-ink-muted">(you)</span>
+              <span className="ml-2 text-[12px] font-normal text-charcoal-muted">(you)</span>
             )}
           </h1>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-soft">
-            {team && (
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                {team.name}
-              </span>
-            )}
+          <div className="mt-1 flex items-center gap-3 text-[12px] text-charcoal-muted">
             {aggregate.streak > 0 && (
-              <span className="flex items-center gap-1 text-cardinal">
-                <Icon name="local_fire_department" size={15} fill />
+              <span className="flex items-center gap-1 text-coral">
+                <Icon name="local_fire_department" size={14} fill />
                 {aggregate.streak}d streak
               </span>
             )}
@@ -43,7 +35,7 @@ export default function RowerProfileHeader({ user, team, aggregate, isSelf }: Ro
       </div>
 
       {/* Stat ribbon */}
-      <div className="mt-5 grid grid-cols-4 divide-x divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+      <div className="mt-5 grid grid-cols-4 gap-px overflow-hidden rounded-xl bg-stone/30">
         <Stat label="Points" value={formatPreciseNumber(aggregate.totalPoints)} accent />
         <Stat label="Sessions" value={String(aggregate.totalWorkouts)} />
         <Stat label="km" value={formatPreciseNumber(aggregate.totalKm)} />
@@ -55,9 +47,9 @@ export default function RowerProfileHeader({ user, team, aggregate, isSelf }: Ro
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="px-3 py-4 sm:px-4 sm:py-5">
-      <p className="label-caps text-ink-muted">{label}</p>
-      <p className={`mt-1.5 text-xl font-bold tabular sm:text-2xl ${accent ? 'text-cardinal' : 'text-ink'}`}>{value}</p>
+    <div className="bg-bone-dark/50 px-3 py-3 sm:px-4 sm:py-4">
+      <p className="text-[9px] font-medium uppercase tracking-wider text-charcoal-muted">{label}</p>
+      <p className={`mt-1 text-lg font-bold tabular sm:text-xl ${accent ? 'text-coral' : 'text-charcoal'}`}>{value}</p>
     </div>
   );
 }

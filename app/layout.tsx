@@ -12,15 +12,15 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Cardinal Row — Summer Rowing',
-  description: 'Log the work, see the squad, keep the summer miles counting.',
+  title: 'Cardinal Row',
+  description: 'Summer work, kept honest.',
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#f8f9fa',
+  themeColor: '#f5f2ed',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=block"
         />
       </head>
-      <body className="h-full bg-background text-ink antialiased">
+      <body className="h-full bg-bone text-charcoal antialiased">
         <AppShell>{children}</AppShell>
       </body>
     </html>

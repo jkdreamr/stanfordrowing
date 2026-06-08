@@ -29,7 +29,6 @@ export default function LockerRoomPage() {
       try {
         setPosts(await fetchLockerPosts());
       } catch (e) {
-        // table missing or not signed in
         const msg = (e as { message?: string })?.message ?? '';
         if (/relation|does not exist|schema/i.test(msg)) setNeedsSchema(true);
         else setError('Sign in to see the Locker Room.');
@@ -90,13 +89,15 @@ export default function LockerRoomPage() {
 
   return (
     <div className="mx-auto max-w-feed px-4 sm:px-6">
-      <div className="pb-4 pt-6">
-        <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Locker Room</h1>
-        <p className="mt-1 text-sm text-ink-soft">Race clips, race goals, whatever fires you up.</p>
+      <div className="pb-2 pt-6 sm:pt-8">
+        <h1 className="font-display text-xl font-semibold tracking-editorial text-charcoal sm:text-2xl">
+          Locker Room
+        </h1>
+        <p className="mt-1 text-[13px] text-charcoal-muted">For when you need a push.</p>
       </div>
 
       {currentUser && !needsSchema && (
-        <div className="mb-5 mt-1">
+        <div className="mb-5 mt-3">
           <LockerRoomComposer user={currentUser} onCreated={(p) => setPosts((prev) => [p, ...prev])} />
         </div>
       )}
@@ -104,8 +105,8 @@ export default function LockerRoomPage() {
       {needsSchema ? (
         <EmptyState
           icon="database"
-          title="Locker Room needs a quick setup"
-          message="Run supabase/locker_room.sql in your Supabase SQL editor (creates the tables + media bucket), then refresh."
+          title="Locker Room needs setup"
+          message="Run the locker_room.sql migration in Supabase, then refresh."
         />
       ) : loading ? (
         <LoadingState count={3} />
@@ -115,18 +116,12 @@ export default function LockerRoomPage() {
         <EmptyState
           icon="bolt"
           title="Nothing on the wall yet."
-          message={
-            posts.length === 0
-              ? currentUser
-                ? 'Post the first thing that fires up the squad.'
-                : 'Sign in to start the wall.'
-              : ''
-          }
+          message={currentUser ? 'Post something that fires up the squad.' : 'Sign in to start the wall.'}
         >
           {!currentUser && (
             <Link
               href="/login"
-              className="focus-ring mt-5 inline-flex items-center justify-center rounded-full bg-cardinal px-5 py-2.5 text-sm font-semibold text-white hover:bg-cardinal-dark"
+              className="focus-ring mt-5 rounded-full bg-coral px-4 py-2 text-[13px] font-semibold text-white hover:bg-coral-dark"
             >
               Log in
             </Link>

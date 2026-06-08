@@ -70,24 +70,24 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
       reset();
       setOpen(false);
     } catch {
-      setError('Could not post right now. Check your connection and try again.');
+      setError('Could not post. Check connection and try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="card rounded-2xl p-4">
+    <div className="card p-4">
       <div className="flex items-start gap-3">
-        <Avatar name={user.name} size={40} />
+        <Avatar name={user.name} size={36} />
         <div className="min-w-0 flex-1">
           {!open ? (
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="focus-ring w-full rounded-xl border border-line bg-container-low/60 px-4 py-3 text-left text-sm text-ink-muted transition-colors hover:border-ink/20"
+              className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-4 py-2.5 text-left text-[13px] text-charcoal-muted transition-colors hover:border-stone"
             >
-              Drop something for the squad…
+              Drop something for the squad...
             </button>
           ) : (
             <div className="space-y-3">
@@ -97,18 +97,17 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
                 placeholder="For when someone needs a push."
                 rows={3}
                 autoFocus
-                className="focus-ring w-full resize-none rounded-xl border border-line bg-container-low/60 px-4 py-3 text-[15px] text-ink placeholder:text-ink-muted"
+                className="focus-ring w-full resize-none rounded-xl border border-stone/40 bg-bone-dark/40 px-4 py-3 text-[14px] text-charcoal placeholder:text-charcoal-muted"
               />
 
-              {/* Attachments */}
               {file && (
-                <div className="flex items-center justify-between rounded-xl border border-line bg-container-low/60 px-3 py-2 text-sm text-ink">
-                  <span className="flex items-center gap-2 truncate">
-                    <Icon name="image" size={18} className="text-ink-soft" />
-                    <span className="truncate">{file.name}</span>
+                <div className="flex items-center justify-between rounded-lg border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[12px]">
+                  <span className="flex items-center gap-1.5 truncate text-charcoal-soft">
+                    <Icon name="image" size={14} />
+                    {file.name}
                   </span>
-                  <button type="button" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value=''; }} className="text-cardinal">
-                    <Icon name="close" size={18} />
+                  <button type="button" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value=''; }} className="text-coral">
+                    <Icon name="close" size={14} />
                   </button>
                 </div>
               )}
@@ -117,15 +116,15 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
                   type="url"
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="Paste an image, YouTube, or article link"
-                  className="focus-ring w-full rounded-xl border border-line bg-container-low/60 px-4 py-2.5 text-sm text-ink placeholder:text-ink-muted"
+                  placeholder="Paste a link"
+                  className="focus-ring w-full rounded-lg border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal placeholder:text-charcoal-muted"
                 />
               )}
 
-              {error && <p className="text-xs font-medium text-cardinal">{error}</p>}
+              {error && <p className="text-[11px] font-medium text-coral">{error}</p>}
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
                   <input
                     ref={fileRef}
                     type="file"
@@ -136,17 +135,17 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="focus-ring flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-ink-soft transition-colors hover:bg-container-low hover:text-ink"
+                    className="focus-ring flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-charcoal-muted hover:bg-stone-light hover:text-charcoal"
                   >
-                    <Icon name="add_photo_alternate" size={18} />
+                    <Icon name="add_photo_alternate" size={16} />
                     Photo
                   </button>
                   <button
                     type="button"
                     onClick={() => { setShowLink((v) => !v); setFile(null); }}
-                    className="focus-ring flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-ink-soft transition-colors hover:bg-container-low hover:text-ink"
+                    className="focus-ring flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-charcoal-muted hover:bg-stone-light hover:text-charcoal"
                   >
-                    <Icon name="link" size={18} />
+                    <Icon name="link" size={16} />
                     Link
                   </button>
                 </div>
@@ -154,7 +153,7 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
                   <button
                     type="button"
                     onClick={() => { reset(); setOpen(false); }}
-                    className="focus-ring rounded-full px-3 py-2 text-xs font-semibold text-ink-muted hover:text-ink"
+                    className="focus-ring rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-charcoal-muted hover:text-charcoal"
                   >
                     Cancel
                   </button>
@@ -162,9 +161,9 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
                     type="button"
                     onClick={handleSubmit}
                     disabled={!canSubmit}
-                    className="focus-ring inline-flex items-center gap-1.5 rounded-full bg-cardinal px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-cardinal-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="focus-ring rounded-full bg-coral px-4 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-coral-dark active:scale-95 disabled:opacity-40"
                   >
-                    {submitting ? 'Posting…' : 'Post'}
+                    {submitting ? 'Posting...' : 'Post'}
                   </button>
                 </div>
               </div>

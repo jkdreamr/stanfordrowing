@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { LockerPost, User } from '@/lib/types';
-import { getTeamById } from '@/lib/data';
 import { timeAgo } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
@@ -42,53 +41,20 @@ export default function LockerRoomPostCard({
   onToggleRespect,
   onDelete,
 }: LockerRoomPostCardProps) {
-  const team = getTeamById(post.teamId);
-  const color = team?.color ?? '#b51c00';
   const reactions = post.reactions ?? [];
   const hasReacted = reactions.some((r) => r.userId === currentUser?.id);
   const canDelete = !!onDelete && (isAdmin || post.authorId === currentUser?.id);
-
   const embed = post.linkUrl ? getVideoEmbed(post.linkUrl) : null;
 
   return (
-    <article className="card animate-fade-in overflow-hidden rounded-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 p-4">
-        <Link href={`/rowers/${post.authorId}`} className="focus-ring flex min-w-0 items-center gap-3 rounded-lg">
-          <Avatar name={post.authorName} color={color} size={40} />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold leading-tight text-ink">{post.authorName}</p>
-            <p className="label-caps mt-0.5 text-ink-muted">{timeAgo(post.createdAt)}</p>
-          </div>
-        </Link>
-        <div className="flex items-center gap-2">
-          {canDelete && (
-            <button
-              type="button"
-              onClick={() => onDelete?.(post)}
-              aria-label="Delete post"
-              className="focus-ring rounded-full p-1.5 text-ink-muted transition-colors hover:bg-container-low hover:text-cardinal"
-            >
-              <Icon name="delete" size={18} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Body */}
-      {post.body && (
-        <div className="px-4 pb-4">
-          <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink">{post.body}</p>
-        </div>
-      )}
-
-      {/* Media */}
+    <article className="card animate-fade-in overflow-hidden">
+      {/* Media first — full bleed */}
       {post.mediaType === 'image' && post.mediaUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.mediaUrl} alt="" loading="lazy" className="w-full bg-container-low object-cover" />
+        <img src={post.mediaUrl} alt="" loading="lazy" className="w-full bg-stone-light object-cover" />
       )}
       {post.linkUrl && embed && (
-        <div className="aspect-video w-full bg-black">
+        <div className="aspect-video w-full bg-charcoal">
           <iframe
             src={embed}
             title="Video"
@@ -98,27 +64,57 @@ export default function LockerRoomPostCard({
           />
         </div>
       )}
-      {post.linkUrl && !embed && (
-        <a
-          href={post.linkUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="mx-4 mb-4 flex items-center gap-2 rounded-xl border border-line bg-container-low/60 px-4 py-3 text-sm font-medium text-ink transition-colors hover:border-cardinal hover:text-cardinal"
-        >
-          <Icon name="link" size={18} />
-          <span className="truncate">{post.linkUrl}</span>
-          <Icon name="open_in_new" size={16} className="ml-auto shrink-0" />
-        </a>
-      )}
 
-      {/* Footer */}
-      <div className="flex items-center justify-between border-t border-line px-4 py-3">
-        <RespectButton
-          count={reactions.length}
-          active={hasReacted}
-          disabled={!currentUser}
-          onToggle={() => onToggleRespect(post)}
-        />
+      <div className="p-4">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3">
+          <Link href={`/rowers/${post.authorId}`} className="focus-ring flex min-w-0 items-center gap-2.5 rounded-lg">
+            <Avatar name={post.authorName} size={32} />
+            <div className="min-w-0">
+              <p className="truncate text-[13px] font-semibold text-charcoal">{post.authorName}</p>
+              <p className="text-[10px] text-charcoal-muted">{timeAgo(post.createdAt)}</p>
+            </div>
+          </Link>
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete?.(post)}
+              aria-label="Delete post"
+              className="focus-ring rounded-lg p-1.5 text-charcoal-light transition-colors hover:text-coral"
+            >
+              <Icon name="close" size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* Body */}
+        {post.body && (
+          <p className="mt-3 whitespace-pre-line text-[14px] leading-relaxed text-charcoal">{post.body}</p>
+        )}
+
+        {/* Link (non-embed) */}
+        {post.linkUrl && !embed && (
+          <a
+            href={post.linkUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 flex items-center gap-2 rounded-xl border border-stone/50 bg-bone-dark/40 px-3 py-2.5 text-[12px] font-medium text-charcoal-soft transition-colors hover:border-coral hover:text-coral"
+          >
+            <Icon name="link" size={14} />
+            <span className="truncate">{post.linkUrl}</span>
+            <Icon name="open_in_new" size={12} className="ml-auto shrink-0 text-charcoal-light" />
+          </a>
+        )}
+
+        {/* Footer */}
+        <div className="mt-3 pt-3 border-t border-stone/30">
+          <RespectButton
+            count={reactions.length}
+            active={hasReacted}
+            disabled={!currentUser}
+            onToggle={() => onToggleRespect(post)}
+          />
+        </div>
       </div>
     </article>
   );

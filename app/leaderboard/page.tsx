@@ -16,11 +16,9 @@ type View = 'overall' | 'weekly' | 'respect' | 'consistent';
 const TABS: FilterTab[] = [
   { key: 'overall', label: 'Overall' },
   { key: 'weekly', label: 'Weekly' },
-  { key: 'respect', label: 'Respect' },
-  { key: 'consistent', label: 'Consistent' },
+  { key: 'respect', label: 'Most Respected' },
+  { key: 'consistent', label: 'Streaks' },
 ];
-
-// Team leaderboard intentionally omitted for the fresh start — teams come later.
 
 export default function LeaderboardPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -88,58 +86,48 @@ export default function LeaderboardPage() {
     return { value: formatPreciseNumber(r.points), unit: 'pts', pct: (r.points / metricMax) * 100 };
   }
 
-  const emptyMessage =
-    view === 'weekly'
-      ? 'No workouts in the last 7 days.'
-      : view === 'respect'
-        ? 'No respect handed out yet.'
-        : view === 'consistent'
-          ? 'No active streaks yet.'
-          : 'No scores yet. Log the work to get on the board.';
-
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-      <div className="pb-5 pt-6">
-        <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Leaderboard</h1>
-        <p className="mt-1 text-sm text-ink-soft">The work shows up here.</p>
+    <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
+      <div className="pb-4 pt-6 sm:pt-8">
+        <h1 className="font-display text-xl font-semibold tracking-editorial text-charcoal sm:text-2xl">
+          Board
+        </h1>
+        <p className="mt-1 text-[13px] text-charcoal-muted">The work shows up here.</p>
       </div>
 
-      <FilterTabs tabs={TABS} active={view} onChange={(k) => setView(k as View)} className="mb-6" />
+      <FilterTabs tabs={TABS} active={view} onChange={(k) => setView(k as View)} className="mb-5" />
 
       {loading ? (
         <LoadingState count={5} variant="list" />
       ) : signedOut ? (
-        <EmptyState icon="lock" title="Sign in to view the leaderboard" actionLabel="Log in" actionHref="/login" />
+        <EmptyState icon="lock" title="Sign in to see the board" actionLabel="Log in" actionHref="/login" />
       ) : ranked.length === 0 ? (
         <EmptyState
           icon="leaderboard"
           title="Nothing here yet."
-          message={emptyMessage}
+          message={view === 'overall' ? 'Log the work to get on the board.' : undefined}
           actionLabel={view === 'overall' ? 'Log a workout' : undefined}
           actionHref={view === 'overall' ? '/log' : undefined}
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {ranked.map((r, i) => {
-            const team = getTeamById(r.user.teamId);
             const m = metricFor(r);
             return (
               <LeaderboardCard
                 key={r.user.id}
                 rank={i + 1}
                 title={r.user.name}
-                subtitle={team?.name}
                 href={`/rowers/${r.user.id}`}
                 value={m.value}
                 unit={m.unit}
                 percentage={m.pct}
-                color={team?.color ?? '#b51c00'}
                 avatarName={r.user.name}
                 highlight={i === 0}
                 badge={
                   i === 0 && view === 'weekly' ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-cardinal/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-cardinal">
-                      <Icon name="trophy" size={12} fill /> King of the week
+                    <span className="rounded-md bg-coral-soft px-1.5 py-0.5 text-[9px] font-semibold text-coral">
+                      Top this week
                     </span>
                   ) : undefined
                 }

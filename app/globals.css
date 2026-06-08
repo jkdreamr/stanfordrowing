@@ -14,8 +14,8 @@
 
   body {
     font-family: var(--font-geist-sans), system-ui, sans-serif;
-    background-color: #f8f9fa;
-    color: #191c1d;
+    background-color: #f5f2ed;
+    color: #2c2c2c;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -32,30 +32,41 @@
 }
 
 @layer components {
-  /* Uppercase mono micro-label used throughout the Stitch system */
+  /* Micro-label — quiet mono caps */
   .label-caps {
     font-family: var(--font-mono), ui-monospace, monospace;
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     font-weight: 500;
   }
 
+  /* Frosted glass surface */
   .glass {
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: rgba(245, 242, 237, 0.8);
+    backdrop-filter: saturate(140%) blur(24px);
+    -webkit-backdrop-filter: saturate(140%) blur(24px);
   }
 
+  /* Frosted card with soft translucency */
   .card {
-    background: #ffffff;
-    border: 1px solid #eaecee;
-    box-shadow: 0 2px 12px -1px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: saturate(120%) blur(16px);
+    -webkit-backdrop-filter: saturate(120%) blur(16px);
+    border: 1px solid rgba(212, 207, 200, 0.5);
+    border-radius: 16px;
+  }
+
+  /* Solid card variant (for forms, modals) */
+  .card-solid {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(212, 207, 200, 0.4);
+    border-radius: 16px;
   }
 
   .focus-ring {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-cardinal/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bone;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -67,30 +78,30 @@
   }
 }
 
-/* Tabular figures for stats and timers (prevents layout shift) */
+/* Tabular figures for stats */
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Safe-area padding for the fixed bottom nav on notched devices */
+/* Safe-area for bottom nav on notched devices */
 .pb-safe {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
 }
 
-/* Custom scrollbar */
+/* Minimal scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d9dadb;
+  background: rgba(180, 175, 168, 0.4);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c0c1c2;
+  background: rgba(180, 175, 168, 0.6);
 }
 
 @media (prefers-reduced-motion: reduce) {

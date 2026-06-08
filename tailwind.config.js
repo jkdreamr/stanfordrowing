@@ -7,35 +7,64 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Cardinal Row — premium athletic tech (Stitch design system)
-        background: '#f8f9fa', // cool off-white app background
-        surface: '#ffffff', // cards / raised surfaces
-        ink: {
-          DEFAULT: '#191c1d', // primary text / on-surface
-          soft: '#5f5e5e', // secondary text
-          muted: '#8a8786', // tertiary / captions
-          900: '#131315', // near-black surfaces
+        // Muted luxury palette — stone / fog / river / morning light
+        bone: {
+          DEFAULT: '#f5f2ed',  // warm off-white background
+          dark: '#ebe7e0',     // slightly deeper for sections
         },
-        line: {
-          DEFAULT: '#e9ecef', // hairline border
-          soft: '#f1f3f5',
+        charcoal: {
+          DEFAULT: '#2c2c2c',  // primary text
+          soft: '#5a5651',     // secondary text
+          muted: '#8c8680',    // tertiary / captions
+          light: '#b0aaa3',    // disabled / hints
         },
-        cardinal: {
-          DEFAULT: '#b51c00', // primary cardinal red
-          dark: '#8e1300',
-          soft: '#ffe7e2', // tint surface
+        stone: {
+          DEFAULT: '#d4cfc8',  // borders, dividers
+          dark: '#a8a299',     // stronger borders
+          light: '#e8e4de',    // subtle backgrounds
+        },
+        olive: {
+          DEFAULT: '#7a7a65',  // muted olive accent
+          soft: '#9a9a85',     // lighter olive
+          bg: '#f0efe8',       // olive-tinted surface
+        },
+        taupe: {
+          DEFAULT: '#c4b5a5',  // warm neutral
+          soft: '#d9cfc3',     // lighter taupe
         },
         coral: {
-          DEFAULT: '#ff4b2b', // vibrant accent / highlights
-          soft: '#fff1ee',
+          DEFAULT: '#c4704a',  // restrained orange/coral — primary actions only
+          dark: '#a85c3a',     // hover state
+          soft: '#f5ebe5',     // tinted surface
+        },
+        surface: {
+          DEFAULT: 'rgba(255,255,255,0.65)',  // frosted card
+          solid: '#ffffff',                    // opaque card when needed
+        },
+        // Keep some aliases for backward compat during migration
+        background: '#f5f2ed',
+        ink: {
+          DEFAULT: '#2c2c2c',
+          soft: '#5a5651',
+          muted: '#8c8680',
+          900: '#1a1a1a',
+        },
+        line: {
+          DEFAULT: '#d4cfc8',
+          soft: '#e8e4de',
+        },
+        cardinal: {
+          DEFAULT: '#c4704a',
+          dark: '#a85c3a',
+          soft: '#f5ebe5',
         },
         container: {
-          low: '#f3f4f5',
-          DEFAULT: '#edeeef',
-          high: '#e7e8e9',
-          highest: '#e1e3e4',
+          low: '#ebe7e0',
+          DEFAULT: '#e8e4de',
+          high: '#d4cfc8',
+          highest: '#c4bfb8',
         },
-        success: '#1c85e8',
+        success: '#5a8f6a',
       },
       fontFamily: {
         sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
@@ -44,32 +73,44 @@ module.exports = {
       },
       letterSpacing: {
         tightest: '-0.04em',
+        editorial: '-0.025em',
       },
       boxShadow: {
-        card: '0 4px 24px -2px rgba(0,0,0,0.04)',
-        'card-lg': '0 20px 50px rgba(0,0,0,0.05)',
-        cardinal: '0 16px 40px rgba(181,28,0,0.18)',
-        nav: '0 -10px 40px rgba(0,0,0,0.03)',
+        card: '0 1px 3px rgba(0,0,0,0.04)',
+        'card-hover': '0 8px 30px rgba(0,0,0,0.06)',
+        glass: '0 1px 2px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.5)',
+        nav: '0 -1px 0 rgba(0,0,0,0.04)',
+        story: '0 4px 20px rgba(0,0,0,0.08)',
+        modal: '0 25px 60px rgba(0,0,0,0.15)',
       },
       maxWidth: {
         container: '1280px',
-        feed: '600px',
+        feed: '540px',
+      },
+      borderRadius: {
+        card: '16px',
+        pill: '100px',
       },
       animation: {
-        'fade-in': 'fadeIn 0.4s ease-out both',
-        'slide-up': 'slideUp 0.5s cubic-bezier(0.16,1,0.3,1) both',
+        'fade-in': 'fadeIn 0.5s ease-out both',
+        'slide-up': 'slideUp 0.6s cubic-bezier(0.16,1,0.3,1) both',
         'respect-pop': 'respectPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275)',
+        'story-in': 'storyIn 0.35s cubic-bezier(0.16,1,0.3,1) both',
       },
       keyframes: {
         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
         slideUp: {
-          '0%': { transform: 'translateY(14px)', opacity: '0' },
+          '0%': { transform: 'translateY(16px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
         respectPop: {
           '0%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(1.35)' },
+          '50%': { transform: 'scale(1.3)' },
           '100%': { transform: 'scale(1)' },
+        },
+        storyIn: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
         },
       },
     },
