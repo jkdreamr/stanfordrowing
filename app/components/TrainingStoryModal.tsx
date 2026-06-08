@@ -94,7 +94,7 @@ export default function TrainingStoryModal({ stories, currentUser, onDelete, onC
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
 
       <div
-        className="animate-story-in relative flex h-dvh w-full max-w-sm flex-col overflow-hidden bg-black sm:h-[90dvh] sm:rounded-[28px] sm:shadow-modal"
+        className="animate-story-in relative flex h-[100svh] w-full max-w-sm flex-col overflow-hidden bg-black sm:h-[90dvh] sm:rounded-[28px] sm:shadow-modal"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Progress segments */}
@@ -201,14 +201,15 @@ export default function TrainingStoryModal({ stories, currentUser, onDelete, onC
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 maxLength={280}
+                enterKeyHint="send"
                 placeholder="Add a comment…"
-                className="h-11 flex-1 rounded-full border border-white/15 bg-white/12 px-4 text-[14px] text-white placeholder-white/50 backdrop-blur focus:outline-none focus:ring-2 focus:ring-white/30"
+                className="h-12 flex-1 rounded-full border border-white/15 bg-white/12 px-4 text-[15px] text-white placeholder-white/50 backdrop-blur focus:outline-none focus:ring-2 focus:ring-white/30"
               />
               <button
                 type="submit"
                 disabled={!draft.trim() || sending}
                 aria-label="Post comment"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-coral text-white transition-transform active:scale-95 disabled:opacity-40"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-coral text-white transition-transform active:scale-95 disabled:opacity-40 touch-manipulation"
               >
                 <Icon name="send" size={18} />
               </button>

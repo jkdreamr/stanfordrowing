@@ -162,19 +162,20 @@ export default function CommentSection({
             <input
               ref={inputRef}
               type="text"
+              enterKeyHint="send"
               value={draft}
               onChange={(e) => setDraft(e.target.value.slice(0, MAX_LENGTH))}
               placeholder={replyTo ? `Reply to ${replyTo.name}…` : 'Add a comment…'}
               disabled={sending}
-              className={`focus-ring min-w-0 flex-1 rounded-pill border px-3.5 py-2 text-[13px] transition-colors disabled:opacity-50 ${inputClass}`}
+              className={`focus-ring min-w-0 flex-1 rounded-pill border px-3.5 py-2.5 text-[14px] transition-colors disabled:opacity-50 ${inputClass}`}
             />
             <button
               type="submit"
               disabled={!draft.trim() || sending}
               aria-label="Post comment"
-              className="focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-coral text-white transition-colors hover:bg-coral-dark disabled:opacity-40"
+              className="focus-ring flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-coral text-white transition-colors hover:bg-coral-dark disabled:opacity-40 active:scale-95"
             >
-              <Icon name="send" size={16} />
+              <Icon name="send" size={18} />
             </button>
           </form>
         </div>

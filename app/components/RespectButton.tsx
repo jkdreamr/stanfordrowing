@@ -39,7 +39,7 @@ export default function RespectButton({
       aria-pressed={active}
       aria-label={active ? 'Remove respect' : 'Respect'}
       title={disabled ? 'Your own work speaks for itself' : undefined}
-      className={`group inline-flex items-center gap-1.5 transition-all duration-150 active:scale-90 ${
+      className={`group inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-lg transition-all duration-150 active:scale-90 touch-manipulation ${
         disabled ? 'cursor-not-allowed opacity-40' : ''
       } ${className}`}
     >

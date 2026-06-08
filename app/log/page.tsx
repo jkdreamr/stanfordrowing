@@ -251,13 +251,13 @@ export default function LogWorkout() {
                 key={cat.value}
                 type="button"
                 onClick={() => setCategory(cat.value)}
-                className={`focus-ring flex flex-col items-center gap-1.5 rounded-xl border py-3 transition-all active:scale-95 ${
+                className={`focus-ring flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-xl border py-3 transition-all active:scale-95 touch-manipulation ${
                   category === cat.value
                     ? 'border-coral bg-coral-soft text-coral'
                     : 'border-stone/40 bg-bone-dark/30 text-charcoal-soft hover:border-stone'
                 }`}
               >
-                <Icon name={cat.icon} size={22} />
+                <Icon name={cat.icon} size={24} />
                 <span className="text-[11px] font-semibold">{cat.label}</span>
               </button>
             ))}
@@ -267,10 +267,10 @@ export default function LogWorkout() {
         {/* Sub-options — only when relevant */}
         {category && (category === 'erg' || category === 'row') && (
           <div className="flex gap-2">
-            <button type="button" onClick={() => setHasPieces(false)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${!hasPieces ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setHasPieces(false)} className={`focus-ring flex-1 min-h-[44px] rounded-lg py-3 text-[13px] font-semibold transition-colors touch-manipulation ${!hasPieces ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               Steady state
             </button>
-            <button type="button" onClick={() => setHasPieces(true)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${hasPieces ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setHasPieces(true)} className={`focus-ring flex-1 min-h-[44px] rounded-lg py-3 text-[13px] font-semibold transition-colors touch-manipulation ${hasPieces ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               With pieces
             </button>
           </div>
@@ -278,10 +278,10 @@ export default function LogWorkout() {
 
         {category === 'lift' && (
           <div className="flex gap-2">
-            <button type="button" onClick={() => setLiftPlan(true)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${liftPlan ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setLiftPlan(true)} className={`focus-ring flex-1 min-h-[44px] rounded-lg py-3 text-[13px] font-semibold transition-colors touch-manipulation ${liftPlan ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               Team plan
             </button>
-            <button type="button" onClick={() => setLiftPlan(false)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${!liftPlan ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setLiftPlan(false)} className={`focus-ring flex-1 min-h-[44px] rounded-lg py-3 text-[13px] font-semibold transition-colors touch-manipulation ${!liftPlan ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               Own workout
             </button>
           </div>
@@ -289,10 +289,10 @@ export default function LogWorkout() {
 
         {category === 'bike' && (
           <div className="flex gap-2">
-            <button type="button" onClick={() => setBikeOutdoor(false)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${!bikeOutdoor ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setBikeOutdoor(false)} className={`focus-ring flex-1 min-h-[44px] rounded-lg py-3 text-[13px] font-semibold transition-colors touch-manipulation ${!bikeOutdoor ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               Stationary
             </button>
-            <button type="button" onClick={() => setBikeOutdoor(true)} className={`focus-ring flex-1 rounded-lg py-2 text-[12px] font-semibold transition-colors ${bikeOutdoor ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
+            <button type="button" onClick={() => setBikeOutdoor(true)} className={`focus-ring flex-1 min-h-[44px] rounded-lg py-3 text-[13px] font-semibold transition-colors touch-manipulation ${bikeOutdoor ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
               Outdoor
             </button>
           </div>
@@ -316,6 +316,8 @@ export default function LogWorkout() {
                 <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (km)</label>
                 <input
                   type="number"
+                  inputMode="decimal"
+                  enterKeyHint="next"
                   value={distanceKm}
                   onChange={(e) => setDistanceKm(e.target.value)}
                   placeholder="0"
@@ -329,6 +331,8 @@ export default function LogWorkout() {
                 <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Minutes</label>
                 <input
                   type="number"
+                  inputMode="numeric"
+                  enterKeyHint="next"
                   value={minutes || ''}
                   onChange={(e) => setMinutes(Math.max(0, Number(e.target.value)))}
                   placeholder="0"
@@ -344,6 +348,8 @@ export default function LogWorkout() {
                 <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance km (optional)</label>
                 <input
                   type="number"
+                  inputMode="decimal"
+                  enterKeyHint="next"
                   value={distanceKm}
                   onChange={(e) => setDistanceKm(e.target.value)}
                   placeholder="0"
@@ -430,7 +436,7 @@ export default function LogWorkout() {
                 <button
                   type="submit"
                   disabled={isSubmitting || isUploadingProof || sessionUnavailable}
-                  className="focus-ring w-full rounded-full bg-coral py-3.5 text-[14px] font-semibold text-white transition-all hover:bg-coral-dark active:scale-[0.99] disabled:opacity-40"
+                  className="focus-ring w-full min-h-[52px] rounded-full bg-coral py-4 text-[15px] font-semibold text-white transition-all hover:bg-coral-dark active:scale-[0.99] disabled:opacity-40 touch-manipulation"
                 >
                   {isSubmitting || isUploadingProof ? (
                     <span className="flex items-center justify-center gap-2">

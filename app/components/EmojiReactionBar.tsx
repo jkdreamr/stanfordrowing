@@ -43,7 +43,7 @@ export default function EmojiReactionBar({ reactions, currentUserId, onToggle }:
           onClick={() => toggle(g.emoji)}
           disabled={disabled}
           aria-pressed={g.mine}
-          className={`flex h-8 items-center gap-1 rounded-full border px-2.5 text-[13px] transition-colors active:scale-95 disabled:cursor-default ${
+          className={`flex h-9 min-w-[44px] items-center justify-center gap-1 rounded-full border px-3 text-[14px] transition-colors active:scale-95 disabled:cursor-default touch-manipulation ${
             g.mine
               ? 'border-coral/50 bg-coral/15 text-charcoal'
               : 'border-white/10 bg-white/[0.04] text-charcoal-soft hover:bg-white/[0.07]'
@@ -61,7 +61,7 @@ export default function EmojiReactionBar({ reactions, currentUserId, onToggle }:
             onClick={() => setOpen((v) => !v)}
             aria-label="Add a reaction"
             aria-expanded={open}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-charcoal-muted transition-colors hover:bg-white/[0.07] active:scale-95"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-charcoal-muted transition-colors hover:bg-white/[0.07] active:scale-95 touch-manipulation"
           >
             <Icon name="add_reaction" size={18} />
           </button>
@@ -76,7 +76,7 @@ export default function EmojiReactionBar({ reactions, currentUserId, onToggle }:
                     type="button"
                     onClick={() => toggle(e)}
                     aria-label={`React ${e}`}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-lg transition-transform hover:bg-white/10 hover:scale-110 active:scale-95"
+                    className="flex h-11 w-11 items-center justify-center rounded-xl text-xl transition-transform hover:bg-white/10 hover:scale-110 active:scale-95 touch-manipulation"
                   >
                     {e}
                   </button>

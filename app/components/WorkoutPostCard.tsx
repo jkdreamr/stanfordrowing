@@ -141,15 +141,15 @@ export default function WorkoutPostCard({
                 type="button"
                 onClick={() => setShowComments((s) => !s)}
                 aria-expanded={showComments}
-                className="group inline-flex items-center gap-1.5 transition-all duration-150 active:scale-90"
+                className="group inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-lg transition-all duration-150 active:scale-90 touch-manipulation"
               >
                 <Icon
                   name="mode_comment"
                   fill={showComments}
-                  size={17}
+                  size={18}
                   className={`transition-colors ${showComments ? 'text-coral' : 'text-charcoal-light group-hover:text-coral'}`}
                 />
-                <span className="text-[11px] font-medium tabular text-charcoal-muted">
+                <span className="text-[12px] font-medium tabular text-charcoal-muted">
                   {comments.length > 0 ? comments.length : ''} Comment{comments.length === 1 ? '' : 's'}
                 </span>
               </button>
