@@ -61,10 +61,12 @@ export default function WorkoutPostCard({
             <p className="truncate text-[15px] font-bold leading-tight text-ink">
               {author?.name ?? 'Unknown'}
             </p>
-            <p className="label-caps mt-0.5 flex items-center gap-1.5 text-ink-muted">
-              <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: teamColor }} />
-              <span className="truncate normal-case tracking-normal">{team?.name ?? 'Unaffiliated'}</span>
-            </p>
+            {team && (
+              <p className="label-caps mt-0.5 flex items-center gap-1.5 text-ink-muted">
+                <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: teamColor }} />
+                <span className="truncate normal-case tracking-normal">{team.name}</span>
+              </p>
+            )}
           </div>
         </Link>
         <span className="label-caps shrink-0 text-ink-muted">{timeAgo(workout.createdAt)}</span>

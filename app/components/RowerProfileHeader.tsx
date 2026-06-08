@@ -29,10 +29,12 @@ export default function RowerProfileHeader({ user, team, aggregate, isSelf }: Ro
             )}
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-soft">
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-              {team?.name ?? 'Unaffiliated'}
-            </span>
+            {team && (
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+                {team.name}
+              </span>
+            )}
             <span className="flex items-center gap-1.5">
               <Icon name="local_fire_department" size={16} className="text-cardinal" fill={aggregate.streak > 0} />
               {aggregate.streak} day streak

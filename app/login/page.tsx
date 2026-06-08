@@ -103,7 +103,11 @@ export default function Login() {
               <Avatar name={selectedUser.name} color={team?.color} size={40} />
               <div>
                 <p className="text-sm font-semibold text-ink">{selectedUser.name}</p>
-                <p className="text-xs text-ink-muted">{team?.name}</p>
+                {team ? (
+                  <p className="text-xs text-ink-muted">{team.name}</p>
+                ) : (
+                  <p className="text-xs text-ink-muted">Roster linked</p>
+                )}
               </div>
             </div>
           ) : (

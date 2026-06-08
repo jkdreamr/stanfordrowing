@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import {
-  TEAMS,
+  ALL_USERS,
   formatPreciseNumber,
   getDaysRemaining,
   getUserByEmail,
   getWorkoutWeightedScore,
 } from '@/lib/data';
+import Avatar from './components/Avatar';
 import { User, Workout, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { addWorkoutReaction, fetchMultipliers, fetchWorkouts, removeWorkoutReaction } from '@/lib/supabaseData';
 import { getWeeklySummary } from '@/lib/stats';
@@ -21,7 +22,6 @@ import Icon from './components/Icon';
 export default function FeedPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [configs, setConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
-  const [teamMultipliers, setTeamMultipliers] = useState<Record<string, number>>({});
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,6 @@ export default function FeedPage() {
           [...workoutsData].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
         );
         setConfigs(multiplierData.workoutTypeConfigs);
-        setTeamMultipliers(multiplierData.teamMultipliers);
       } catch {
         setSignedOut(true);
       } finally {
@@ -91,16 +90,16 @@ export default function FeedPage() {
     [workouts, configs]
   );
 
-  const topTeams = useMemo(() => {
-    return TEAMS.map((team) => {
-      const teamWorkouts = workouts.filter((w) => team.members.some((m) => m.id === w.oderId));
-      const raw = teamWorkouts.reduce((s, w) => s + getWorkoutWeightedScore(w, configs), 0);
-      const total = raw * (teamMultipliers[team.id] ?? team.scoreMultiplier);
-      return { team, total };
-    })
+  const topRowers = useMemo(() => {
+    const byUser = new Map<string, number>();
+    for (const w of workouts) {
+      byUser.set(w.oderId, (byUser.get(w.oderId) ?? 0) + getWorkoutWeightedScore(w, configs));
+    }
+    return ALL_USERS.map((u) => ({ user: u, total: byUser.get(u.id) ?? 0 }))
+      .filter((r) => r.total > 0)
       .sort((a, b) => b.total - a.total)
-      .slice(0, 3);
-  }, [workouts, configs, teamMultipliers]);
+      .slice(0, 5);
+  }, [workouts, configs]);
 
   const myWeek = useMemo(() => {
     if (!currentUser) return null;
@@ -109,8 +108,6 @@ export default function FeedPage() {
       configs
     );
   }, [workouts, currentUser, configs]);
-
-  const maxTeam = topTeams[0]?.total || 1;
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -157,34 +154,26 @@ export default function FeedPage() {
 
           <div className="card rounded-2xl p-5">
             <div className="flex items-center justify-between">
-              <h3 className="label-caps text-ink">Team standings</h3>
+              <h3 className="label-caps text-ink">Top rowers</h3>
               <Link href="/leaderboard" className="label-caps text-cardinal hover:underline">
                 All
               </Link>
             </div>
             <div className="mt-4 space-y-3">
-              {topTeams.map(({ team, total }, i) => (
-                <Link key={team.id} href="/leaderboard" className="block">
-                  <div className="flex items-center gap-3">
-                    <span className="w-4 text-sm font-bold tabular text-ink-muted">{i + 1}</span>
-                    <span className="h-3 w-3 rounded-full" style={{ backgroundColor: team.color }} />
-                    <span className="flex-1 truncate text-sm font-medium text-ink">{team.name}</span>
-                    <span className="text-sm font-bold tabular text-ink">{formatPreciseNumber(total)}</span>
-                  </div>
-                  <div className="mt-1.5 ml-7 h-1 overflow-hidden rounded-full bg-container-low">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${Math.max(4, (total / maxTeam) * 100)}%`, backgroundColor: team.color }}
-                    />
-                  </div>
+              {topRowers.map(({ user, total }, i) => (
+                <Link key={user.id} href={`/rowers/${user.id}`} className="flex items-center gap-3">
+                  <span className="w-4 text-sm font-bold tabular text-ink-muted">{i + 1}</span>
+                  <Avatar name={user.name} size={28} />
+                  <span className="flex-1 truncate text-sm font-medium text-ink">{user.name}</span>
+                  <span className="text-sm font-bold tabular text-ink">{formatPreciseNumber(total)}</span>
                 </Link>
               ))}
-              {topTeams.length === 0 && <p className="text-sm text-ink-muted">No scores yet.</p>}
+              {topRowers.length === 0 && <p className="text-sm text-ink-muted">No scores yet. Be the first.</p>}
             </div>
           </div>
 
           <div className="card rounded-2xl p-5">
-            <p className="label-caps text-ink-muted">All teams · all summer</p>
+            <p className="label-caps text-ink-muted">All rowers · all summer</p>
             <p className="mt-1 text-3xl font-bold tabular text-ink">{formatPreciseNumber(totalPoints)}</p>
             <p className="mt-0.5 text-sm text-ink-soft">{workouts.length} workouts logged</p>
           </div>

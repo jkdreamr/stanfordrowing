@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { ALL_USERS, TEAMS } from '@/lib/data';
+import { ALL_USERS } from '@/lib/data';
 import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { fetchMultipliers, fetchWorkouts } from '@/lib/supabaseData';
 import { aggregateRower, last7Counts } from '@/lib/stats';
 import RowerCard from '../components/RowerCard';
-import FilterTabs, { FilterTab } from '../components/FilterTabs';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
 import Icon from '../components/Icon';
@@ -17,7 +16,6 @@ export default function RowersPage() {
   const [configs, setConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
   const [loading, setLoading] = useState(true);
   const [signedOut, setSignedOut] = useState(false);
-  const [team, setTeam] = useState('all');
   const [query, setQuery] = useState('');
 
   useEffect(() => {
@@ -55,15 +53,9 @@ export default function RowersPage() {
         spark: last7Counts(userWorkouts),
       };
     })
-      .filter((r) => (team === 'all' ? true : r.user.teamId === team))
       .filter((r) => (q ? r.user.name.toLowerCase().includes(q) : true))
       .sort((a, b) => b.aggregate.totalPoints - a.aggregate.totalPoints);
-  }, [byUser, configs, team, query]);
-
-  const tabs: FilterTab[] = [
-    { key: 'all', label: 'All' },
-    ...TEAMS.map((t) => ({ key: t.id, label: t.name })),
-  ];
+  }, [byUser, configs, query]);
 
   return (
     <div className="mx-auto max-w-container px-4 sm:px-6 lg:px-8">
@@ -84,7 +76,7 @@ export default function RowersPage() {
         />
       </div>
 
-      <FilterTabs tabs={tabs} active={team} onChange={setTeam} className="mb-6" />
+      <div className="mb-6" />
 
       {loading ? (
         <LoadingState count={6} variant="list" />

@@ -26,10 +26,12 @@ export default function RowerCard({ user, aggregate, sparkValues }: RowerCardPro
           <Avatar name={user.name} color={color} size={48} />
           <div>
             <h3 className="text-base font-bold leading-tight text-ink">{user.name}</h3>
-            <p className="label-caps mt-1 flex items-center gap-1.5 text-ink-muted">
-              <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-              <span className="normal-case tracking-normal">{team?.name ?? 'Unaffiliated'}</span>
-            </p>
+            {team && (
+              <p className="label-caps mt-1 flex items-center gap-1.5 text-ink-muted">
+                <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                <span className="normal-case tracking-normal">{team.name}</span>
+              </p>
+            )}
           </div>
         </div>
         <div className="text-right">

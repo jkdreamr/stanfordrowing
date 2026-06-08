@@ -1,92 +1,48 @@
 import { Team, User, Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from './types';
 
-// Team rosters for the Summer Rowing Challenge
-export const TEAMS: Team[] = [
-  {
-    id: 'group-1',
-    name: 'Group 1',
-    color: '#3B82F6', // blue
-    scoreMultiplier: 1.2, // 5-member team bonus
-    members: [
-      { id: 'scalfi', name: 'Scalfi', teamId: 'group-1' },
-      { id: 'berwick', name: 'Berwick', teamId: 'group-1' },
-      { id: 'wolfensberger', name: 'Wolfensberger', teamId: 'group-1' },
-      { id: 'donovan-davis', name: 'Donovan-Davis', teamId: 'group-1' },
-      { id: 'freijo', name: 'Freijo', teamId: 'group-1' },
-    ]
-  },
-  {
-    id: 'group-2',
-    name: 'Sigma Nimbus Desmond Group',
-    color: '#10B981', // green
-    scoreMultiplier: 1.2, // 5-member team bonus
-    members: [
-      { id: 'corbett', name: 'Corbett', teamId: 'group-2' },
-      { id: 'salvi', name: 'Salvi', teamId: 'group-2' },
-      { id: 'george', name: 'George', teamId: 'group-2' },
-      { id: 'hainlein', name: 'Hainlein', teamId: 'group-2' },
-      { id: 'lorgen', name: 'Lorgen', teamId: 'group-2' },
-    ]
-  },
-  {
-    id: 'group-3',
-    name: 'Group 3',
-    color: '#F59E0B', // amber
-    scoreMultiplier: 1.0,
-    members: [
-      { id: 'harvey', name: 'Harvey', teamId: 'group-3' },
-      { id: 'smith', name: 'Smith', teamId: 'group-3' },
-      { id: 'ericson', name: 'Ericson', teamId: 'group-3' },
-      { id: 'albrecht', name: 'Albrecht', teamId: 'group-3' },
-      { id: 'muehl', name: 'Muehl', teamId: 'group-3' },
-      { id: 'endicott', name: 'Endicott', teamId: 'group-3' },
-    ]
-  },
-  {
-    id: 'group-4',
-    name: 'Group 4',
-    color: '#EF4444', // red
-    scoreMultiplier: 1.0,
-    members: [
-      { id: 'c-griffin', name: 'C. Griffin', teamId: 'group-4' },
-      { id: 'j-griffin', name: 'J. Griffin', teamId: 'group-4' },
-      { id: 'orio', name: 'Orio', teamId: 'group-4' },
-      { id: 'amodio', name: 'Amodio', teamId: 'group-4' },
-      { id: 'murphy', name: 'Murphy', teamId: 'group-4' },
-      { id: 'skottowe', name: 'Skottowe', teamId: 'group-4' },
-    ]
-  },
-  {
-    id: 'group-5',
-    name: 'Group 5',
-    color: '#8B5CF6', // purple
-    scoreMultiplier: 1.0,
-    members: [
-      { id: 'pullinger', name: 'Pullinger', teamId: 'group-5' },
-      { id: 'rivera', name: 'Rivera', teamId: 'group-5' },
-      { id: 'vachris', name: 'Vachris', teamId: 'group-5' },
-      { id: 'celli', name: 'Celli', teamId: 'group-5' },
-      { id: 'routley', name: 'Routley', teamId: 'group-5' },
-      { id: 'stephenson', name: 'Stephenson', teamId: 'group-5' },
-    ]
-  },
-  {
-    id: 'coxswains',
-    name: 'Coxswains',
-    color: '#EC4899', // pink
-    scoreMultiplier: 3.0, // 3x multiplier for coxswains
-    members: [
-      { id: 'koo', name: 'Koo', teamId: 'coxswains' },
-      { id: 'alford', name: 'Alford', teamId: 'coxswains' },
-      { id: 'bernstein', name: 'Bernstein', teamId: 'coxswains' },
-      { id: 'zammit', name: 'Zammit', teamId: 'coxswains' },
-      { id: 'herzog', name: 'Theo Herzog', teamId: 'coxswains' },
-    ]
-  },
-];
+// Teams are reset for the fresh start — groupings will be defined later.
+// Everyone is "unassigned" for now; team UI stays hidden until TEAMS is populated.
+export const UNASSIGNED_TEAM_ID = 'unassigned';
 
-// Get all users from all teams
-export const ALL_USERS: User[] = TEAMS.flatMap(team => team.members);
+export const TEAMS: Team[] = [];
+
+// The roster (individuals). Kept independent of teams so we can regroup later
+// without touching identities or the email→roster mapping.
+export const ALL_USERS: User[] = [
+  { id: 'scalfi', name: 'Scalfi', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'berwick', name: 'Berwick', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'wolfensberger', name: 'Wolfensberger', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'donovan-davis', name: 'Donovan-Davis', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'freijo', name: 'Freijo', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'corbett', name: 'Corbett', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'salvi', name: 'Salvi', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'george', name: 'George', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'hainlein', name: 'Hainlein', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'lorgen', name: 'Lorgen', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'harvey', name: 'Harvey', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'smith', name: 'Smith', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'ericson', name: 'Ericson', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'albrecht', name: 'Albrecht', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'muehl', name: 'Muehl', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'endicott', name: 'Endicott', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'c-griffin', name: 'C. Griffin', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'j-griffin', name: 'J. Griffin', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'orio', name: 'Orio', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'amodio', name: 'Amodio', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'murphy', name: 'Murphy', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'skottowe', name: 'Skottowe', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'pullinger', name: 'Pullinger', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'rivera', name: 'Rivera', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'vachris', name: 'Vachris', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'celli', name: 'Celli', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'routley', name: 'Routley', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'stephenson', name: 'Stephenson', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'koo', name: 'Koo', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'alford', name: 'Alford', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'bernstein', name: 'Bernstein', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'zammit', name: 'Zammit', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'herzog', name: 'Theo Herzog', teamId: UNASSIGNED_TEAM_ID },
+];
 
 export const USER_EMAILS: Record<string, string> = {
   'joskoo@stanford.edu': 'koo',

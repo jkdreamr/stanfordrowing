@@ -20,7 +20,7 @@ import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/ty
 import { supabase } from '@/lib/supabaseClient';
 import { deleteWorkoutRow, fetchMultipliers, fetchWorkouts, saveMultipliers, updateWorkoutRow } from '@/lib/supabaseData';
 
-const ADMIN_PASSWORD = 'rowingadmin123';
+const ADMIN_PASSWORD = 'rowing123';
 const emptyEdit = {
   minutes: '',
   distance: '',
