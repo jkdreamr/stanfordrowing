@@ -23,9 +23,17 @@ function isActive(pathname: string | null, href: string): boolean {
 
 export function Wordmark() {
   return (
-    <Link href="/" className="focus-ring flex items-center gap-2 rounded-md">
-      <span className="font-display text-[15px] font-semibold tracking-editorial text-charcoal">
-        Cardinal Row
+    <Link href="/" className="focus-ring flex items-center gap-2.5 rounded-lg">
+      <span className="relative flex h-8 w-8 items-center justify-center rounded-[10px] bg-coral text-white shadow-glow">
+        <span className="material-symbols-outlined fill" style={{ fontSize: 19 }}>
+          rowing
+        </span>
+      </span>
+      <span className="flex flex-col leading-none">
+        <span className="font-display text-[15px] font-semibold tracking-editorial text-charcoal">
+          Cardinal Row
+        </span>
+        <span className="label-caps mt-1 text-charcoal-light">Stanford Rowing</span>
       </span>
     </Link>
   );
@@ -49,12 +57,12 @@ export default function TopNav() {
   }, []);
 
   return (
-    <header className="fixed top-0 inset-x-0 z-40 h-14 border-b border-stone/30 bg-bone/80 backdrop-blur-xl">
+    <header className="glass fixed top-0 inset-x-0 z-40 h-16 border-b border-white/[0.06]">
       <div className="mx-auto flex h-full max-w-container items-center justify-between gap-4 px-5 lg:px-8">
         <Wordmark />
 
         {/* Desktop nav — quiet pills */}
-        <nav className="hidden items-center gap-0.5 sm:flex">
+        <nav className="hidden items-center gap-0.5 rounded-pill border border-white/[0.06] bg-white/[0.03] p-1 sm:flex">
           {NAV.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -62,9 +70,9 @@ export default function TopNav() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`focus-ring rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                className={`focus-ring rounded-pill px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
                   active
-                    ? 'bg-charcoal/8 text-charcoal'
+                    ? 'bg-white/[0.08] text-charcoal shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
                     : 'text-charcoal-muted hover:text-charcoal'
                 }`}
               >
@@ -76,9 +84,9 @@ export default function TopNav() {
             <Link
               href="/admin"
               aria-current={isActive(pathname, '/admin') ? 'page' : undefined}
-              className={`focus-ring rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
+              className={`focus-ring rounded-pill px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
                 isActive(pathname, '/admin')
-                  ? 'bg-charcoal/8 text-charcoal'
+                  ? 'bg-white/[0.08] text-charcoal'
                   : 'text-charcoal-muted hover:text-charcoal'
               }`}
             >

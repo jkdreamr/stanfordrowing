@@ -4,9 +4,9 @@ import BottomNav from './BottomNav';
 
 export default function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-dvh bg-bone">
+    <div className="min-h-dvh">
       <TopNav />
-      <main className="pt-14 pb-24 sm:pb-8">{children}</main>
+      <main className="pt-16 pb-28 sm:pb-12">{children}</main>
       <BottomNav />
     </div>
   );

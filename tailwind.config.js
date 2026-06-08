@@ -7,64 +7,71 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Muted luxury palette — stone / fog / river / morning light
+        // ── Cinematic dark base — charcoal / black-green / deep stone ──
+        // Token names are kept stable so components read semantically:
+        //   bone     = page / surface backgrounds (now dark)
+        //   charcoal = primary text + ink (now off-white)
+        //   stone    = borders, dividers, muted fills
+        //   olive    = muted natural accent (badges, tags)
+        //   coral / cardinal = Stanford cardinal red — identity accent
         bone: {
-          DEFAULT: '#f5f2ed',  // warm off-white background
-          dark: '#ebe7e0',     // slightly deeper for sections
+          DEFAULT: '#0d1110', // deep charcoal-green page background
+          dark: '#161c1a',    // raised surface / tinted section
         },
         charcoal: {
-          DEFAULT: '#2c2c2c',  // primary text
-          soft: '#5a5651',     // secondary text
-          muted: '#8c8680',    // tertiary / captions
-          light: '#b0aaa3',    // disabled / hints
+          DEFAULT: '#f3f1ea', // primary text — warm off-white
+          soft: '#c4c8c0',    // secondary text
+          muted: '#8a918a',   // tertiary / captions — river gray
+          light: '#5d655f',   // disabled / hints
         },
         stone: {
-          DEFAULT: '#d4cfc8',  // borders, dividers
-          dark: '#a8a299',     // stronger borders
-          light: '#e8e4de',    // subtle backgrounds
+          DEFAULT: '#39413d',  // borders, dividers
+          dark: '#4c554f',     // stronger borders
+          light: '#1c2321',    // subtle dark fills (avatars, skeletons)
         },
         olive: {
-          DEFAULT: '#7a7a65',  // muted olive accent
-          soft: '#9a9a85',     // lighter olive
-          bg: '#f0efe8',       // olive-tinted surface
+          DEFAULT: '#9aa07e',  // muted olive accent
+          soft: '#b3b894',     // lighter olive
+          bg: '#1a201a',       // olive-tinted dark surface
         },
         taupe: {
-          DEFAULT: '#c4b5a5',  // warm neutral
-          soft: '#d9cfc3',     // lighter taupe
+          DEFAULT: '#8a7d6d',  // warm neutral
+          soft: '#9e9384',     // lighter taupe
         },
+        // Stanford cardinal — selective identity accent
         coral: {
-          DEFAULT: '#c4704a',  // restrained orange/coral — primary actions only
-          dark: '#a85c3a',     // hover state
-          soft: '#f5ebe5',     // tinted surface
+          DEFAULT: '#c8202b',  // vivid cardinal for CTAs / rings
+          dark: '#9e161f',     // hover / pressed
+          soft: '#2a1315',     // dark red-tinted surface
         },
         surface: {
-          DEFAULT: 'rgba(255,255,255,0.65)',  // frosted card
-          solid: '#ffffff',                    // opaque card when needed
+          DEFAULT: 'rgba(255,255,255,0.04)', // glass card fill
+          solid: '#141a18',                  // opaque card when needed
         },
-        // Keep some aliases for backward compat during migration
-        background: '#f5f2ed',
+        // Backward-compat aliases
+        background: '#0d1110',
         ink: {
-          DEFAULT: '#2c2c2c',
-          soft: '#5a5651',
-          muted: '#8c8680',
-          900: '#1a1a1a',
+          DEFAULT: '#f3f1ea',
+          soft: '#c4c8c0',
+          muted: '#8a918a',
+          900: '#f7f6f1',
         },
         line: {
-          DEFAULT: '#d4cfc8',
-          soft: '#e8e4de',
+          DEFAULT: '#39413d',
+          soft: '#262d2a',
         },
         cardinal: {
-          DEFAULT: '#c4704a',
-          dark: '#a85c3a',
-          soft: '#f5ebe5',
+          DEFAULT: '#c8202b',
+          dark: '#9e161f',
+          soft: '#2a1315',
         },
         container: {
-          low: '#ebe7e0',
-          DEFAULT: '#e8e4de',
-          high: '#d4cfc8',
-          highest: '#c4bfb8',
+          low: '#111614',
+          DEFAULT: '#161c1a',
+          high: '#1f2624',
+          highest: '#283029',
         },
-        success: '#5a8f6a',
+        success: '#5fbf85',
       },
       fontFamily: {
         sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
@@ -76,26 +83,31 @@ module.exports = {
         editorial: '-0.025em',
       },
       boxShadow: {
-        card: '0 1px 3px rgba(0,0,0,0.04)',
-        'card-hover': '0 8px 30px rgba(0,0,0,0.06)',
-        glass: '0 1px 2px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.5)',
-        nav: '0 -1px 0 rgba(0,0,0,0.04)',
-        story: '0 4px 20px rgba(0,0,0,0.08)',
-        modal: '0 25px 60px rgba(0,0,0,0.15)',
+        card: '0 1px 0 rgba(255,255,255,0.03), 0 8px 24px rgba(0,0,0,0.35)',
+        'card-hover': '0 1px 0 rgba(255,255,255,0.05), 0 16px 44px rgba(0,0,0,0.5)',
+        glass: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 30px rgba(0,0,0,0.4)',
+        nav: '0 -1px 0 rgba(255,255,255,0.04)',
+        story: '0 10px 40px rgba(0,0,0,0.5)',
+        modal: '0 40px 90px rgba(0,0,0,0.7)',
+        glow: '0 0 0 1px rgba(200,32,43,0.4), 0 6px 24px rgba(200,32,43,0.25)',
       },
       maxWidth: {
-        container: '1280px',
-        feed: '540px',
+        container: '1200px',
+        feed: '552px',
       },
       borderRadius: {
-        card: '16px',
+        card: '20px',
         pill: '100px',
+      },
+      backgroundImage: {
+        'grain': "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")",
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out both',
         'slide-up': 'slideUp 0.6s cubic-bezier(0.16,1,0.3,1) both',
         'respect-pop': 'respectPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275)',
         'story-in': 'storyIn 0.35s cubic-bezier(0.16,1,0.3,1) both',
+        'shimmer': 'shimmer 2.2s linear infinite',
       },
       keyframes: {
         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
@@ -111,6 +123,10 @@ module.exports = {
         storyIn: {
           '0%': { transform: 'scale(0.95)', opacity: '0' },
           '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         },
       },
     },

@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   html {
@@ -14,10 +14,35 @@
 
   body {
     font-family: var(--font-geist-sans), system-ui, sans-serif;
-    background-color: #f5f2ed;
-    color: #2c2c2c;
+    background-color: #0d1110;
+    color: #f3f1ea;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Cinematic ambient backdrop — deep stone/river with a faint cardinal ember */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(40, 52, 47, 0.55) 0%, rgba(13, 17, 16, 0) 55%),
+      radial-gradient(80% 50% at 100% 0%, rgba(200, 32, 43, 0.10) 0%, rgba(13, 17, 16, 0) 50%),
+      radial-gradient(70% 60% at 0% 100%, rgba(28, 40, 36, 0.5) 0%, rgba(13, 17, 16, 0) 60%),
+      #0d1110;
+  }
+
+  /* Subtle film grain over everything */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.035;
+    pointer-events: none;
+    mix-blend-mode: overlay;
   }
 
   /* Material Symbols icon font defaults */
@@ -37,36 +62,61 @@
     font-family: var(--font-mono), ui-monospace, monospace;
     font-size: 10px;
     line-height: 1;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     font-weight: 500;
   }
 
-  /* Frosted glass surface */
+  /* Frosted nav / chrome surface */
   .glass {
-    background: rgba(245, 242, 237, 0.8);
-    backdrop-filter: saturate(140%) blur(24px);
-    -webkit-backdrop-filter: saturate(140%) blur(24px);
+    background: rgba(13, 17, 16, 0.72);
+    backdrop-filter: saturate(140%) blur(20px);
+    -webkit-backdrop-filter: saturate(140%) blur(20px);
   }
 
-  /* Frosted card with soft translucency */
+  /* Elevated dark card — tactile, faint top highlight */
   .card {
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: saturate(120%) blur(16px);
-    -webkit-backdrop-filter: saturate(120%) blur(16px);
-    border: 1px solid rgba(212, 207, 200, 0.5);
-    border-radius: 16px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.015) 14%, rgba(255, 255, 255, 0) 100%),
+      #141a18;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 20px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 
   /* Solid card variant (for forms, modals) */
   .card-solid {
-    background: rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(212, 207, 200, 0.4);
-    border-radius: 16px;
+    background: #161c1a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Deep cinematic panel — for heroes and feature areas */
+  .panel-cinematic {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      radial-gradient(120% 100% at 0% 0%, rgba(200, 32, 43, 0.18) 0%, rgba(20, 26, 24, 0) 45%),
+      linear-gradient(160deg, #1a221f 0%, #0f1413 100%);
+  }
+
+  /* Story ring — cardinal gradient halo around avatars */
+  .story-ring {
+    background: conic-gradient(from 140deg, #c8202b, #e0555d, #c8202b, #7a1318, #c8202b);
+    padding: 2px;
+    border-radius: 9999px;
+  }
+  .story-ring-seen {
+    background: rgba(255, 255, 255, 0.14);
+    padding: 2px;
+    border-radius: 9999px;
   }
 
   .focus-ring {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bone;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bone;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -83,6 +133,17 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Skeleton shimmer for loading states */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.09) 37%,
+    rgba(255, 255, 255, 0.04) 63%
+  );
+  background-size: 200% 100%;
+}
+
 /* Safe-area for bottom nav on notched devices */
 .pb-safe {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
@@ -90,18 +151,18 @@
 
 /* Minimal scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(180, 175, 168, 0.4);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(180, 175, 168, 0.6);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 @media (prefers-reduced-motion: reduce) {
