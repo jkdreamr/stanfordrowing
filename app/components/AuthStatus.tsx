@@ -3,39 +3,36 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
-import { getUserByEmail, getTeamById } from '@/lib/data';
-import { User } from '@/lib/types';
+import { getTeamById } from '@/lib/data';
+import { getProfileByAuthId, Profile } from '@/lib/userProfile';
 import Avatar from './Avatar';
 import Icon from './Icon';
 
 export default function AuthStatus() {
-  const [email, setEmail] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
+  const loadProfile = async (authId: string | undefined) => {
+    if (!authId) { setProfile(null); setIsLoading(false); return; }
+    const p = await getProfileByAuthId(authId);
+    setProfile(p);
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase.auth.getSession();
-      setEmail(data.session?.user.email ?? null);
-      setIsLoading(false);
-    };
-    load();
+    supabase.auth.getSession().then(({ data }) => loadProfile(data.session?.user.id));
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      setEmail(session?.user.email ?? null);
+      loadProfile(session?.user.id);
     });
     return () => listener.subscription.unsubscribe();
   }, []);
-
-  useEffect(() => {
-    setUser(email ? getUserByEmail(email) : null);
-  }, [email]);
 
   if (isLoading) {
     return <div className="h-9 w-9 animate-pulse rounded-full bg-container-high" />;
   }
 
-  if (!email) {
+  if (!profile) {
     return (
       <Link
         href="/login"
@@ -46,11 +43,11 @@ export default function AuthStatus() {
     );
   }
 
-  const team = user ? getTeamById(user.teamId) : undefined;
+  const team = getTeamById(profile.teamId);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    setEmail(null);
+    setProfile(null);
     setOpen(false);
   };
 
@@ -63,27 +60,25 @@ export default function AuthStatus() {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <Avatar name={user?.name ?? email} color={team?.color ?? '#b51c00'} size={36} />
+        <Avatar name={profile.name} color={team?.color ?? '#b51c00'} size={36} />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
           <div className="card absolute right-0 z-50 mt-2 w-60 rounded-2xl p-2 shadow-card-lg">
             <div className="px-3 py-2">
-              <p className="text-sm font-semibold text-ink">{user?.name ?? 'Guest'}</p>
-              <p className="truncate text-xs text-ink-muted">{email}</p>
+              <p className="text-sm font-semibold text-ink">{profile.name}</p>
+              <p className="truncate text-xs text-ink-muted">{profile.email}</p>
             </div>
             <div className="my-1 h-px bg-line" />
-            {user && (
-              <Link
-                href={`/rowers/${user.id}`}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-container-low"
-              >
-                <Icon name="person" size={18} className="text-ink-soft" />
-                My profile
-              </Link>
-            )}
+            <Link
+              href={`/rowers/${profile.id}`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-container-low"
+            >
+              <Icon name="person" size={18} className="text-ink-soft" />
+              My profile
+            </Link>
             <Link
               href="/log"
               onClick={() => setOpen(false)}

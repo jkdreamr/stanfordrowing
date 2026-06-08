@@ -43,7 +43,8 @@ export default function WorkoutPostCard({
   actions,
 }: WorkoutPostCardProps) {
   const author = getUserById(workout.oderId);
-  const team = author ? getTeamById(author.teamId) : undefined;
+  const displayName = author?.name ?? workout.userName ?? 'Unknown';
+  const team = author ? getTeamById(author.teamId) : (workout.teamId ? getTeamById(workout.teamId) : undefined);
   const teamColor = team?.color ?? '#b51c00';
   const primary = getWorkoutPrimaryValue(workout, configs);
   const points = getWorkoutWeightedScore(workout, configs);
@@ -56,10 +57,10 @@ export default function WorkoutPostCard({
       {/* Header */}
       <div className="flex items-center gap-3 p-4 pb-3">
         <Link href={`/rowers/${workout.oderId}`} className="focus-ring flex min-w-0 flex-1 items-center gap-3 rounded-lg">
-          <Avatar name={author?.name ?? 'Unknown'} color={teamColor} size={40} />
+          <Avatar name={displayName} color={teamColor} size={40} />
           <div className="min-w-0">
             <p className="truncate text-[15px] font-bold leading-snug text-ink">
-              {author?.name ?? 'Unknown'}
+              {displayName}
             </p>
             <p className="label-caps mt-0.5 text-ink-muted">{timeAgo(workout.createdAt)}</p>
           </div>

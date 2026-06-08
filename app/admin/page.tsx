@@ -13,9 +13,9 @@ import {
   getChallengeDates,
   getWorkoutLabel,
   getWorkoutWeightedScore,
-  isAdminEmail,
   setAdminAuth,
 } from '@/lib/data';
+import { getProfileByAuthId } from '@/lib/userProfile';
 import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { supabase } from '@/lib/supabaseClient';
 import { deleteWorkoutRow, fetchMultipliers, fetchWorkouts, saveMultipliers, updateWorkoutRow } from '@/lib/supabaseData';
@@ -31,7 +31,6 @@ export default function Admin() {
   const [adminPassword, setAdminPassword] = useState('');
   const [adminError, setAdminError] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [workoutTypeConfigs, setWorkoutTypeConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
@@ -49,21 +48,17 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
-    const loadSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSessionEmail(data.session?.user.email ?? null);
+    const checkAdmin = async (authId: string | undefined) => {
+      if (!authId) { setIsAuthLoading(false); return; }
+      const p = await getProfileByAuthId(authId);
+      if (p?.isAdmin) setIsAdmin(true);
       setIsAuthLoading(false);
     };
-
-    loadSession();
-
+    supabase.auth.getSession().then(({ data }) => checkAdmin(data.session?.user.id));
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSessionEmail(session?.user.email ?? null);
+      checkAdmin(session?.user.id);
     });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    return () => authListener.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -146,7 +141,6 @@ export default function Admin() {
     clearAdminAuth();
     setIsAdmin(false);
     await supabase.auth.signOut();
-    setSessionEmail(null);
   };
 
   const getUserName = (userId: string) => ALL_USERS.find(u => u.id === userId)?.name || 'Unknown';
@@ -271,35 +265,15 @@ export default function Admin() {
     );
   }
 
-  if (!sessionEmail) {
+  if (!isAdmin && isAuthLoading) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] py-12">
-        <div className="max-w-xl mx-auto px-4 sm:px-6">
-          <div className="mb-8">
-            <h1 className="font-display text-2xl sm:text-3xl">Admin access</h1>
-            <p className="mt-2 text-[#5f5e5e]">Sign in with Google to continue.</p>
-          </div>
-
-          <div className="rounded-3xl border border-[#e9ecef] bg-white/80 p-6 text-center shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
-            <button
-              onClick={handleGoogleSignIn}
-              className="w-full rounded-full bg-[#191c1d] px-6 py-3 text-sm font-semibold text-[#f8f9fa] transition-colors duration-200 hover:bg-[#131315]"
-            >
-              Continue with Google
-            </button>
-          </div>
-
-          <div className="mt-6 text-center text-sm text-[#5f5e5e]">
-            <Link href="/" className="font-semibold text-[#191c1d] transition-colors duration-200 hover:text-[#b51c00]">
-              Return to dashboard
-            </Link>
-          </div>
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-cardinal border-t-transparent" />
       </div>
     );
   }
 
-  if (!isAdminEmail(sessionEmail)) {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen bg-[#f8f9fa] py-12">
         <div className="max-w-xl mx-auto px-4 sm:px-6">

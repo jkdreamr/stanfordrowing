@@ -36,6 +36,8 @@ export async function fetchWorkouts(): Promise<Workout[]> {
   return (data as SupabaseWorkoutRow[]).map(row => ({
     id: row.id,
     oderId: row.user_id,
+    userName: row.user_name,
+    teamId: row.team_id,
     date: row.date,
     type: row.type,
     minutes: row.minutes,

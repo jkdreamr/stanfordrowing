@@ -2,38 +2,60 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { TEAMS, getUserByEmail } from '@/lib/data';
-import { User } from '@/lib/types';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { getProfileByAuthId, isStanfordEmail, Profile } from '@/lib/userProfile';
 import Avatar from '../components/Avatar';
 import Icon from '../components/Icon';
 
+type State = 'loading' | 'signed_out' | 'not_stanford' | 'needs_profile' | 'ready';
+
 export default function Login() {
   const router = useRouter();
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [emailWarning, setEmailWarning] = useState('');
+  const searchParams = useSearchParams();
+  const [state, setState] = useState<State>('loading');
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const hasCode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('code');
+    const errorParam = searchParams.get('error');
+    if (errorParam === 'not_stanford') {
+      setState('not_stanford');
+      return;
+    }
+
+    const hasCode = new URLSearchParams(window.location.search).has('code');
+
+    const handleSession = async (sessionEmail: string | undefined, authId: string | undefined) => {
+      if (!sessionEmail || !authId) {
+        setState('signed_out');
+        return;
+      }
+      if (!isStanfordEmail(sessionEmail)) {
+        await supabase.auth.signOut();
+        setState('not_stanford');
+        return;
+      }
+      setEmail(sessionEmail);
+      const existing = await getProfileByAuthId(authId);
+      if (!existing) {
+        setState('needs_profile');
+      } else {
+        setProfile(existing);
+        setState('ready');
+      }
+    };
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSessionEmail(session?.user.email ?? null);
-      setIsLoading(false);
+      handleSession(session?.user.email, session?.user.id);
     });
 
     if (!hasCode) {
-      // No OAuth code — just read the existing session directly
       supabase.auth.getSession().then(({ data }) => {
-        setSessionEmail(data.session?.user.email ?? null);
-        setIsLoading(false);
+        handleSession(data.session?.user.email, data.session?.user.id);
       });
     } else {
-      // ?code= present — detectSessionInUrl will exchange it and fire onAuthStateChange.
-      // Fallback: if it takes more than 5s, stop the spinner.
-      const t = setTimeout(() => setIsLoading(false), 5000);
+      const t = setTimeout(() => setState('signed_out'), 6000);
       return () => {
         clearTimeout(t);
         authListener.subscription.unsubscribe();
@@ -41,18 +63,12 @@ export default function Login() {
     }
 
     return () => authListener.subscription.unsubscribe();
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
-    if (!sessionEmail) {
-      setSelectedUser(null);
-      setEmailWarning('');
-      return;
-    }
-    const mappedUser = getUserByEmail(sessionEmail);
-    setSelectedUser(mappedUser);
-    setEmailWarning(mappedUser ? '' : 'Your Google email isn’t mapped to a roster name yet. Ask an admin.');
-  }, [sessionEmail]);
+    if (state === 'needs_profile') router.replace('/onboarding');
+    if (state === 'ready') router.replace('/');
+  }, [state, router]);
 
   const handleGoogleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
@@ -63,12 +79,10 @@ export default function Login() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    setSessionEmail(null);
-    setSelectedUser(null);
-    setEmailWarning('');
+    setProfile(null);
+    setEmail(null);
+    setState('signed_out');
   };
-
-  const team = selectedUser ? TEAMS.find((t) => t.id === selectedUser.teamId) : undefined;
 
   return (
     <div className="mx-auto max-w-md px-4 pb-10 pt-10 sm:px-6">
@@ -77,18 +91,28 @@ export default function Login() {
           S
         </span>
         <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Welcome to Cardinal Row</h1>
-        <p className="mt-1 text-sm text-ink-soft">Sign in with Google to link your roster profile.</p>
+        <p className="mt-1 text-sm text-ink-soft">Stanford rowing, summer miles.</p>
       </div>
 
       <div className="space-y-4">
+        {state === 'not_stanford' && (
+          <div className="card rounded-2xl border-cardinal/30 bg-cardinal/5 p-5 text-center">
+            <p className="text-sm font-semibold text-cardinal">Stanford accounts only</p>
+            <p className="mt-1 text-xs text-ink-soft">Sign in with your @stanford.edu Google account.</p>
+          </div>
+        )}
+
         <div className="card rounded-2xl p-6">
           <label className="label-caps mb-3 block text-ink-soft">Google sign-in</label>
-          {isLoading ? (
-            <p className="text-sm text-ink-muted">Checking your session…</p>
-          ) : sessionEmail ? (
+          {state === 'loading' ? (
+            <div className="flex items-center gap-3 text-sm text-ink-muted">
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-cardinal border-t-transparent" />
+              Signing you in…
+            </div>
+          ) : email ? (
             <div className="space-y-3">
               <div className="rounded-xl border border-line bg-container-low/60 px-4 py-3 text-sm text-ink">
-                Signed in as <span className="font-semibold">{sessionEmail}</span>
+                Signed in as <span className="font-semibold">{email}</span>
               </div>
               <button
                 type="button"
@@ -110,36 +134,18 @@ export default function Login() {
           )}
         </div>
 
-        <div className="card rounded-2xl p-6">
-          <label className="label-caps mb-3 block text-ink-soft">Roster profile</label>
-          {selectedUser ? (
+        {profile && (
+          <div className="card rounded-2xl p-6">
+            <label className="label-caps mb-3 block text-ink-soft">Profile</label>
             <div className="flex items-center gap-3 rounded-xl border border-line bg-container-low/60 px-4 py-3">
-              <Avatar name={selectedUser.name} color={team?.color} size={40} />
+              <Avatar name={profile.name} size={40} />
               <div>
-                <p className="text-sm font-semibold text-ink">{selectedUser.name}</p>
-                {team ? (
-                  <p className="text-xs text-ink-muted">{team.name}</p>
-                ) : (
-                  <p className="text-xs text-ink-muted">Roster linked</p>
-                )}
+                <p className="text-sm font-semibold text-ink">{profile.name}</p>
+                <p className="text-xs text-ink-muted">Redirecting…</p>
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-ink-muted">
-              {sessionEmail ? 'No roster match yet.' : 'Sign in to match your name.'}
-            </p>
-          )}
-          {emailWarning && <p className="mt-3 text-xs text-cardinal">{emailWarning}</p>}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => router.push('/')}
-          disabled={!selectedUser || !sessionEmail}
-          className="focus-ring w-full rounded-full bg-cardinal px-6 py-4 text-base font-semibold text-white shadow-cardinal transition-all duration-200 hover:bg-cardinal-dark active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Enter the squad
-        </button>
+          </div>
+        )}
 
         <p className="text-center text-sm text-ink-soft">
           Just looking?{' '}

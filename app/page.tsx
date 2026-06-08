@@ -7,9 +7,9 @@ import {
   ALL_USERS,
   formatPreciseNumber,
   getDaysRemaining,
-  getUserByEmail,
   getWorkoutWeightedScore,
 } from '@/lib/data';
+import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
 import Avatar from './components/Avatar';
 import { User, Workout, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { addWorkoutReaction, fetchMultipliers, fetchWorkouts, removeWorkoutReaction } from '@/lib/supabaseData';
@@ -23,9 +23,14 @@ export default function FeedPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [configs, setConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [signedOut, setSignedOut] = useState(false);
+
+  const loadUser = async (authId: string | undefined) => {
+    if (!authId) { setCurrentUser(null); return; }
+    const p = await getProfileByAuthId(authId);
+    setCurrentUser(p ? profileToUser(p) : null);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -41,21 +46,13 @@ export default function FeedPage() {
         setLoading(false);
       }
     };
-    const loadSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSessionEmail(data.session?.user.email ?? null);
-    };
     load();
-    loadSession();
+    supabase.auth.getSession().then(({ data }) => loadUser(data.session?.user.id));
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      setSessionEmail(session?.user.email ?? null);
+      loadUser(session?.user.id);
     });
     return () => listener.subscription.unsubscribe();
   }, []);
-
-  useEffect(() => {
-    setCurrentUser(sessionEmail ? getUserByEmail(sessionEmail) : null);
-  }, [sessionEmail]);
 
   const updateReactions = (id: string, updater: (r: WorkoutReaction[]) => WorkoutReaction[]) => {
     setWorkouts((prev) =>

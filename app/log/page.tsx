@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { DEFAULT_PLAN_MILEAGES, formatPreciseNumber, getPstDateString, getUserByEmail } from '@/lib/data';
+import { DEFAULT_PLAN_MILEAGES, formatPreciseNumber, getPstDateString } from '@/lib/data';
+import { getProfileByAuthId, isStanfordEmail, profileToUser } from '@/lib/userProfile';
 import { User, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { supabase } from '@/lib/supabaseClient';
 import { createWorkout, fetchMultipliers, updateWorkoutRow } from '@/lib/supabaseData';
@@ -75,10 +76,16 @@ export default function LogWorkout() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [workoutTypeConfigs, setWorkoutTypeConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
   const [planMileages, setPlanMileages] = useState<Record<string, number>>({});
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
-  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [rosterWarning, setRosterWarning] = useState('');
+  const [notStanford, setNotStanford] = useState(false);
+
+  const resolveUser = async (authId: string | undefined, email: string | undefined) => {
+    if (!authId || !email) { setSelectedUser(null); setIsAuthLoading(false); return; }
+    if (!isStanfordEmail(email)) { setNotStanford(true); setIsAuthLoading(false); return; }
+    const profile = await getProfileByAuthId(authId);
+    setSelectedUser(profile ? profileToUser(profile) : null);
+    setIsAuthLoading(false);
+  };
 
   useEffect(() => {
     const loadMultipliers = async () => {
@@ -91,31 +98,15 @@ export default function LogWorkout() {
         setPlanMileages(DEFAULT_PLAN_MILEAGES);
       }
     };
-    const loadSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSessionEmail(data.session?.user.email ?? null);
-      setSessionUserId(data.session?.user.id ?? null);
-      setIsAuthLoading(false);
-    };
     loadMultipliers();
-    loadSession();
+    supabase.auth.getSession().then(({ data }) =>
+      resolveUser(data.session?.user.id, data.session?.user.email)
+    );
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSessionEmail(session?.user.email ?? null);
-      setSessionUserId(session?.user.id ?? null);
+      resolveUser(session?.user.id, session?.user.email);
     });
     return () => authListener.subscription.unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (!sessionEmail) {
-      setSelectedUser(null);
-      setRosterWarning('');
-      return;
-    }
-    const mappedUser = getUserByEmail(sessionEmail);
-    setSelectedUser(mappedUser);
-    setRosterWarning(mappedUser ? '' : 'Your Google email isn’t linked to a roster name yet. Ask an admin.');
-  }, [sessionEmail]);
 
   const resolveWorkoutType = (): WorkoutType => {
     if (category === 'training_session') return 'training_session';
@@ -196,7 +187,7 @@ export default function LogWorkout() {
         setIsUploadingProof(true);
         const fileExtension = fileToUpload.name.split('.').pop()?.toLowerCase() || 'jpg';
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExtension}`;
-        const ownerId = sessionUserId ?? selectedUser.id;
+        const ownerId = selectedUser.id;
         const filePath = `${ownerId}/${fileName}`;
         void (async () => {
           try {
@@ -237,7 +228,7 @@ export default function LogWorkout() {
     setIsSubmitting(false);
   };
 
-  const isLoggedIn = !!selectedUser && !!sessionEmail;
+  const isLoggedIn = !!selectedUser;
   const selectedType = resolveWorkoutType();
   const selectedBasis = (workoutTypeConfigs[selectedType] ?? WORKOUT_TYPES[selectedType])?.basis ?? 'minutes';
   const distanceValue = parseFloat(distanceKm) || 0;
@@ -286,7 +277,7 @@ export default function LogWorkout() {
               Go to login
             </Link>
             {isAuthLoading && <p className="mt-3 text-xs text-ink-muted">Checking your session…</p>}
-            {rosterWarning && <p className="mt-3 text-xs text-cardinal">{rosterWarning}</p>}
+            {notStanford && <p className="mt-3 text-xs text-cardinal">Stanford accounts only (@stanford.edu).</p>}
           </div>
         )}
 

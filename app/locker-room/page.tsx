@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
-import { getUserByEmail, isAdminEmail } from '@/lib/data';
+import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
 import { LockerPost, LockerReaction, User } from '@/lib/types';
 import {
   addLockerReaction,
@@ -37,16 +37,18 @@ export default function LockerRoomPage() {
         setLoading(false);
       }
     };
-    const loadSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setCurrentUser(getUserByEmail(data.session?.user.email));
-      setIsAdmin(isAdminEmail(data.session?.user.email));
+    const loadSession = async (authId: string | undefined, isAdm: boolean) => {
+      if (!authId) { setCurrentUser(null); setIsAdmin(false); return; }
+      const profile = await getProfileByAuthId(authId);
+      setCurrentUser(profile ? profileToUser(profile) : null);
+      setIsAdmin(isAdm || (profile?.isAdmin ?? false));
     };
     load();
-    loadSession();
+    supabase.auth.getSession().then(({ data }) =>
+      loadSession(data.session?.user.id, false)
+    );
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      setCurrentUser(getUserByEmail(session?.user.email));
-      setIsAdmin(isAdminEmail(session?.user.email));
+      loadSession(session?.user.id, false);
     });
     return () => listener.subscription.unsubscribe();
   }, []);

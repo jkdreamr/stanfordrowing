@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { getUserByEmail } from '@/lib/data';
+import { getProfileByAuthId } from '@/lib/userProfile';
 import LoadingState from '../components/LoadingState';
 
 /** Legacy route — your workouts now live on your rower profile. */
@@ -13,8 +13,10 @@ export default function WorkoutsRedirect() {
   useEffect(() => {
     const go = async () => {
       const { data } = await supabase.auth.getSession();
-      const user = getUserByEmail(data.session?.user.email);
-      router.replace(user ? `/rowers/${user.id}` : '/login');
+      const session = data.session;
+      if (!session?.user.id) { router.replace('/login'); return; }
+      const profile = await getProfileByAuthId(session.user.id);
+      router.replace(profile ? `/rowers/${profile.id}` : '/login');
     };
     go();
   }, [router]);

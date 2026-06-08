@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { isAdminEmail } from '@/lib/data';
+import { getProfileByAuthId } from '@/lib/userProfile';
 import AuthStatus from './AuthStatus';
 
 const NAV = [
@@ -39,13 +39,14 @@ export default function TopNav() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const check = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsAdmin(isAdminEmail(data.session?.user.email));
+    const checkAdmin = async (authId: string | undefined) => {
+      if (!authId) { setIsAdmin(false); return; }
+      const p = await getProfileByAuthId(authId);
+      setIsAdmin(p?.isAdmin ?? false);
     };
-    check();
+    supabase.auth.getSession().then(({ data }) => checkAdmin(data.session?.user.id));
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      setIsAdmin(isAdminEmail(session?.user.email));
+      checkAdmin(session?.user.id);
     });
     return () => listener.subscription.unsubscribe();
   }, []);

@@ -15,6 +15,8 @@ export interface Team {
 export interface Workout {
   id: string;
   oderId: string;
+  userName?: string;
+  teamId?: string;
   date: string;
   type: WorkoutType;
   minutes: number;

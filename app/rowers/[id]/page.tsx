@@ -6,10 +6,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import {
   getTeamById,
-  getUserByEmail,
   getUserById,
   getWorkoutLabel,
 } from '@/lib/data';
+import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
 import { User, Workout, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import {
   addWorkoutReaction,
@@ -69,14 +69,15 @@ export default function RowerProfilePage() {
         setLoading(false);
       }
     };
-    const loadSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setCurrentUser(getUserByEmail(data.session?.user.email));
+    const loadSession = async (authId: string | undefined) => {
+      if (!authId) { setCurrentUser(null); return; }
+      const p = await getProfileByAuthId(authId);
+      setCurrentUser(p ? profileToUser(p) : null);
     };
     load();
-    loadSession();
+    supabase.auth.getSession().then(({ data }) => loadSession(data.session?.user.id));
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      setCurrentUser(getUserByEmail(session?.user.email));
+      loadSession(session?.user.id);
     });
     return () => listener.subscription.unsubscribe();
   }, []);
