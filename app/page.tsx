@@ -1,16 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import {
-  ALL_USERS,
-  formatPreciseNumber,
-  getDaysRemaining,
-  getWorkoutWeightedScore,
-} from '@/lib/data';
+import { formatPreciseNumber, getDaysRemaining, getWorkoutWeightedScore } from '@/lib/data';
 import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
-import { User, Workout, WorkoutComment, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
+import { Story, User, Workout, WorkoutComment, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import {
   addWorkoutComment,
   addWorkoutReaction,
@@ -19,6 +14,7 @@ import {
   removeWorkoutComment,
   removeWorkoutReaction,
 } from '@/lib/supabaseData';
+import { createStory, deleteStory, fetchStories, uploadStoryMedia } from '@/lib/stories';
 import { getWeeklySummary } from '@/lib/stats';
 import FeedList from './components/FeedList';
 import WeeklySummaryCard from './components/WeeklySummaryCard';
@@ -31,11 +27,14 @@ import Icon from './components/Icon';
 
 export default function FeedPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [stories, setStories] = useState<Story[]>([]);
   const [configs, setConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [signedOut, setSignedOut] = useState(false);
-  const [storyWorkout, setStoryWorkout] = useState<Workout | null>(null);
+  const [viewerAuthor, setViewerAuthor] = useState<string | null>(null);
+  const [uploadingStory, setUploadingStory] = useState(false);
+  const [storyError, setStoryError] = useState('');
 
   const loadUser = async (authId: string | undefined) => {
     if (!authId) { setCurrentUser(null); return; }
@@ -56,6 +55,12 @@ export default function FeedPage() {
       } finally {
         setLoading(false);
       }
+      // Stories load independently — a missing table shouldn't break the feed.
+      try {
+        setStories(await fetchStories());
+      } catch {
+        /* no stories backend yet */
+      }
     };
     load();
     supabase.auth.getSession().then(({ data }) => loadUser(data.session?.user.id));
@@ -65,10 +70,9 @@ export default function FeedPage() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  // ---- reactions ----
   const updateReactions = (id: string, updater: (r: WorkoutReaction[]) => WorkoutReaction[]) => {
-    setWorkouts((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, reactions: updater(w.reactions ?? []) } : w))
-    );
+    setWorkouts((prev) => prev.map((w) => (w.id === id ? { ...w, reactions: updater(w.reactions ?? []) } : w)));
   };
 
   const toggleRespect = async (workout: Workout) => {
@@ -91,26 +95,15 @@ export default function FeedPage() {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const toggleStoryRespect = useCallback(() => {
-    if (storyWorkout) toggleRespect(storyWorkout);
-  }, [storyWorkout, currentUser]);
-
+  // ---- comments ----
   const updateComments = (id: string, updater: (c: WorkoutComment[]) => WorkoutComment[]) => {
-    setWorkouts((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, comments: updater(w.comments ?? []) } : w))
-    );
+    setWorkouts((prev) => prev.map((w) => (w.id === id ? { ...w, comments: updater(w.comments ?? []) } : w)));
   };
 
   const addComment = async (workout: Workout, body: string): Promise<boolean> => {
     if (!currentUser) return false;
     try {
-      const comment = await addWorkoutComment({
-        workoutId: workout.id,
-        userId: currentUser.id,
-        userName: currentUser.name,
-        body,
-      });
+      const comment = await addWorkoutComment({ workoutId: workout.id, userId: currentUser.id, userName: currentUser.name, body });
       updateComments(workout.id, (c) => [...c, comment]);
       return true;
     } catch {
@@ -128,31 +121,52 @@ export default function FeedPage() {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const addStoryComment = useCallback(
-    (body: string) => (storyWorkout ? addComment(storyWorkout, body) : Promise.resolve(false)),
-    [storyWorkout, currentUser]
-  );
+  // ---- stories ----
+  const handleUploadStory = async (file: File) => {
+    if (!currentUser) return;
+    setStoryError('');
+    setUploadingStory(true);
+    try {
+      const { url, type } = await uploadStoryMedia(file, currentUser.id);
+      const story = await createStory({ user: currentUser, mediaUrl: url, mediaType: type });
+      setStories((prev) => [story, ...prev]);
+    } catch (e) {
+      setStoryError((e as Error)?.message || 'Could not post your story.');
+    } finally {
+      setUploadingStory(false);
+    }
+  };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const deleteStoryComment = useCallback(
-    (commentId: string) => {
-      if (storyWorkout) void deleteComment(storyWorkout, commentId);
-    },
-    [storyWorkout, currentUser]
-  );
+  const handleDeleteStory = async (storyId: string) => {
+    const author = stories.find((s) => s.id === storyId)?.userId;
+    const previous = stories;
+    setStories((prev) => prev.filter((s) => s.id !== storyId));
+    if (author && previous.filter((s) => s.userId === author && s.id !== storyId).length === 0) {
+      setViewerAuthor(null);
+    }
+    try {
+      await deleteStory(storyId);
+    } catch {
+      setStories(previous);
+    }
+  };
 
+  // ---- derived ----
   const totalPoints = useMemo(
     () => workouts.reduce((sum, w) => sum + getWorkoutWeightedScore(w, configs), 0),
     [workouts, configs]
   );
 
   const topRowers = useMemo(() => {
-    const byUser = new Map<string, number>();
+    const map = new Map<string, { name: string; total: number }>();
     for (const w of workouts) {
-      byUser.set(w.oderId, (byUser.get(w.oderId) ?? 0) + getWorkoutWeightedScore(w, configs));
+      const cur = map.get(w.oderId) ?? { name: w.userName ?? 'Rower', total: 0 };
+      cur.total += getWorkoutWeightedScore(w, configs);
+      if (w.userName) cur.name = w.userName;
+      map.set(w.oderId, cur);
     }
-    return ALL_USERS.map((u) => ({ user: u, total: byUser.get(u.id) ?? 0 }))
+    return Array.from(map.entries())
+      .map(([id, v]) => ({ id, ...v }))
       .filter((r) => r.total > 0)
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
@@ -160,16 +174,13 @@ export default function FeedPage() {
 
   const myWeek = useMemo(() => {
     if (!currentUser) return null;
-    return getWeeklySummary(
-      workouts.filter((w) => w.oderId === currentUser.id),
-      configs
-    );
+    return getWeeklySummary(workouts.filter((w) => w.oderId === currentUser.id), configs);
   }, [workouts, currentUser, configs]);
 
-  // For the story modal — find the current version of storyWorkout in workouts
-  const activeStory = storyWorkout
-    ? workouts.find((w) => w.id === storyWorkout.id) ?? storyWorkout
-    : null;
+  const viewerStories = useMemo(
+    () => (viewerAuthor ? stories.filter((s) => s.userId === viewerAuthor) : []),
+    [viewerAuthor, stories]
+  );
 
   const daysLeft = getDaysRemaining();
 
@@ -181,7 +192,6 @@ export default function FeedPage() {
   return (
     <>
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        {/* Header — editorial and quiet */}
         <div className="pb-2 pt-6 sm:pt-8">
           <h1 className="font-display text-2xl font-semibold tracking-editorial text-charcoal sm:text-[28px]">
             Latest from the squad
@@ -194,14 +204,17 @@ export default function FeedPage() {
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
           {/* Main feed column */}
           <div className="mx-auto w-full max-w-feed flex-1">
-            {/* Training Stories */}
-            {!loading && workouts.length > 0 && (
+            {/* Stories */}
+            {!loading && (currentUser || stories.length > 0) && (
               <div className="mb-6">
                 <TrainingStories
-                  workouts={workouts}
-                  configs={configs}
-                  onTap={(w) => setStoryWorkout(w)}
+                  stories={stories}
+                  currentUser={currentUser}
+                  onView={(authorId) => setViewerAuthor(authorId)}
+                  onUpload={handleUploadStory}
+                  uploading={uploadingStory}
                 />
+                {storyError && <p className="mt-2 px-1 text-[12px] text-coral">{storyError}</p>}
               </div>
             )}
 
@@ -227,17 +240,15 @@ export default function FeedPage() {
             <div className="card p-5">
               <div className="flex items-center justify-between">
                 <p className="label-caps text-charcoal-muted">Top rowers</p>
-                <Link href="/leaderboard" className="text-[11px] font-medium text-coral hover:underline">
-                  All
-                </Link>
+                <Link href="/leaderboard" className="text-[11px] font-medium text-coral hover:underline">All</Link>
               </div>
               <div className="mt-4 space-y-3">
-                {topRowers.map(({ user, total }, i) => (
-                  <Link key={user.id} href={`/rowers/${user.id}`} className="focus-ring flex items-center gap-2.5 rounded-lg">
+                {topRowers.map((r, i) => (
+                  <Link key={r.id} href={`/rowers/${r.id}`} className="focus-ring flex items-center gap-2.5 rounded-lg">
                     <span className={`w-4 text-[12px] font-bold tabular ${i === 0 ? 'text-coral' : 'text-charcoal-light'}`}>{i + 1}</span>
-                    <Avatar name={user.name} size={28} />
-                    <span className="flex-1 truncate text-[12.5px] font-medium text-charcoal">{user.name}</span>
-                    <span className="text-[12.5px] font-semibold tabular text-charcoal-soft">{formatPreciseNumber(total)}</span>
+                    <Avatar name={r.name} size={28} />
+                    <span className="flex-1 truncate text-[12.5px] font-medium text-charcoal">{r.name}</span>
+                    <span className="text-[12.5px] font-semibold tabular text-charcoal-soft">{formatPreciseNumber(r.total)}</span>
                   </Link>
                 ))}
                 {topRowers.length === 0 && <p className="text-[12px] text-charcoal-muted">No scores yet.</p>}
@@ -265,18 +276,13 @@ export default function FeedPage() {
         </div>
       </div>
 
-      {/* Story modal */}
-      {activeStory && (
+      {/* Story viewer */}
+      {viewerStories.length > 0 && (
         <TrainingStoryModal
-          workout={activeStory}
-          configs={configs}
-          currentUser={currentUser}
-          hasReacted={(activeStory.reactions ?? []).some((r) => r.userId === currentUser?.id)}
-          respectCount={(activeStory.reactions ?? []).length}
-          onToggleRespect={toggleStoryRespect}
-          onAddComment={addStoryComment}
-          onDeleteComment={deleteStoryComment}
-          onClose={() => setStoryWorkout(null)}
+          stories={viewerStories}
+          currentUserId={currentUser?.id}
+          onDelete={handleDeleteStory}
+          onClose={() => setViewerAuthor(null)}
         />
       )}
     </>

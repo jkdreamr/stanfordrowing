@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import {
   getTeamById,
-  getUserById,
   getWorkoutLabel,
 } from '@/lib/data';
 import { getProfileByAuthId, profileToUser } from '@/lib/userProfile';
@@ -53,7 +52,7 @@ const CATEGORY_TABS: FilterTab[] = [
 export default function RowerProfilePage() {
   const params = useParams<{ id: string }>();
   const rowerId = params?.id;
-  const profileUser = rowerId ? getUserById(rowerId) : undefined;
+  const [loadedProfile, setLoadedProfile] = useState<User | null>(null);
 
   const [allWorkouts, setAllWorkouts] = useState<Workout[]>([]);
   const [configs, setConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
@@ -70,6 +69,10 @@ export default function RowerProfilePage() {
         const [w, m] = await Promise.all([fetchWorkouts(), fetchMultipliers()]);
         setAllWorkouts(w);
         setConfigs(m.workoutTypeConfigs);
+        if (rowerId) {
+          const rp = await getProfileByAuthId(rowerId);
+          if (rp) setLoadedProfile(profileToUser(rp));
+        }
       } catch {
         setSignedOut(true);
       } finally {
@@ -96,6 +99,14 @@ export default function RowerProfilePage() {
         .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')),
     [allWorkouts, rowerId]
   );
+
+  // Resolve the rower from their profile; fall back to the name on their workouts.
+  const profileUser = useMemo<User | null>(() => {
+    if (loadedProfile) return loadedProfile;
+    const wn = userWorkouts[0]?.userName;
+    if (rowerId && wn) return { id: rowerId, name: wn, teamId: 'unassigned' };
+    return null;
+  }, [loadedProfile, userWorkouts, rowerId]);
 
   const aggregate = useMemo(() => aggregateRower(userWorkouts, configs), [userWorkouts, configs]);
   const weekly = useMemo(() => getWeeklySummary(userWorkouts, configs), [userWorkouts, configs]);

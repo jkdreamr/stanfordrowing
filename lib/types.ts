@@ -180,3 +180,17 @@ export interface LockerPost {
   reactions: LockerReaction[];
   createdAt: string;
 }
+
+// ---- Stories (Instagram-style photo/video posts) ----
+
+export type StoryMediaType = 'image' | 'video';
+
+export interface Story {
+  id: string;
+  userId: string;
+  userName: string;
+  mediaUrl: string;
+  mediaType: StoryMediaType;
+  caption?: string;
+  createdAt: string;
+}

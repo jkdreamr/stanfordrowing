@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ALL_USERS } from '@/lib/data';
 import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { fetchMultipliers, fetchWorkouts } from '@/lib/supabaseData';
+import { getAllProfiles, profileToUser } from '@/lib/userProfile';
 import { aggregateRower, last7Counts } from '@/lib/stats';
 import RowerCard from '../components/RowerCard';
 import LoadingState from '../components/LoadingState';
@@ -13,6 +13,7 @@ import Icon from '../components/Icon';
 export default function RowersPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [configs, setConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
+  const [rowerUsers, setRowerUsers] = useState<{ id: string; name: string; teamId: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [signedOut, setSignedOut] = useState(false);
   const [query, setQuery] = useState('');
@@ -20,9 +21,14 @@ export default function RowersPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [w, m] = await Promise.all([fetchWorkouts(), fetchMultipliers()]);
+        const [w, m, profiles] = await Promise.all([
+          fetchWorkouts(),
+          fetchMultipliers(),
+          getAllProfiles(),
+        ]);
         setWorkouts(w);
         setConfigs(m.workoutTypeConfigs);
+        setRowerUsers(profiles.map(profileToUser));
       } catch {
         setSignedOut(true);
       } finally {
@@ -44,19 +50,20 @@ export default function RowersPage() {
 
   const rowers = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return ALL_USERS.map((user) => {
-      const userWorkouts = byUser.get(user.id) ?? [];
-      const sorted = [...userWorkouts].sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
-      return {
-        user,
-        aggregate: aggregateRower(userWorkouts, configs),
-        spark: last7Counts(userWorkouts),
-        latestWorkout: sorted[0],
-      };
-    })
+    return rowerUsers
+      .map((user) => {
+        const userWorkouts = byUser.get(user.id) ?? [];
+        const sorted = [...userWorkouts].sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
+        return {
+          user,
+          aggregate: aggregateRower(userWorkouts, configs),
+          spark: last7Counts(userWorkouts),
+          latestWorkout: sorted[0],
+        };
+      })
       .filter((r) => (q ? r.user.name.toLowerCase().includes(q) : true))
       .sort((a, b) => b.aggregate.totalPoints - a.aggregate.totalPoints);
-  }, [byUser, configs, query]);
+  }, [rowerUsers, byUser, configs, query]);
 
   return (
     <div className="mx-auto max-w-container px-4 sm:px-6 lg:px-8">
@@ -64,20 +71,22 @@ export default function RowersPage() {
         <h1 className="font-display text-xl font-semibold tracking-editorial text-charcoal sm:text-2xl">
           Rowers
         </h1>
-        <p className="mt-1 text-[13px] text-charcoal-muted">The roster. Every name, every session.</p>
+        <p className="mt-1 text-[13px] text-charcoal-muted">Everyone who&apos;s signed up. The squad grows here.</p>
       </div>
 
       {/* Search */}
-      <div className="relative mb-5 max-w-sm">
-        <Icon name="search" size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-light" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search..."
-          className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 py-2 pl-9 pr-4 text-[13px] text-charcoal placeholder:text-charcoal-light"
-        />
-      </div>
+      {rowerUsers.length > 0 && (
+        <div className="relative mb-5 max-w-sm">
+          <Icon name="search" size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-light" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search..."
+            className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 py-2 pl-9 pr-4 text-[13px] text-charcoal placeholder:text-charcoal-light"
+          />
+        </div>
+      )}
 
       {loading ? (
         <LoadingState count={6} variant="list" />
@@ -88,6 +97,14 @@ export default function RowersPage() {
           message="The rower directory is for the team."
           actionLabel="Log in"
           actionHref="/login"
+        />
+      ) : rowerUsers.length === 0 ? (
+        <EmptyState
+          icon="group_add"
+          title="No rowers yet."
+          message="As teammates sign up, they show up here. Someone has to start."
+          actionLabel="Log the work"
+          actionHref="/log"
         />
       ) : rowers.length === 0 ? (
         <EmptyState icon="search_off" title="No match." message="Try a different name." />

@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  ALL_USERS,
   DEFAULT_PLAN_MILEAGES,
   TEAMS,
   formatPreciseNumber,
@@ -117,13 +116,10 @@ export default function Admin() {
     setSignedIn(false);
   };
 
-  const getUserName = (userId: string) => ALL_USERS.find(u => u.id === userId)?.name || 'Unknown';
+  const getUserName = (userId: string) =>
+    workouts.find((w) => w.oderId === userId)?.userName || 'Unknown';
 
-  const getUserTeam = (userId: string) => {
-    const user = ALL_USERS.find(u => u.id === userId);
-    if (!user) return null;
-    return TEAMS.find(team => team.id === user.teamId) || null;
-  };
+  const getUserTeam = (_userId: string): { color: string; name: string } | null => null;
 
   const startEdit = (workout: Workout) => {
     setEditingWorkoutId(workout.id);

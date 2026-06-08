@@ -6,7 +6,6 @@ import { getUserById, getWorkoutLabel, getWorkoutPrimaryValue } from '@/lib/data
 import { formatPrimary, workoutIcon } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
-import TrainingStories from './TrainingStories';
 
 const UNIT_LABEL: Record<string, string> = { km: 'km', mins: 'min', pts: 'pts' };
 
@@ -102,11 +101,6 @@ export default function LoggedOutFeed({ configs }: { configs: Record<WorkoutType
               </div>
             </div>
           </section>
-
-          {/* Story preview */}
-          <div className="mt-7">
-            <TrainingStories workouts={SAMPLE as unknown as Workout[]} configs={configs} onTap={() => {}} locked />
-          </div>
 
           {/* Locked sample cards */}
           <div className="mt-6 space-y-5">

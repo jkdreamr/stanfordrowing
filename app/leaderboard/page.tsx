@@ -1,15 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ALL_USERS, formatPreciseNumber, getTeamById, getWorkoutWeightedScore } from '@/lib/data';
-import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
+import { formatPreciseNumber, getWorkoutWeightedScore } from '@/lib/data';
+import { User, Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { fetchMultipliers, fetchWorkouts } from '@/lib/supabaseData';
+import { getAllProfiles, profileToUser } from '@/lib/userProfile';
 import { getStreak, getWeeklySummary } from '@/lib/stats';
 import LeaderboardCard from '../components/LeaderboardCard';
 import FilterTabs, { FilterTab } from '../components/FilterTabs';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
-import Icon from '../components/Icon';
 
 type View = 'overall' | 'weekly' | 'respect' | 'consistent';
 
@@ -23,6 +23,7 @@ const TABS: FilterTab[] = [
 export default function LeaderboardPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [configs, setConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
+  const [rowerUsers, setRowerUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [signedOut, setSignedOut] = useState(false);
   const [view, setView] = useState<View>('overall');
@@ -30,9 +31,14 @@ export default function LeaderboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [w, m] = await Promise.all([fetchWorkouts(), fetchMultipliers()]);
+        const [w, m, profiles] = await Promise.all([
+          fetchWorkouts(),
+          fetchMultipliers(),
+          getAllProfiles(),
+        ]);
         setWorkouts(w);
         setConfigs(m.workoutTypeConfigs);
+        setRowerUsers(profiles.map(profileToUser));
       } catch {
         setSignedOut(true);
       } finally {
@@ -53,7 +59,7 @@ export default function LeaderboardPage() {
   }, [workouts]);
 
   const rows = useMemo(() => {
-    return ALL_USERS.map((user) => {
+    return rowerUsers.map((user) => {
       const uw = byUser.get(user.id) ?? [];
       const points = uw.reduce((s, w) => s + getWorkoutWeightedScore(w, configs), 0);
       const week = getWeeklySummary(uw, configs).points;
@@ -61,7 +67,7 @@ export default function LeaderboardPage() {
       const streak = getStreak(uw);
       return { user, points, week, kudos, streak };
     });
-  }, [byUser, configs]);
+  }, [rowerUsers, byUser, configs]);
 
   const ranked = useMemo(() => {
     if (view === 'weekly') return [...rows].filter((r) => r.week > 0).sort((a, b) => b.week - a.week);
