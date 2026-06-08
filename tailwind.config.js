@@ -33,10 +33,14 @@ module.exports = {
           soft: '#d9cfc3',     // lighter taupe
         },
         coral: {
-          DEFAULT: '#c4704a',  // restrained orange/coral — primary actions only
-          dark: '#a85c3a',     // hover state
-          soft: '#f5ebe5',     // tinted surface
+          DEFAULT: '#b1040e',  // Stanford cardinal — sharp accent / primary actions only
+          dark: '#8a0c14',     // hover state
+          bright: '#d21f32',   // brighter cardinal for emphasis
+          soft: '#f6e7e7',     // red-tinted surface
         },
+        // Cinematic dark surfaces for the hero
+        night: '#111613',       // deep charcoal
+        forest: '#07100d',      // deep green-black
         surface: {
           DEFAULT: 'rgba(255,255,255,0.65)',  // frosted card
           solid: '#ffffff',                    // opaque card when needed
@@ -54,9 +58,10 @@ module.exports = {
           soft: '#e8e4de',
         },
         cardinal: {
-          DEFAULT: '#c4704a',
-          dark: '#a85c3a',
-          soft: '#f5ebe5',
+          DEFAULT: '#b1040e',
+          dark: '#8a0c14',
+          bright: '#d21f32',
+          soft: '#f6e7e7',
         },
         container: {
           low: '#ebe7e0',
@@ -82,6 +87,8 @@ module.exports = {
         nav: '0 -1px 0 rgba(0,0,0,0.04)',
         story: '0 4px 20px rgba(0,0,0,0.08)',
         modal: '0 25px 60px rgba(0,0,0,0.15)',
+        float: '0 24px 60px -18px rgba(17,22,19,0.45)',
+        'float-sm': '0 12px 32px -12px rgba(17,22,19,0.35)',
       },
       maxWidth: {
         container: '1280px',

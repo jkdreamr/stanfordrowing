@@ -83,6 +83,37 @@
   font-variant-numeric: tabular-nums;
 }
 
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Subtle film grain overlay — give as an absolutely-positioned child */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* Cinematic hero media placeholder when no video file is present.
+   Layered deep-green / charcoal washes so it reads as intentional, not empty. */
+.hero-media {
+  background:
+    radial-gradient(120% 90% at 18% 12%, rgba(40, 58, 48, 0.55), transparent 60%),
+    radial-gradient(120% 120% at 92% 8%, rgba(177, 4, 14, 0.32), transparent 55%),
+    radial-gradient(140% 120% at 70% 110%, rgba(7, 16, 13, 0.9), transparent 60%),
+    linear-gradient(160deg, #16201a 0%, #0c1410 55%, #07100d 100%);
+}
+
+/* Faint horizontal "water" striations for the hero placeholder */
+.hero-water {
+  background-image: repeating-linear-gradient(
+    178deg,
+    rgba(255, 255, 255, 0.035) 0px,
+    rgba(255, 255, 255, 0.035) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+}
+
 /* Safe-area for bottom nav on notched devices */
 .pb-safe {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
