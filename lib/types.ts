@@ -190,6 +190,7 @@ export interface LockerPost {
   linkUrl?: string; // external link or video URL (YouTube/Vimeo/etc)
   reactions: LockerReaction[];
   comments: LockerComment[];
+  pinned: boolean;
   createdAt: string;
 }
 

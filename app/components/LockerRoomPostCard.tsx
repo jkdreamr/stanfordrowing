@@ -16,6 +16,7 @@ interface LockerRoomPostCardProps {
   onAddComment: (post: LockerPost, body: string, parentId?: string) => Promise<boolean>;
   onDeleteComment: (post: LockerPost, commentId: string) => void;
   onDelete?: (post: LockerPost) => void;
+  onTogglePin?: (post: LockerPost) => void;
 }
 
 function getVideoEmbed(url: string): string | null {
@@ -45,12 +46,18 @@ export default function LockerRoomPostCard({
   onAddComment,
   onDeleteComment,
   onDelete,
+  onTogglePin,
 }: LockerRoomPostCardProps) {
   const canDelete = !!onDelete && (isAdmin || post.authorId === currentUser?.id);
+  const canPin = !!onTogglePin && isAdmin;
   const embed = post.linkUrl ? getVideoEmbed(post.linkUrl) : null;
 
   return (
-    <article className="card animate-fade-in overflow-hidden">
+    <article
+      className={`card animate-fade-in overflow-hidden ${
+        post.pinned ? 'ring-1 ring-coral/40' : ''
+      }`}
+    >
       {/* Media first — full bleed */}
       {post.mediaType === 'image' && post.mediaUrl && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -69,6 +76,14 @@ export default function LockerRoomPostCard({
       )}
 
       <div className="p-4">
+        {/* Pinned chip */}
+        {post.pinned && (
+          <div className="mb-2 flex items-center gap-1 text-coral">
+            <Icon name="push_pin" size={13} fill />
+            <span className="label-caps">Pinned</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between gap-3">
           <Link href={`/rowers/${post.authorId}`} className="focus-ring flex min-w-0 items-center gap-2.5 rounded-lg">
@@ -78,16 +93,32 @@ export default function LockerRoomPostCard({
               <p className="text-[10px] text-charcoal-muted">{timeAgo(post.createdAt)}</p>
             </div>
           </Link>
-          {canDelete && (
-            <button
-              type="button"
-              onClick={() => onDelete?.(post)}
-              aria-label="Delete post"
-              className="focus-ring rounded-lg p-1.5 text-charcoal-light transition-colors hover:text-coral"
-            >
-              <Icon name="delete" size={16} />
-            </button>
-          )}
+          <div className="flex shrink-0 items-center gap-0.5">
+            {canPin && (
+              <button
+                type="button"
+                onClick={() => onTogglePin?.(post)}
+                aria-label={post.pinned ? 'Unpin post' : 'Pin post'}
+                aria-pressed={post.pinned}
+                title={post.pinned ? 'Unpin' : 'Pin to top'}
+                className={`focus-ring rounded-lg p-1.5 transition-colors ${
+                  post.pinned ? 'text-coral' : 'text-charcoal-light hover:text-charcoal'
+                }`}
+              >
+                <Icon name="push_pin" size={16} fill={post.pinned} />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete?.(post)}
+                aria-label="Delete post"
+                className="focus-ring rounded-lg p-1.5 text-charcoal-light transition-colors hover:text-coral"
+              >
+                <Icon name="delete" size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Body */}

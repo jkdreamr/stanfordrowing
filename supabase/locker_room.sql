@@ -109,3 +109,13 @@ drop policy if exists "locker comments insert" on public.locker_room_comments;
 create policy "locker comments insert" on public.locker_room_comments for insert with check (auth.role() = 'authenticated');
 drop policy if exists "locker comments delete" on public.locker_room_comments;
 create policy "locker comments delete" on public.locker_room_comments for delete using (auth.role() = 'authenticated');
+
+-- ---------------------------------------------------------------------------
+-- Pinned posts (admins pin to keep at the top)
+-- ---------------------------------------------------------------------------
+alter table public.locker_room_posts add column if not exists pinned boolean not null default false;
+create index if not exists locker_room_posts_pinned_idx on public.locker_room_posts (pinned desc, created_at desc);
+
+drop policy if exists "locker posts update" on public.locker_room_posts;
+create policy "locker posts update" on public.locker_room_posts
+  for update using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');

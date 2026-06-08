@@ -12,7 +12,15 @@ import {
   fetchLockerPosts,
   removeLockerComment,
   removeLockerReaction,
+  setLockerPinned,
 } from '@/lib/lockerRoom';
+
+/** Pinned posts first, then newest. */
+function sortPosts(list: LockerPost[]): LockerPost[] {
+  return [...list].sort((a, b) =>
+    a.pinned === b.pinned ? b.createdAt.localeCompare(a.createdAt) : a.pinned ? -1 : 1
+  );
+}
 import LockerRoomComposer from '../components/LockerRoomComposer';
 import LockerRoomPostCard from '../components/LockerRoomPostCard';
 import LoadingState from '../components/LoadingState';
@@ -104,6 +112,17 @@ export default function LockerRoomPage() {
     }
   };
 
+  const togglePin = async (post: LockerPost) => {
+    const pinned = !post.pinned;
+    const previous = posts;
+    setPosts((list) => sortPosts(list.map((p) => (p.id === post.id ? { ...p, pinned } : p))));
+    try {
+      await setLockerPinned({ postId: post.id, pinned });
+    } catch {
+      setPosts(previous);
+    }
+  };
+
   const handleDelete = async (post: LockerPost) => {
     if (!window.confirm('Delete this post?')) return;
     const prev = posts;
@@ -126,7 +145,7 @@ export default function LockerRoomPage() {
 
       {currentUser && !needsSchema && (
         <div className="mb-5 mt-3">
-          <LockerRoomComposer user={currentUser} onCreated={(p) => setPosts((prev) => [p, ...prev])} />
+          <LockerRoomComposer user={currentUser} onCreated={(p) => setPosts((prev) => sortPosts([p, ...prev]))} />
         </div>
       )}
 
@@ -167,6 +186,7 @@ export default function LockerRoomPage() {
               onAddComment={addComment}
               onDeleteComment={deleteComment}
               onDelete={handleDelete}
+              onTogglePin={togglePin}
             />
           ))}
         </div>

@@ -10,6 +10,7 @@ interface LockerPostRow {
   media_url: string | null;
   media_type: LockerMediaType;
   link_url: string | null;
+  pinned: boolean | null;
   created_at: string;
   locker_room_reactions?: { user_id: string; emoji: string | null; created_at: string }[];
   locker_room_comments?: { id: string; user_id: string; user_name: string; body: string; parent_id: string | null; created_at: string }[];
@@ -43,6 +44,7 @@ function mapRow(row: LockerPostRow): LockerPost {
         createdAt: c.created_at,
       }))
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt)) satisfies LockerComment[],
+    pinned: row.pinned ?? false,
     createdAt: row.created_at,
   };
 }
@@ -51,10 +53,19 @@ export async function fetchLockerPosts(): Promise<LockerPost[]> {
   const { data, error } = await supabase
     .from('locker_room_posts')
     .select(SELECT)
+    .order('pinned', { ascending: false })
     .order('created_at', { ascending: false });
 
   if (error) throw error;
   return (data as LockerPostRow[]).map(mapRow);
+}
+
+export async function setLockerPinned(params: { postId: string; pinned: boolean }): Promise<void> {
+  const { error } = await supabase
+    .from('locker_room_posts')
+    .update({ pinned: params.pinned })
+    .eq('id', params.postId);
+  if (error) throw error;
 }
 
 export async function createLockerPost(params: {
