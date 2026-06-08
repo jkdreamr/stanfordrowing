@@ -14,7 +14,7 @@ import { Badge, formatPrimary, timeAgo, workoutIcon } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
 import RespectButton from './RespectButton';
-import ProofPreview from './ProofPreview';
+import ProofPreview, { proofKind } from './ProofPreview';
 import CommentSection from './CommentSection';
 
 interface WorkoutPostCardProps {
@@ -65,7 +65,9 @@ export default function WorkoutPostCard({
       {workout.proofUrl && (
         <div className="relative">
           <ProofPreview url={workout.proofUrl} aspect="aspect-[16/10]" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#141a18] to-transparent" />
+          {proofKind(workout.proofUrl) === 'image' && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#141a18] to-transparent" />
+          )}
         </div>
       )}
 
