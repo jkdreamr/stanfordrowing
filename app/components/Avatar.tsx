@@ -7,6 +7,8 @@ interface AvatarProps {
   className?: string;
   /** Show a ring indicating recent activity (used in stories) */
   ring?: boolean;
+  /** Uploaded profile photo; falls back to initials when absent. */
+  src?: string | null;
 }
 
 // Deterministic warm/stone gradient per rower so avatars feel distinct but on-brand.
@@ -24,9 +26,24 @@ function gradientFor(name: string): string {
   return GRADIENTS[hash % GRADIENTS.length];
 }
 
-export default function Avatar({ name, color, size = 40, className = '', ring = false }: AvatarProps) {
+export default function Avatar({ name, color, size = 40, className = '', ring = false, src }: AvatarProps) {
   const initials = getInitials(name);
   const fontSize = Math.round(size * 0.36);
+  const ringShadow = ring ? `0 0 0 2px #0d1110, 0 0 0 4px ${color || '#c8202b'}` : 'none';
+
+  if (src) {
+    return (
+      <span
+        className={`inline-flex shrink-0 overflow-hidden rounded-full ring-1 ring-inset ring-white/10 ${className}`}
+        style={{ width: size, height: size, boxShadow: ringShadow }}
+        aria-hidden
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt="" className="h-full w-full object-cover" />
+      </span>
+    );
+  }
+
   return (
     <span
       className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-charcoal/90 ring-1 ring-inset ring-white/10 ${className}`}
@@ -36,9 +53,7 @@ export default function Avatar({ name, color, size = 40, className = '', ring = 
         fontSize,
         letterSpacing: '0.02em',
         backgroundImage: gradientFor(name),
-        boxShadow: ring
-          ? `0 0 0 2px #0d1110, 0 0 0 4px ${color || '#c8202b'}`
-          : 'none',
+        boxShadow: ringShadow,
       }}
       aria-hidden
     >

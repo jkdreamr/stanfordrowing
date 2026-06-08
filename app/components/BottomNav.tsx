@@ -22,7 +22,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="pb-safe glass fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.07] sm:hidden">
+    <nav className="pb-safe glass fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.07] sm:hidden">
       <div className="flex items-stretch justify-around px-2 pt-2">
         {ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
@@ -33,7 +33,7 @@ export default function BottomNav() {
                 key={item.href}
                 href={item.href}
                 aria-label="Log the work"
-                className="-mt-5 flex flex-col items-center gap-1"
+                className="-mt-5 flex flex-col items-center gap-1 touch-manipulation"
               >
                 <span
                   className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-coral text-white shadow-glow transition-all duration-200 active:scale-90 ${
@@ -54,7 +54,7 @@ export default function BottomNav() {
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex flex-1 flex-col items-center gap-1 pb-1 pt-1 transition-colors active:scale-95 ${
+              className={`flex flex-1 flex-col items-center gap-1 pb-1 pt-1 transition-colors active:scale-95 touch-manipulation ${
                 active ? 'text-charcoal' : 'text-charcoal-muted'
               }`}
             >

@@ -8,6 +8,7 @@ export interface Profile {
   name: string;
   teamId: string;
   isAdmin: boolean;
+  avatarUrl?: string;
   createdAt: string;
 }
 
@@ -17,6 +18,7 @@ interface ProfileRow {
   name: string;
   team_id: string;
   is_admin: boolean;
+  avatar_url: string | null;
   created_at: string;
 }
 
@@ -27,6 +29,7 @@ function rowToProfile(row: ProfileRow): Profile {
     name: row.name,
     teamId: row.team_id,
     isAdmin: row.is_admin,
+    avatarUrl: row.avatar_url ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -36,7 +39,25 @@ export function profileToUser(profile: Profile): User {
     id: profile.id,
     name: profile.name,
     teamId: profile.teamId,
+    avatarUrl: profile.avatarUrl,
   };
+}
+
+/** Upload a new avatar image and save it on the profile. Returns the public URL. */
+export async function uploadAvatar(file: File, authId: string): Promise<string> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const filePath = `${authId}/${Date.now()}.${ext}`;
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, file, { cacheControl: '3600', contentType: file.type || 'image/jpeg', upsert: true });
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+  const url = data.publicUrl;
+
+  const { error } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', authId);
+  if (error) throw error;
+  return url;
 }
 
 export async function getProfileByAuthId(authId: string): Promise<Profile | null> {

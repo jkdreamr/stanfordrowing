@@ -2,6 +2,7 @@ export interface User {
   id: string;
   name: string;
   teamId: string;
+  avatarUrl?: string;
 }
 
 export interface Team {
