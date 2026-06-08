@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LockerPost, LOCKER_TAGS, User } from '@/lib/types';
+import { LockerPost, User } from '@/lib/types';
 import { getTeamById } from '@/lib/data';
 import { timeAgo } from '@/lib/stats';
 import Avatar from './Avatar';
@@ -44,7 +44,6 @@ export default function LockerRoomPostCard({
 }: LockerRoomPostCardProps) {
   const team = getTeamById(post.teamId);
   const color = team?.color ?? '#b51c00';
-  const tag = LOCKER_TAGS[post.tag];
   const reactions = post.reactions ?? [];
   const hasReacted = reactions.some((r) => r.userId === currentUser?.id);
   const canDelete = !!onDelete && (isAdmin || post.authorId === currentUser?.id);
@@ -63,10 +62,6 @@ export default function LockerRoomPostCard({
           </div>
         </Link>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-ink/5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
-            <Icon name={tag.icon} size={14} />
-            {tag.label}
-          </span>
           {canDelete && (
             <button
               type="button"

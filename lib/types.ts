@@ -150,30 +150,6 @@ export interface TeamStats {
 
 // ---- Locker Room (team motivation wall) ----
 
-export type LockerTag =
-  | 'race_day'
-  | 'discipline'
-  | 'team'
-  | 'erg'
-  | 'mentality'
-  | 'recovery'
-  | 'hype';
-
-export interface LockerTagConfig {
-  label: string;
-  icon: string; // Material Symbols glyph name
-}
-
-export const LOCKER_TAGS: Record<LockerTag, LockerTagConfig> = {
-  hype: { label: 'Hype', icon: 'local_fire_department' },
-  race_day: { label: 'Race Day', icon: 'flag' },
-  discipline: { label: 'Discipline', icon: 'fitness_center' },
-  team: { label: 'Team', icon: 'groups' },
-  erg: { label: 'Erg', icon: 'rowing' },
-  mentality: { label: 'Mentality', icon: 'psychology' },
-  recovery: { label: 'Recovery', icon: 'self_improvement' },
-};
-
 export type LockerMediaType = 'image' | 'video' | 'link' | null;
 
 export interface LockerReaction {
@@ -187,7 +163,6 @@ export interface LockerPost {
   authorName: string;
   teamId: string;
   body: string;
-  tag: LockerTag;
   mediaUrl?: string; // uploaded image (Supabase storage)
   mediaType: LockerMediaType;
   linkUrl?: string; // external link or video URL (YouTube/Vimeo/etc)

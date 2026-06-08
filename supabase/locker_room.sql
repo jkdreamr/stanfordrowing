@@ -7,7 +7,7 @@ create table if not exists public.locker_room_posts (
   user_name text not null,
   team_id text not null,
   body text not null default '',
-  tag text not null,
+  tag text,
   media_url text,
   media_type text,          -- 'image' | 'video' | 'link' | null
   link_url text,

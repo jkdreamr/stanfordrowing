@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
-import { LockerMediaType, LockerPost, LockerReaction, LockerTag, User } from '@/lib/types';
+import { LockerMediaType, LockerPost, LockerReaction, User } from '@/lib/types';
 
 interface LockerPostRow {
   id: string;
@@ -7,7 +7,6 @@ interface LockerPostRow {
   user_name: string;
   team_id: string;
   body: string;
-  tag: LockerTag;
   media_url: string | null;
   media_type: LockerMediaType;
   link_url: string | null;
@@ -22,7 +21,6 @@ function mapRow(row: LockerPostRow): LockerPost {
     authorName: row.user_name,
     teamId: row.team_id,
     body: row.body ?? '',
-    tag: row.tag,
     mediaUrl: row.media_url ?? undefined,
     mediaType: row.media_type ?? null,
     linkUrl: row.link_url ?? undefined,
@@ -47,7 +45,6 @@ export async function fetchLockerPosts(): Promise<LockerPost[]> {
 export async function createLockerPost(params: {
   user: User;
   body: string;
-  tag: LockerTag;
   mediaUrl?: string;
   mediaType?: LockerMediaType;
   linkUrl?: string;
@@ -57,7 +54,6 @@ export async function createLockerPost(params: {
     user_name: params.user.name,
     team_id: params.user.teamId,
     body: params.body,
-    tag: params.tag,
     media_url: params.mediaUrl ?? null,
     media_type: params.mediaType ?? null,
     link_url: params.linkUrl ?? null,

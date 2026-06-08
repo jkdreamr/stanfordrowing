@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { LockerMediaType, LockerPost, LockerTag, LOCKER_TAGS, User } from '@/lib/types';
+import { LockerMediaType, LockerPost, User } from '@/lib/types';
 import { createLockerPost, uploadLockerImage } from '@/lib/lockerRoom';
 import Avatar from './Avatar';
 import Icon from './Icon';
@@ -22,7 +22,6 @@ function classifyLink(url: string): { mediaType: LockerMediaType; mediaUrl?: str
 export default function LockerRoomComposer({ user, onCreated }: LockerRoomComposerProps) {
   const [open, setOpen] = useState(false);
   const [body, setBody] = useState('');
-  const [tag, setTag] = useState<LockerTag>('hype');
   const [linkUrl, setLinkUrl] = useState('');
   const [showLink, setShowLink] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -32,7 +31,6 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
 
   const reset = () => {
     setBody('');
-    setTag('hype');
     setLinkUrl('');
     setShowLink(false);
     setFile(null);
@@ -64,7 +62,6 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
       const post = await createLockerPost({
         user,
         body: body.trim(),
-        tag,
         mediaUrl,
         mediaType,
         linkUrl: finalLink,
@@ -102,27 +99,6 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
                 autoFocus
                 className="focus-ring w-full resize-none rounded-xl border border-line bg-container-low/60 px-4 py-3 text-[15px] text-ink placeholder:text-ink-muted"
               />
-
-              {/* Tag picker */}
-              <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
-                {(Object.keys(LOCKER_TAGS) as LockerTag[]).map((key) => {
-                  const cfg = LOCKER_TAGS[key];
-                  const active = tag === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setTag(key)}
-                      className={`flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        active ? 'bg-ink text-white' : 'border border-line bg-surface text-ink-soft hover:border-ink/30'
-                      }`}
-                    >
-                      <Icon name={cfg.icon} size={14} fill={active} />
-                      {cfg.label}
-                    </button>
-                  );
-                })}
-              </div>
 
               {/* Attachments */}
               {file && (

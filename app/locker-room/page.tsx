@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { getUserByEmail, isAdminEmail } from '@/lib/data';
-import { LockerPost, LockerReaction, LockerTag, LOCKER_TAGS, User } from '@/lib/types';
+import { LockerPost, LockerReaction, User } from '@/lib/types';
 import {
   addLockerReaction,
   deleteLockerPost,
@@ -13,7 +13,6 @@ import {
 } from '@/lib/lockerRoom';
 import LockerRoomComposer from '../components/LockerRoomComposer';
 import LockerRoomPostCard from '../components/LockerRoomPostCard';
-import FilterTabs, { FilterTab } from '../components/FilterTabs';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
 
@@ -24,7 +23,6 @@ export default function LockerRoomPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [needsSchema, setNeedsSchema] = useState(false);
-  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     const load = async () => {
@@ -88,29 +86,11 @@ export default function LockerRoomPage() {
     }
   };
 
-  const tabs: FilterTab[] = [
-    { key: 'all', label: 'All' },
-    ...(Object.keys(LOCKER_TAGS) as LockerTag[]).map((k) => ({
-      key: k,
-      label: LOCKER_TAGS[k].label,
-      icon: LOCKER_TAGS[k].icon,
-    })),
-  ];
-
-  const visible = useMemo(
-    () => (filter === 'all' ? posts : posts.filter((p) => p.tag === filter)),
-    [posts, filter]
-  );
-
   return (
     <div className="mx-auto max-w-feed px-4 sm:px-6">
       <div className="pb-2 pt-6 text-center">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Locker Room</h1>
         <p className="mt-1 text-sm text-ink-soft">For when you need a push.</p>
-      </div>
-
-      <div className="sticky top-16 z-10 -mx-4 bg-background/80 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:px-0">
-        <FilterTabs tabs={tabs} active={filter} onChange={setFilter} />
       </div>
 
       {currentUser && !needsSchema && (
@@ -129,16 +109,16 @@ export default function LockerRoomPage() {
         <LoadingState count={3} />
       ) : error ? (
         <EmptyState icon="lock" title="Sign in to see the Locker Room" actionLabel="Log in" actionHref="/login" />
-      ) : visible.length === 0 ? (
+      ) : posts.length === 0 ? (
         <EmptyState
           icon="bolt"
-          title={posts.length === 0 ? 'Nothing on the wall yet.' : 'Nothing tagged that.'}
+          title="Nothing on the wall yet."
           message={
             posts.length === 0
               ? currentUser
                 ? 'Post the first thing that fires up the squad.'
                 : 'Sign in to start the wall.'
-              : 'Try another tag.'
+              : ''
           }
         >
           {!currentUser && (
@@ -152,7 +132,7 @@ export default function LockerRoomPage() {
         </EmptyState>
       ) : (
         <div className="space-y-4 pb-6">
-          {visible.map((post) => (
+          {posts.map((post) => (
             <LockerRoomPostCard
               key={post.id}
               post={post}
