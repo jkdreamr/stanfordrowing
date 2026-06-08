@@ -22,8 +22,9 @@
     -moz-osx-font-smoothing: grayscale;
     /* Prevent scroll bounce on body to stabilize Safari viewport */
     overscroll-behavior-y: none;
-    /* Ensure body fills viewport on mobile Safari */
+    /* Ensure body fills viewport on mobile Safari - use svh for stable small viewport */
     min-height: 100vh;
+    min-height: 100svh;
     min-height: 100dvh;
   }
 
