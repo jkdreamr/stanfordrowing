@@ -80,13 +80,13 @@ export default function WorkoutPostCard({
             <Avatar name={displayName} size={40} src={avatarById?.[workout.oderId]} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[14px] font-semibold tracking-editorial text-charcoal">{displayName}</p>
-              <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-charcoal-muted">
-                <span className="flex items-center gap-1 text-charcoal-soft">
-                  <Icon name={workoutIcon(workout.type)} size={13} />
-                  {getWorkoutLabel(workout, configs)}
+              <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-charcoal-muted">
+                <span className="flex min-w-0 items-center gap-1 text-charcoal-soft">
+                  <Icon name={workoutIcon(workout.type)} size={13} className="shrink-0" />
+                  <span className="truncate">{getWorkoutLabel(workout, configs)}</span>
                 </span>
-                <span className="text-charcoal-light">·</span>
-                <span>{timeAgo(workout.createdAt)}</span>
+                <span className="shrink-0 text-charcoal-light">·</span>
+                <span className="shrink-0">{timeAgo(workout.createdAt)}</span>
               </div>
             </div>
           </Link>
@@ -96,11 +96,11 @@ export default function WorkoutPostCard({
         </div>
 
         {/* Main stat — one dominant number */}
-        <div className="mt-4 flex items-end gap-2">
-          <span className="font-display text-[52px] font-bold leading-[0.9] tracking-tightest text-charcoal tabular">
+        <div className="mt-4 flex max-w-full items-end gap-2 overflow-hidden">
+          <span className="font-display text-[40px] xs:text-[46px] sm:text-[52px] font-bold leading-[0.9] tracking-tightest text-charcoal tabular">
             {formatPrimary(primary.value, primary.unit)}
           </span>
-          <span className="pb-1 text-base font-medium text-charcoal-muted">{UNIT_LABEL[primary.unit] ?? primary.unit}</span>
+          <span className="shrink-0 pb-1 text-base font-medium text-charcoal-muted">{UNIT_LABEL[primary.unit] ?? primary.unit}</span>
         </div>
 
         {/* Badges — quiet tags */}

@@ -6,6 +6,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      screens: {
+        xs: '400px',
+      },
       colors: {
         // ── Cinematic dark base — charcoal / black-green / deep stone ──
         // Token names are kept stable so components read semantically:
