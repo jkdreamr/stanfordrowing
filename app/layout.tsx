@@ -19,6 +19,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // App-like feel: no pinch/double-tap zoom on the UI. Media that should zoom
+  // (proof photos) opens in its own tab, where zoom works normally.
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: 'cover',
   themeColor: '#0d1110',
 };

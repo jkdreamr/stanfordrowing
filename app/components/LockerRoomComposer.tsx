@@ -51,7 +51,7 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
 
       if (file) {
         mediaUrl = await uploadLockerImage(file, user.id);
-        mediaType = 'image';
+        mediaType = file.type.startsWith('video/') ? 'video' : 'image';
       } else if (linkUrl.trim()) {
         const classified = classifyLink(linkUrl.trim());
         mediaType = classified.mediaType;
@@ -103,9 +103,9 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
 
               {file && (
                 <div className="flex items-center justify-between rounded-lg border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[12px]">
-                  <span className="flex items-center gap-1.5 truncate text-charcoal-soft">
-                    <Icon name="image" size={14} />
-                    {file.name}
+                  <span className="flex min-w-0 items-center gap-1.5 text-charcoal-soft">
+                    <Icon name={file.type.startsWith('video/') ? 'videocam' : 'image'} size={14} className="shrink-0" />
+                    <span className="truncate">{file.name}</span>
                   </span>
                   <button type="button" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value=''; }} className="flex h-8 w-8 items-center justify-center rounded-full text-coral hover:bg-coral/10 touch-manipulation">
                     <Icon name="close" size={16} />
@@ -129,9 +129,20 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
                   <input
                     ref={fileRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     className="hidden"
-                    onChange={(e) => { setFile(e.target.files?.[0] ?? null); setShowLink(false); setLinkUrl(''); }}
+                    onChange={(e) => {
+                      const picked = e.target.files?.[0] ?? null;
+                      if (picked && picked.size > 50 * 1024 * 1024) {
+                        setError('That file is too big — keep it under 50 MB.');
+                        e.target.value = '';
+                        return;
+                      }
+                      setError('');
+                      setFile(picked);
+                      setShowLink(false);
+                      setLinkUrl('');
+                    }}
                   />
                   <button
                     type="button"
@@ -139,7 +150,7 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
                     className="focus-ring flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-medium text-charcoal-muted hover:bg-stone-light hover:text-charcoal touch-manipulation"
                   >
                     <Icon name="add_photo_alternate" size={18} />
-                    Photo
+                    Media
                   </button>
                   <button
                     type="button"

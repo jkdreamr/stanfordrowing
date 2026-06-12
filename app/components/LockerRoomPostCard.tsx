@@ -65,6 +65,15 @@ export default function LockerRoomPostCard({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={post.mediaUrl} alt="" loading="lazy" className="w-full bg-stone-light object-cover" />
       )}
+      {post.mediaType === 'video' && post.mediaUrl && (
+        <video
+          src={post.mediaUrl}
+          controls
+          playsInline
+          preload="metadata"
+          className="max-h-[480px] w-full bg-black object-contain"
+        />
+      )}
       {post.linkUrl && embed && (
         <div className="aspect-video w-full bg-charcoal">
           <iframe

@@ -107,7 +107,7 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center" onClick={onClose} data-no-swipe>
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
 
       <div
