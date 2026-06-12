@@ -39,13 +39,16 @@ function saturate(s: number): Matrix {
   };
 }
 
-function sepia(a: number): Matrix {
-  const t = (x: number, y: number) => x + (y - x) * a;
+// NOTE: no inner closures here — the Next 14 SWC minifier mis-inlines them
+// (it constant-folds some calls and leaves dangling identifiers), which
+// crashed every page at module load in production builds.
+function sepia(amount: number): Matrix {
+  const keep = 1 - amount;
   return {
     m: [
-      t(1, 0.393), t(0, 0.769), t(0, 0.189),
-      t(0, 0.349), t(1, 0.686), t(0, 0.168),
-      t(0, 0.272), t(0, 0.534), t(1, 0.131),
+      keep + 0.393 * amount, 0.769 * amount, 0.189 * amount,
+      0.349 * amount, keep + 0.686 * amount, 0.168 * amount,
+      0.272 * amount, 0.534 * amount, keep + 0.131 * amount,
     ],
     o: [0, 0, 0],
   };
