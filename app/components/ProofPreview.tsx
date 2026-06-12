@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
 import Icon from './Icon';
 
 interface ProofPreviewProps {
@@ -20,22 +23,48 @@ export function proofKind(url: string): ProofKind {
   return 'link';
 }
 
+/**
+ * Auto-playing feed video that only plays while on screen. Off-screen videos
+ * pause and only preload metadata, so a video-heavy feed stays smooth.
+ */
+function AutoPlayVideo({ url }: { url: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) video.play().catch(() => {});
+        else video.pause();
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <video
+      ref={ref}
+      src={url}
+      muted
+      loop
+      playsInline
+      controls
+      preload="metadata"
+      className="h-full w-full object-cover"
+    />
+  );
+}
+
 export default function ProofPreview({ url, className = '', aspect = 'aspect-video' }: ProofPreviewProps) {
   const kind = proofKind(url);
 
   if (kind === 'video') {
     return (
       <div className={`relative w-full overflow-hidden bg-black ${aspect} ${className}`}>
-        <video
-          src={url}
-          autoPlay
-          muted
-          loop
-          playsInline
-          controls
-          preload="auto"
-          className="h-full w-full object-cover"
-        />
+        <AutoPlayVideo url={url} />
       </div>
     );
   }

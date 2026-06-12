@@ -25,6 +25,8 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
   const [comments, setComments] = useState<StoryComment[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  // Track the on-screen keyboard so the comment bar floats above it on mobile.
+  const [kbInset, setKbInset] = useState(0);
 
   const next = () => setIndex((i) => (i + 1 >= ordered.length ? (onClose(), i) : i + 1));
   const prev = () => setIndex((i) => Math.max(0, i - 1));
@@ -60,6 +62,20 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ordered.length]);
 
+  // Keep the comment input above the mobile keyboard (visualViewport shrinks on focus).
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setKbInset(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    update();
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
+
   if (!story) return null;
   const isOwn = currentUser?.id && story.userId === currentUser.id;
   const recent = comments.slice(-4);
@@ -91,7 +107,7 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
 
       <div
@@ -165,7 +181,13 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
         </div>
 
         {/* Bottom: caption + comments (bottom-left) + input */}
-        <div className="absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 pb-3 pt-14">
+        <div
+          className="absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 pt-14 transition-transform duration-150"
+          style={{
+            transform: kbInset ? `translateY(-${kbInset}px)` : undefined,
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+          }}
+        >
           {story.caption && (
             <p className="mb-2 px-1 text-[14px] leading-relaxed text-white/90">{story.caption}</p>
           )}
@@ -204,7 +226,7 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
                 maxLength={280}
                 enterKeyHint="send"
                 placeholder="Add a comment…"
-                className="h-12 flex-1 rounded-full border border-white/15 bg-white/12 px-4 text-[15px] text-white placeholder-white/50 backdrop-blur focus:outline-none focus:ring-2 focus:ring-white/30"
+                className="h-12 min-w-0 flex-1 rounded-full border border-white/15 bg-white/12 px-4 text-[16px] text-white placeholder-white/50 backdrop-blur focus:outline-none focus:ring-2 focus:ring-white/30"
               />
               <button
                 type="submit"

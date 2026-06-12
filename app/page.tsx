@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { formatPreciseNumber, getDaysRemaining, getWorkoutWeightedScore } from '@/lib/data';
 import { getAllProfiles, getProfileByAuthId, profileToUser } from '@/lib/userProfile';
@@ -21,6 +21,7 @@ import FeedList from './components/FeedList';
 import WeeklySummaryCard from './components/WeeklySummaryCard';
 import TrainingStories from './components/TrainingStories';
 import TrainingStoryModal from './components/TrainingStoryModal';
+import StoryComposer from './components/StoryComposer';
 import LoadingState from './components/LoadingState';
 import LoggedOutFeed from './components/LoggedOutFeed';
 import Avatar from './components/Avatar';
@@ -38,6 +39,30 @@ export default function FeedPage() {
   const [storyError, setStoryError] = useState('');
   const [seenMap, setSeenMap] = useState<Record<string, string>>({});
   const [avatarById, setAvatarById] = useState<Record<string, string>>({});
+  const [composerOpen, setComposerOpen] = useState(false);
+  // Instagram-style: a left swipe on the feed opens the story camera.
+  const swipe = useRef<{ x: number; y: number; t: number; skip: boolean } | null>(null);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    const target = e.target as HTMLElement;
+    // Ignore swipes that begin in horizontal-scroll regions (the stories rail)
+    // or near the right edge (browser forward-nav gesture).
+    const skip = !!target.closest?.('[data-no-swipe]') || t.clientX > window.innerWidth - 28;
+    swipe.current = { x: t.clientX, y: t.clientY, t: Date.now(), skip };
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s = swipe.current;
+    swipe.current = null;
+    if (!s || s.skip || !currentUser || composerOpen || viewerAuthor) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    if (dx < -70 && Math.abs(dx) > Math.abs(dy) * 1.8 && Date.now() - s.t < 600) {
+      setComposerOpen(true);
+    }
+  };
 
   const loadUser = async (authId: string | undefined) => {
     if (!authId) { setCurrentUser(null); return; }
@@ -216,7 +241,7 @@ export default function FeedPage() {
 
   return (
     <>
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="pb-2 pt-6 sm:pt-8">
           <h1 className="font-display text-2xl font-semibold tracking-editorial text-charcoal sm:text-[28px]">
             Latest from the squad
@@ -231,7 +256,7 @@ export default function FeedPage() {
           <div className="mx-auto w-full max-w-feed flex-1">
             {/* Stories */}
             {!loading && (currentUser || stories.length > 0) && (
-              <div className="mb-6">
+              <div className="mb-6" data-no-swipe>
                 <TrainingStories
                   stories={stories}
                   currentUser={currentUser}
@@ -303,6 +328,11 @@ export default function FeedPage() {
           </aside>
         </div>
       </div>
+
+      {/* Story composer — opened by swiping left on the feed (mobile) */}
+      {composerOpen && currentUser && (
+        <StoryComposer onPick={handleUploadStory} onClose={() => setComposerOpen(false)} />
+      )}
 
       {/* Story viewer */}
       {viewerStories.length > 0 && (

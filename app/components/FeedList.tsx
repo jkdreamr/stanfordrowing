@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Workout, WorkoutType, WorkoutTypeConfig, User } from '@/lib/types';
 import { getWorkoutBadges } from '@/lib/stats';
 import WorkoutPostCard from './WorkoutPostCard';
@@ -19,6 +19,9 @@ interface FeedListProps {
   emptyMessage?: string;
 }
 
+/** Cards rendered up front; more mount on demand so long feeds stay smooth. */
+const PAGE_SIZE = 15;
+
 export default function FeedList({
   workouts,
   configs,
@@ -31,6 +34,8 @@ export default function FeedList({
   emptyTitle = 'No work logged yet.',
   emptyMessage = 'Someone has to start.',
 }: FeedListProps) {
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
   const byAuthor = useMemo(() => {
     const map = new Map<string, Workout[]>();
     for (const w of allWorkouts ?? workouts) {
@@ -53,9 +58,12 @@ export default function FeedList({
     );
   }
 
+  const visible = workouts.slice(0, visibleCount);
+  const remaining = workouts.length - visible.length;
+
   return (
     <div className="space-y-5">
-      {workouts.map((w) => (
+      {visible.map((w) => (
         <WorkoutPostCard
           key={w.id}
           workout={w}
@@ -68,6 +76,16 @@ export default function FeedList({
           onDeleteComment={onDeleteComment}
         />
       ))}
+
+      {remaining > 0 && (
+        <button
+          type="button"
+          onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+          className="focus-ring flex min-h-[48px] w-full items-center justify-center rounded-xl border border-stone/40 bg-white/[0.03] text-[13px] font-semibold text-charcoal-soft transition-colors hover:bg-white/[0.06] active:scale-[0.99] touch-manipulation"
+        >
+          Show {Math.min(remaining, PAGE_SIZE)} more
+        </button>
+      )}
     </div>
   );
 }
