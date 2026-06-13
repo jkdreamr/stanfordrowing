@@ -23,9 +23,9 @@ function mapRow(row: StoryRow): Story {
   };
 }
 
-/** Stories from the last 48 hours, newest first (Instagram-style ephemerality). */
+/** Stories from the last 24 hours, newest first (Instagram-style ephemerality). */
 export async function fetchStories(): Promise<Story[]> {
-  const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from('stories')
     .select('*')

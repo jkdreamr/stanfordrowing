@@ -7,7 +7,7 @@ import Avatar from './Avatar';
 import Icon from './Icon';
 
 interface TrainingStoriesProps {
-  /** Stories from the last 48h, newest-first. */
+  /** Stories from the last 24h, newest-first. */
   stories: Story[];
   currentUser: User | null;
   currentUserAvatarUrl?: string | null;
