@@ -11,9 +11,34 @@ const mono = JetBrains_Mono({
   display: 'swap',
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : 'http://localhost:3000');
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: 'Cardinal Row',
-  description: 'Summer work, kept honest.',
+  description: 'Stanford Rowing — summer training, kept honest.',
+  applicationName: 'Cardinal Row',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Cardinal Row',
+  },
+  openGraph: {
+    title: 'Cardinal Row',
+    description: 'Stanford Rowing — summer training, kept honest.',
+    siteName: 'Cardinal Row',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Cardinal Row',
+    description: 'Stanford Rowing — summer training, kept honest.',
+  },
 };
 
 export const viewport: Viewport = {
