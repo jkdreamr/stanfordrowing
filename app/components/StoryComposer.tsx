@@ -119,6 +119,26 @@ export default function StoryComposer({ onPick, onClose }: StoryComposerProps) {
 
   const filter = FILTERS.find((f) => f.id === filterId) ?? FILTERS[0];
 
+  // Instagram: the camera sits left of the feed, so a left-swipe on the
+  // capture screen returns to the feed. Only on the pick stage — editing a
+  // photo (filters, draggable text) must not be hijacked.
+  const swipe = useRef<{ x: number; y: number; t: number } | null>(null);
+  const onStageTouchStart = (e: React.TouchEvent) => {
+    if (photo) { swipe.current = null; return; }
+    const t = e.touches[0];
+    swipe.current = t ? { x: t.clientX, y: t.clientY, t: Date.now() } : null;
+  };
+  const onStageTouchEnd = (e: React.TouchEvent) => {
+    const s = swipe.current;
+    swipe.current = null;
+    if (!s) return;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    if (dx < -70 && Math.abs(dx) > Math.abs(dy) * 1.8 && Date.now() - s.t < 600) onClose();
+  };
+
   // Free the preview object URL when it changes / on unmount.
   useEffect(() => {
     const url = photo?.url;
@@ -234,7 +254,7 @@ export default function StoryComposer({ onPick, onClose }: StoryComposerProps) {
   // ------------------------------------------------------------------ render
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-black animate-fade-in" role="dialog" aria-label="New story" data-no-swipe>
+    <div className="fixed inset-0 z-[70] flex flex-col bg-black animate-fade-in" role="dialog" aria-label="New story" data-no-swipe onTouchStart={onStageTouchStart} onTouchEnd={onStageTouchEnd}>
       {/* Top bar */}
       <div
         className="z-10 flex items-center justify-between px-4 pb-3"
