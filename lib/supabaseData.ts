@@ -12,6 +12,7 @@ interface SupabaseWorkoutRow {
   distance: number | null;
   notes: string | null;
   proof_url: string | null;
+  proof_urls: string[] | null;
   activity_name: string | null;
   workout_reactions?: { user_id: string; created_at: string }[];
   created_at: string;
@@ -87,6 +88,7 @@ export async function fetchWorkouts(): Promise<Workout[]> {
     distance: row.distance ?? undefined,
     notes: row.notes ?? undefined,
     proofUrl: row.proof_url ?? undefined,
+    proofUrls: row.proof_urls ?? undefined,
     activityName: row.activity_name ?? undefined,
     reactions: (row.workout_reactions ?? []).map(reaction => ({
       userId: reaction.user_id,
@@ -165,6 +167,7 @@ export async function createWorkout(params: {
   distance?: number;
   notes?: string;
   proofUrl?: string;
+  proofUrls?: string[];
   activityName?: string;
   date: string;
 }): Promise<Workout> {
@@ -178,6 +181,7 @@ export async function createWorkout(params: {
     distance: params.distance ?? null,
     notes: params.notes ?? null,
     proof_url: params.proofUrl ?? null,
+    proof_urls: params.proofUrls && params.proofUrls.length > 0 ? params.proofUrls : null,
     activity_name: params.activityName ?? null,
   };
 
@@ -202,6 +206,7 @@ export async function createWorkout(params: {
     distance: row.distance ?? undefined,
     notes: row.notes ?? undefined,
     proofUrl: row.proof_url ?? undefined,
+    proofUrls: row.proof_urls ?? undefined,
     activityName: row.activity_name ?? undefined,
     reactions: [],
     createdAt: row.created_at,

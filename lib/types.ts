@@ -26,6 +26,7 @@ export interface Workout {
   splitTime?: string;
   notes?: string;
   proofUrl?: string;
+  proofUrls?: string[];
   activityName?: string;
   reactions?: WorkoutReaction[];
   comments?: WorkoutComment[];

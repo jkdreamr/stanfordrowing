@@ -63,15 +63,29 @@ export default function WorkoutPostCard({
 
   return (
     <article className="card group animate-fade-in overflow-hidden">
-      {/* Proof image — full bleed at top if available */}
-      {workout.proofUrl && (
+      {/* Proof — a swipeable carousel when there are several, else a single full-bleed */}
+      {workout.proofUrls && workout.proofUrls.length > 1 ? (
+        <div className="relative" data-no-swipe>
+          <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto">
+            {workout.proofUrls.map((u, i) => (
+              <div key={i} className="w-full shrink-0 snap-center">
+                <ProofPreview url={u} aspect="aspect-[16/10]" />
+              </div>
+            ))}
+          </div>
+          <span className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
+            <Icon name="photo_library" size={12} />
+            {workout.proofUrls.length}
+          </span>
+        </div>
+      ) : workout.proofUrl ? (
         <div className="relative">
           <ProofPreview url={workout.proofUrl} aspect="aspect-[16/10]" />
           {proofKind(workout.proofUrl) === 'image' && (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#141a18] to-transparent" />
           )}
         </div>
-      )}
+      ) : null}
 
       <div className="p-5">
         {/* Author row */}
@@ -123,7 +137,7 @@ export default function WorkoutPostCard({
 
         {/* Caption */}
         {(caption || workout.activityName) && (
-          <p className="mt-3 text-[13.5px] leading-relaxed text-charcoal-soft">
+          <p className="mt-3 break-words text-[13.5px] leading-relaxed text-charcoal-soft">
             {workout.activityName ? <span className="font-semibold text-charcoal">{workout.activityName} — </span> : null}
             {caption}
           </p>

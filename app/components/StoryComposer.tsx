@@ -115,6 +115,7 @@ export default function StoryComposer({ onPick, onClose }: StoryComposerProps) {
   const [text, setText] = useState('');
   const [textColor, setTextColor] = useState(TEXT_COLORS[0]);
   const [textPos, setTextPos] = useState({ x: 50, y: 42 }); // % of stage
+  const [textScale, setTextScale] = useState(1);
   const [editingText, setEditingText] = useState(false);
 
   const filter = FILTERS.find((f) => f.id === filterId) ?? FILTERS[0];
@@ -169,20 +170,50 @@ export default function StoryComposer({ onPick, onClose }: StoryComposerProps) {
     setFilterId('normal');
     setText('');
     setTextPos({ x: 50, y: 42 });
+    setTextScale(1);
     setPhoto({ url: URL.createObjectURL(file), file });
   };
 
-  // Drag the text sticker around the stage.
-  const onTextDrag = (e: React.TouchEvent) => {
+  // One-finger drag moves the text sticker; two-finger pinch resizes it.
+  const pinch = useRef<{ dist: number; scale: number } | null>(null);
+  const moved = useRef(false);
+
+  const fingerDist = (a: React.Touch, b: React.Touch) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+  const onTextTouchStart = (e: React.TouchEvent) => {
+    moved.current = false;
+    if (e.touches.length === 2) {
+      pinch.current = { dist: fingerDist(e.touches[0], e.touches[1]), scale: textScale };
+    }
+  };
+
+  const onTextTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length >= 2 && pinch.current) {
+      moved.current = true;
+      const d = fingerDist(e.touches[0], e.touches[1]);
+      const next = pinch.current.scale * (d / pinch.current.dist);
+      setTextScale(Math.min(4, Math.max(0.4, next)));
+      return;
+    }
     const stage = stageRef.current;
-    if (!stage) return;
     const point = e.touches[0];
-    if (!point) return;
+    if (!stage || !point) return;
+    moved.current = true;
     const rect = stage.getBoundingClientRect();
     setTextPos({
       x: Math.min(90, Math.max(10, ((point.clientX - rect.left) / rect.width) * 100)),
       y: Math.min(85, Math.max(10, ((point.clientY - rect.top) / rect.height) * 100)),
     });
+  };
+
+  const onTextTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) pinch.current = null;
+  };
+
+  // Suppress the tap-to-edit if the touch was a drag/pinch, not a tap.
+  const onTextClick = () => {
+    if (moved.current) { moved.current = false; return; }
+    setEditingText(true);
   };
 
   /** Bake filter + text into a JPEG and post it. */
@@ -225,7 +256,7 @@ export default function StoryComposer({ onPick, onClose }: StoryComposerProps) {
 
       const caption = text.trim();
       if (caption) {
-        const fontSize = Math.round(w * 0.075);
+        const fontSize = Math.round(w * 0.075 * textScale);
         ctx.font = `700 ${fontSize}px -apple-system, system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -338,14 +369,17 @@ export default function StoryComposer({ onPick, onClose }: StoryComposerProps) {
             {text.trim() && !editingText && (
               <div
                 role="button"
-                aria-label="Move text"
-                onTouchMove={onTextDrag}
-                onClick={() => setEditingText(true)}
-                className="absolute -translate-x-1/2 -translate-y-1/2 cursor-grab select-none whitespace-pre-wrap px-4 text-center text-[28px] font-bold leading-tight"
+                aria-label="Move or pinch to resize text"
+                onTouchStart={onTextTouchStart}
+                onTouchMove={onTextTouchMove}
+                onTouchEnd={onTextTouchEnd}
+                onClick={onTextClick}
+                className="absolute -translate-x-1/2 -translate-y-1/2 cursor-grab select-none whitespace-pre-wrap px-4 text-center font-bold leading-tight"
                 style={{
                   left: `${textPos.x}%`,
                   top: `${textPos.y}%`,
                   color: textColor,
+                  fontSize: `${Math.round(28 * textScale)}px`,
                   textShadow: '0 1px 12px rgba(0,0,0,0.55)',
                   maxWidth: '92%',
                   touchAction: 'none',

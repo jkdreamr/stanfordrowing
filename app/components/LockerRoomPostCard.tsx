@@ -134,7 +134,7 @@ export default function LockerRoomPostCard({
 
         {/* Body */}
         {post.body && (
-          <p className="mt-3 whitespace-pre-line text-[14px] leading-relaxed text-charcoal">{post.body}</p>
+          <p className="mt-3 whitespace-pre-line break-words text-[14px] leading-relaxed text-charcoal">{post.body}</p>
         )}
 
         {/* Link (non-embed) */}

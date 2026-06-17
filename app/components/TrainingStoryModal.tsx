@@ -25,6 +25,7 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
   const [comments, setComments] = useState<StoryComment[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [commentError, setCommentError] = useState('');
   // Track the on-screen keyboard so the comment bar floats above it on mobile.
   const [kbInset, setKbInset] = useState(0);
 
@@ -85,12 +86,13 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
     const body = draft.trim();
     if (!body || !currentUser || sending) return;
     setSending(true);
+    setCommentError('');
     try {
       const c = await addStoryComment({ storyId: story.id, userId: currentUser.id, userName: currentUser.name, body });
       setComments((prev) => [...prev, c]);
       setDraft('');
     } catch {
-      /* keep the draft so the user can retry */
+      setCommentError('Could not post. Try again.');
     } finally {
       setSending(false);
     }
@@ -246,6 +248,7 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
           ) : (
             <p className="px-1 pb-1 text-[12px] text-white/55">Sign in to comment.</p>
           )}
+          {commentError && <p className="mt-1.5 px-1 text-[12px] text-coral">{commentError}</p>}
         </div>
       </div>
     </div>

@@ -62,6 +62,7 @@ export default function RowerProfilePage() {
   const [filter, setFilter] = useState('all');
   const [editing, setEditing] = useState<Workout | null>(null);
   const [editValues, setEditValues] = useState({ type: 'rowing_no_pieces' as WorkoutType, minutes: '', distance: '', notes: '' });
+  const [editError, setEditError] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
@@ -182,6 +183,7 @@ export default function RowerProfilePage() {
       distance: w.distance ? String(w.distance) : '',
       notes: w.notes ?? '',
     });
+    setEditError('');
   };
 
   const saveEdit = async () => {
@@ -190,8 +192,9 @@ export default function RowerProfilePage() {
     const basis = config?.basis ?? 'minutes';
     const minutes = Number(editValues.minutes) || 0;
     const distance = editValues.distance ? Number(editValues.distance) : undefined;
-    if (basis === 'minutes' && minutes <= 0) return;
-    if (basis === 'distance' && (!distance || distance <= 0)) return;
+    if (basis === 'minutes' && minutes <= 0) { setEditError('Enter minutes greater than 0.'); return; }
+    if (basis === 'distance' && (!distance || distance <= 0)) { setEditError('Enter a distance greater than 0.'); return; }
+    setEditError('');
     const updated: Workout = {
       ...editing,
       type: editValues.type,
@@ -204,7 +207,7 @@ export default function RowerProfilePage() {
       setAllWorkouts((prev) => prev.map((w) => (w.id === updated.id ? { ...w, ...updated } : w)));
       setEditing(null);
     } catch {
-      /* keep modal open */
+      setEditError('Could not save. Please try again.');
     }
   };
 
@@ -354,6 +357,7 @@ export default function RowerProfilePage() {
                 <textarea value={editValues.notes} onChange={(e) => setEditValues((v) => ({ ...v, notes: e.target.value }))} rows={2} className="focus-ring w-full resize-none rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
               </div>
             </div>
+            {editError && <p role="alert" className="mt-4 text-[12px] font-medium text-coral">{editError}</p>}
             <div className="mt-5 flex items-center justify-end gap-2">
               <button type="button" onClick={() => setEditing(null)} className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-charcoal-muted hover:text-charcoal">Cancel</button>
               <button type="button" onClick={saveEdit} className="rounded-full bg-coral px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-coral-dark">Save</button>

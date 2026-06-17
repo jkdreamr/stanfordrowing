@@ -6,7 +6,7 @@ import { DEFAULT_PLAN_MILEAGES, formatPreciseNumber, getPstDateString } from '@/
 import { getProfileByAuthId, isStanfordEmail, profileToUser } from '@/lib/userProfile';
 import { User, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { supabase } from '@/lib/supabaseClient';
-import { createWorkout, fetchMultipliers, updateWorkoutRow } from '@/lib/supabaseData';
+import { createWorkout, fetchMultipliers } from '@/lib/supabaseData';
 import { getWorkoutWeightedScore } from '@/lib/data';
 import Icon from '../components/Icon';
 
@@ -38,12 +38,13 @@ export default function LogWorkout() {
   const [distanceKm, setDistanceKm] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [proofUrl, setProofUrl] = useState<string>('');
-  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [proofFileInputKey, setProofFileInputKey] = useState(0);
   const [proofUploadError, setProofUploadError] = useState('');
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [activityName, setActivityName] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [lastScore, setLastScore] = useState(0);
   const [workoutTypeConfigs, setWorkoutTypeConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
@@ -101,66 +102,66 @@ export default function LogWorkout() {
     const distanceValue = parseFloat(distanceKm) || 0;
     const planMileage = planMileages[sessionDate] ?? 0;
 
-    if (category === 'session' && planMileage <= 0) return;
-    if (category !== 'session') {
-      if (basis === 'minutes' && minutes <= 0) return;
-      if (basis === 'distance' && distanceValue <= 0) return;
+    // Validate with visible feedback — never fail silently (a dead-looking button).
+    if (category === 'session') {
+      if (planMileage <= 0) { setFormError('No session mileage is set for this date yet.'); return; }
+    } else if (category === 'other' && !activityName.trim()) {
+      setFormError('Name the activity first.'); return;
+    } else if (basis === 'minutes' && minutes <= 0) {
+      setFormError('Enter how many minutes you did.'); return;
+    } else if (basis === 'distance' && distanceValue <= 0) {
+      setFormError('Enter your distance in km.'); return;
     }
 
-    setIsSubmitting(true);
+    setFormError('');
     setProofUploadError('');
+    setIsSubmitting(true);
 
     const date = category === 'session' ? sessionDate : getPstDateString();
-    const fileToUpload = proofFile;
-    const initialProofUrl = fileToUpload ? undefined : proofUrl || undefined;
 
     try {
+      // Upload proof files FIRST so the workout is never saved without its proof,
+      // and so a failed upload can't leave the button stuck (everything is awaited).
+      const uploadedUrls: string[] = [];
+      if (proofFiles.length > 0) {
+        setIsUploadingProof(true);
+        const ownerId = selectedUser.id;
+        for (const file of proofFiles) {
+          const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+          const filePath = `${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from('workout-proofs')
+            .upload(filePath, file, { cacheControl: '3600', contentType: file.type || undefined });
+          if (uploadError) throw new Error(uploadError.message);
+          uploadedUrls.push(supabase.storage.from('workout-proofs').getPublicUrl(filePath).data.publicUrl);
+        }
+        setIsUploadingProof(false);
+      }
+
+      const proofUrlValue = uploadedUrls[0] ?? (proofUrl.trim() || undefined);
+
       const createdWorkout = await createWorkout({
         user: selectedUser,
         type,
         minutes: category === 'session' ? 0 : basis === 'minutes' ? minutes : 0,
         distance: category === 'session' ? planMileage : distanceValue > 0 ? distanceValue : undefined,
         notes: notes || undefined,
-        proofUrl: initialProofUrl,
+        proofUrl: proofUrlValue,
+        proofUrls: uploadedUrls.length > 1 ? uploadedUrls : undefined,
         activityName: activityName.trim() || undefined,
         date,
       });
 
-      const score = getWorkoutWeightedScore(createdWorkout, workoutTypeConfigs);
-      setLastScore(score);
-
-      if (fileToUpload) {
-        setIsUploadingProof(true);
-        const fileExtension = fileToUpload.name.split('.').pop()?.toLowerCase() || 'jpg';
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExtension}`;
-        const ownerId = selectedUser.id;
-        const filePath = `${ownerId}/${fileName}`;
-        void (async () => {
-          try {
-            const { error: uploadError } = await supabase.storage
-              .from('workout-proofs')
-              .upload(filePath, fileToUpload, { cacheControl: '3600' });
-            if (uploadError) {
-              setProofUploadError(`Upload failed: ${uploadError.message}`);
-              setIsUploadingProof(false);
-              return;
-            }
-            const { data: publicUrlData } = supabase.storage.from('workout-proofs').getPublicUrl(filePath);
-            await updateWorkoutRow({ ...createdWorkout, proofUrl: publicUrlData.publicUrl });
-            setIsUploadingProof(false);
-            setShowSuccess(true);
-            setTimeout(() => { setShowSuccess(false); resetForm(); }, 2500);
-          } catch {
-            setProofUploadError('Upload failed. Try again.');
-            setIsUploadingProof(false);
-          }
-        })();
-      } else {
-        setShowSuccess(true);
-        setTimeout(() => { setShowSuccess(false); resetForm(); }, 2500);
-      }
-    } catch {
+      setLastScore(getWorkoutWeightedScore(createdWorkout, workoutTypeConfigs));
+      setShowSuccess(true);
+      setTimeout(() => { setShowSuccess(false); resetForm(); }, 2500);
+    } catch (err) {
+      const msg = (err as Error)?.message;
+      setProofUploadError(msg ? `Upload failed: ${msg}` : '');
+      setFormError('Could not log it. Check your connection and try again.');
+    } finally {
       setIsSubmitting(false);
+      setIsUploadingProof(false);
     }
   };
 
@@ -174,11 +175,12 @@ export default function LogWorkout() {
     setDistanceKm('');
     setNotes('');
     setProofUrl('');
-    setProofFile(null);
+    setProofFiles([]);
     setProofFileInputKey((p) => p + 1);
     setProofUploadError('');
     setActivityName('');
     setIsSubmitting(false);
+    setFormError('');
   };
 
   if (isAuthLoading) {
@@ -250,7 +252,7 @@ export default function LogWorkout() {
               <button
                 key={cat.value}
                 type="button"
-                onClick={() => setCategory(cat.value)}
+                onClick={() => { setCategory(cat.value); setFormError(''); }}
                 className={`focus-ring flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-xl border py-3 transition-all active:scale-95 touch-manipulation ${
                   category === cat.value
                     ? 'border-coral bg-coral-soft text-coral'
@@ -302,7 +304,7 @@ export default function LogWorkout() {
           <input
             type="text"
             value={activityName}
-            onChange={(e) => setActivityName(e.target.value)}
+            onChange={(e) => { setActivityName(e.target.value); setFormError(''); }}
             placeholder="What was it? e.g. Basketball"
             className={inputClass}
           />
@@ -319,7 +321,7 @@ export default function LogWorkout() {
                   inputMode="decimal"
                   enterKeyHint="next"
                   value={distanceKm}
-                  onChange={(e) => setDistanceKm(e.target.value)}
+                  onChange={(e) => { setDistanceKm(e.target.value); setFormError(''); }}
                   placeholder="0"
                   step="0.1"
                   min="0"
@@ -334,7 +336,7 @@ export default function LogWorkout() {
                   inputMode="numeric"
                   enterKeyHint="next"
                   value={minutes || ''}
-                  onChange={(e) => setMinutes(Math.max(0, Number(e.target.value)))}
+                  onChange={(e) => { setMinutes(Math.max(0, Number(e.target.value))); setFormError(''); }}
                   placeholder="0"
                   min="0"
                   className={inputClass}
@@ -351,7 +353,7 @@ export default function LogWorkout() {
                   inputMode="decimal"
                   enterKeyHint="next"
                   value={distanceKm}
-                  onChange={(e) => setDistanceKm(e.target.value)}
+                  onChange={(e) => { setDistanceKm(e.target.value); setFormError(''); }}
                   placeholder="0"
                   step="0.1"
                   min="0"
@@ -400,7 +402,7 @@ export default function LogWorkout() {
 
             <div>
               <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Proof (optional)</label>
-              {!proofFile && (
+              {proofFiles.length === 0 && (
                 <input
                   type="text"
                   value={proofUrl}
@@ -412,15 +414,40 @@ export default function LogWorkout() {
               <input
                 key={proofFileInputKey}
                 type="file"
-                onChange={(e) => { setProofFile(e.target.files?.[0] ?? null); setProofUploadError(''); }}
+                multiple
+                onChange={(e) => {
+                  const picked = Array.from(e.target.files ?? []);
+                  const tooBig = picked.find((f) => f.size > 50 * 1024 * 1024);
+                  if (tooBig) {
+                    setProofUploadError('Each file must be under 50 MB.');
+                    setProofFileInputKey((p) => p + 1);
+                    return;
+                  }
+                  setProofUploadError('');
+                  setProofFiles((prev) => [...prev, ...picked]);
+                  setProofFileInputKey((p) => p + 1);
+                }}
                 accept="image/*,video/*"
                 className="w-full text-[12px] text-charcoal-muted file:mr-2 file:rounded-full file:border-0 file:bg-stone-light file:px-3 file:py-1.5 file:text-[11px] file:font-medium file:text-charcoal"
               />
-              {proofFile && (
-                <div className="mt-2 flex items-center justify-between text-[12px]">
-                  <span className="truncate text-charcoal-soft">{proofFile.name}</span>
-                  <button type="button" onClick={() => { setProofFile(null); setProofFileInputKey((p) => p + 1); }} className="text-coral text-[11px] font-medium">Clear</button>
-                </div>
+              {proofFiles.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {proofFiles.map((f, i) => (
+                    <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-2 text-[12px]">
+                      <span className="min-w-0 flex items-center gap-1.5 text-charcoal-soft">
+                        <Icon name={f.type.startsWith('video/') ? 'videocam' : 'image'} size={14} className="shrink-0" />
+                        <span className="truncate">{f.name}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setProofFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="shrink-0 text-coral text-[11px] font-medium"
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
               {proofUploadError && <p className="mt-1 text-[11px] text-coral">{proofUploadError}</p>}
             </div>
@@ -429,7 +456,15 @@ export default function LogWorkout() {
 
         {/* Sticky submit */}
         {category && (
-          <div className="sticky bottom-20 sm:bottom-4 z-10 pt-2">
+          <div
+            className="sticky z-10 pt-2"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 84px)' }}
+          >
+            {formError && (
+              <p role="alert" className="mb-2 rounded-lg bg-coral/10 px-3 py-2 text-center text-[12px] font-medium text-coral">
+                {formError}
+              </p>
+            )}
             {(() => {
               const sessionUnavailable = category === 'session' && (planMileages[sessionDate] ?? 0) <= 0;
               return (

@@ -124,7 +124,7 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
 
               {error && <p className="text-[11px] font-medium text-coral">{error}</p>}
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-0.5">
                   <input
                     ref={fileRef}
@@ -161,7 +161,7 @@ export default function LockerRoomComposer({ user, onCreated }: LockerRoomCompos
                     Link
                   </button>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="ml-auto flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => { reset(); setOpen(false); }}
