@@ -115,7 +115,10 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
         onClick={(e) => e.stopPropagation()}
       >
         {/* Progress segments */}
-        <div className="absolute inset-x-0 top-0 z-30 flex gap-1 p-3">
+        <div
+          className="absolute inset-x-0 top-0 z-30 flex gap-1 p-3"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
+        >
           {ordered.map((_, i) => (
             <span key={i} className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/25">
               <span className={`block h-full bg-white/90 transition-all ${i <= index ? 'w-full' : 'w-0'}`} />
@@ -124,7 +127,10 @@ export default function TrainingStoryModal({ stories, currentUser, authorAvatarU
         </div>
 
         {/* Header */}
-        <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between p-4 pt-6">
+        <div
+          className="absolute inset-x-0 top-0 z-30 flex items-center justify-between p-4"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}
+        >
           <div className="flex items-center gap-2.5">
             <Avatar name={story.userName} size={36} src={authorAvatarUrl} />
             <div>

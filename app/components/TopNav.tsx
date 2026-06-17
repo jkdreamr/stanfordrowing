@@ -58,8 +58,11 @@ export default function TopNav() {
   }, []);
 
   return (
-    <header className="glass fixed top-0 inset-x-0 z-40 h-16 border-b border-white/[0.06]">
-      <div className="mx-auto flex h-full max-w-container items-center justify-between gap-4 px-5 lg:px-8">
+    <header
+      className="glass fixed top-0 inset-x-0 z-40 border-b border-white/[0.06]"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
+      <div className="mx-auto flex h-16 max-w-container items-center justify-between gap-4 px-5 lg:px-8">
         <Wordmark />
 
         {/* Desktop nav — quiet pills */}

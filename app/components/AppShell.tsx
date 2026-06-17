@@ -8,7 +8,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-[100dvh]">
       <TopNav />
       <SwipeNav>
-        <main className="pt-16 pb-28 sm:pb-12">{children}</main>
+        <main className="pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-28 sm:pb-12">{children}</main>
       </SwipeNav>
       <BottomNav />
     </div>
