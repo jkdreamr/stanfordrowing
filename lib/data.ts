@@ -90,7 +90,9 @@ export const ADMIN_EMAILS = [
 ];
 
 export const APP_TIME_ZONE = 'America/Los_Angeles';
-const PRECISE_NUMBER_FORMATTER = new Intl.NumberFormat('en-US', { maximumFractionDigits: 5 });
+// Display rounds to 1 decimal — scoring/sorting still use the exact value,
+// this only formats the rendered label (so pills read "+5.1", not "+5.06275").
+const PRECISE_NUMBER_FORMATTER = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
 
 export function getPstDateString(date: Date = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-US', {
