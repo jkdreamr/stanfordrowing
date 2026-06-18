@@ -318,12 +318,12 @@ export default function LogWorkout() {
                 <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (m)</label>
                 <input
                   type="number"
-                  inputMode="numeric"
+                  inputMode="decimal"
                   enterKeyHint="next"
                   value={distanceKm}
                   onChange={(e) => { setDistanceKm(e.target.value); setFormError(''); }}
                   placeholder="0"
-                  step="1"
+                  step="any"
                   min="0"
                   className={inputClass}
                 />
@@ -350,12 +350,12 @@ export default function LogWorkout() {
                 <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (m, optional)</label>
                 <input
                   type="number"
-                  inputMode="numeric"
+                  inputMode="decimal"
                   enterKeyHint="next"
                   value={distanceKm}
                   onChange={(e) => { setDistanceKm(e.target.value); setFormError(''); }}
                   placeholder="0"
-                  step="1"
+                  step="any"
                   min="0"
                   className={inputClass}
                 />

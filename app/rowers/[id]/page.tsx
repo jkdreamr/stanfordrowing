@@ -365,11 +365,11 @@ export default function RowerProfilePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Minutes</label>
-                  <input type="number" value={editValues.minutes} onChange={(e) => setEditValues((v) => ({ ...v, minutes: e.target.value }))} className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
+                  <input type="number" inputMode="numeric" value={editValues.minutes} onChange={(e) => setEditValues((v) => ({ ...v, minutes: e.target.value }))} className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
                 </div>
                 <div>
                   <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (m)</label>
-                  <input type="number" value={editValues.distance} onChange={(e) => setEditValues((v) => ({ ...v, distance: e.target.value }))} step="1" className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
+                  <input type="number" inputMode="decimal" value={editValues.distance} onChange={(e) => setEditValues((v) => ({ ...v, distance: e.target.value }))} step="any" className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
                 </div>
               </div>
               <div>
