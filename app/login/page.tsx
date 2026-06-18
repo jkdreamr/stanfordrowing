@@ -15,6 +15,16 @@ export default function Login() {
   const [state, setState] = useState<State>('loading');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  // Google blocks sign-in inside embedded/in-app browsers (Instagram, WhatsApp,
+  // etc.) — the email field becomes untappable. Detect those and guide the user.
+  const [inAppBrowser, setInAppBrowser] = useState(false);
+
+  useEffect(() => {
+    const ua = navigator.userAgent || '';
+    setInAppBrowser(
+      /FBAN|FBAV|FB_IAB|Instagram|Line\/|Snapchat|Twitter|TikTok|Pinterest|WhatsApp|MicroMessenger/i.test(ua)
+    );
+  }, []);
 
   useEffect(() => {
     if (searchParams.get('error') === 'not_stanford') {
@@ -108,6 +118,19 @@ export default function Login() {
         </div>
 
         <div className="space-y-4">
+          {inAppBrowser && !email && (
+            <div className="rounded-xl border border-coral/40 bg-coral/10 p-3.5">
+              <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-coral">
+                <Icon name="open_in_new" size={15} />
+                Open in Safari or Chrome to sign in
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-charcoal-muted">
+                Google blocks sign-in inside in-app browsers (Instagram, WhatsApp, etc.).
+                Tap the menu (••• or the share icon) and choose &ldquo;Open in browser,&rdquo; then sign in there.
+              </p>
+            </div>
+          )}
+
           {state === 'not_stanford' && (
             <div className="rounded-xl bg-coral-soft p-4 text-center">
               <p className="text-[13px] font-medium text-coral">Stanford accounts only</p>
