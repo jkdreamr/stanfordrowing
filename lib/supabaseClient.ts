@@ -22,9 +22,15 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder-anon-key',
   {
     auth: {
-      flowType: 'pkce',
-      detectSessionInUrl: false,
+      // Implicit flow (token returned in the URL) instead of PKCE: PKCE stores a
+      // code_verifier in localStorage that an installed/standalone PWA loses when
+      // iOS opens the Google redirect in a separate Safari context, so sign-in
+      // silently failed on the home-screen app. Implicit needs no verifier and
+      // detectSessionInUrl auto-applies the session from the redirect URL.
+      flowType: 'implicit',
+      detectSessionInUrl: true,
       persistSession: true,
+      autoRefreshToken: true,
     },
   }
 );

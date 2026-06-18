@@ -82,7 +82,11 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        // Always show Google's account picker, even after signing back in.
+        queryParams: { prompt: 'select_account' },
+      },
     });
   };
 

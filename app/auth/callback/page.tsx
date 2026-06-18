@@ -10,44 +10,39 @@ export default function AuthCallback() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    let cancelled = false;
+    let finished = false;
 
-    const run = async () => {
-      const code = new URLSearchParams(window.location.search).get('code');
-
-      if (!code) {
-        const { data } = await supabase.auth.getSession();
-        if (data.session) {
-          const profile = await getProfileByAuthId(data.session.user.id);
-          if (!cancelled) router.replace(profile ? '/' : '/onboarding');
-        } else {
-          if (!cancelled) setError('No sign-in code found. Please try again.');
-        }
-        return;
-      }
-
-      const { data, error: exchError } = await supabase.auth.exchangeCodeForSession(code);
-
-      if (exchError || !data.session) {
-        if (!cancelled) setError(exchError?.message ?? 'Sign-in failed. Please try again.');
-        return;
-      }
-
-      if (cancelled) return;
-
-      const email = data.session.user.email ?? '';
+    // The Supabase client auto-applies the session from the redirect URL
+    // (implicit flow). Route as soon as it's available — whether it's already
+    // set on mount or arrives via the auth event.
+    const finish = async (session: { user: { id: string; email?: string } }) => {
+      if (finished) return;
+      finished = true;
+      const email = session.user.email ?? '';
       if (!isStanfordEmail(email)) {
         await supabase.auth.signOut();
         router.replace('/login?error=not_stanford');
         return;
       }
-
-      const profile = await getProfileByAuthId(data.session.user.id);
+      const profile = await getProfileByAuthId(session.user.id);
       router.replace(profile ? '/' : '/onboarding');
     };
 
-    run();
-    return () => { cancelled = true; };
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) finish(data.session);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) finish(session);
+    });
+
+    const timeout = setTimeout(() => {
+      if (!finished) setError('Sign-in timed out. Please try again.');
+    }, 10000);
+
+    return () => {
+      listener.subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [router]);
 
   if (error) {
