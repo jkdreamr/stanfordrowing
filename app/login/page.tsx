@@ -28,7 +28,7 @@ export default function Login() {
         return;
       }
       if (!isStanfordEmail(sessionEmail)) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
         setState('not_stanford');
         return;
       }
@@ -91,7 +91,7 @@ export default function Login() {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
     setProfile(null);
     setEmail(null);
     setState('signed_out');

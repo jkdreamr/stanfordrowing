@@ -44,9 +44,18 @@ export default function AuthStatus() {
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
     setOpen(false);
+    try {
+      // 'local' clears this device immediately without a server round-trip, so a
+      // flaky mobile connection can't leave sign-out half-done (the global default
+      // calls the server first and, on failure, never clears the local session).
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      /* clear locally regardless of network */
+    }
+    setProfile(null);
+    // Hard reload to fully reset app state and drop any already-loaded data.
+    window.location.href = '/';
   };
 
   return (

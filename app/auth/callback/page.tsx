@@ -20,7 +20,7 @@ export default function AuthCallback() {
       finished = true;
       const email = session.user.email ?? '';
       if (!isStanfordEmail(email)) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
         router.replace('/login?error=not_stanford');
         return;
       }

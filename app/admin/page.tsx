@@ -126,14 +126,20 @@ export default function Admin() {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { prompt: 'select_account' },
       },
     });
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      /* clear locally regardless */
+    }
     setIsAdmin(false);
     setSignedIn(false);
+    window.location.href = '/';
   };
 
   const getUserName = (userId: string) =>

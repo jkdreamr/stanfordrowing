@@ -25,7 +25,7 @@ export default function OnboardingPage() {
       }
       const userEmail = session.user.email ?? '';
       if (!isStanfordEmail(userEmail)) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
         router.replace('/login?error=not_stanford');
         return;
       }
