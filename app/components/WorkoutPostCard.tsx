@@ -15,6 +15,7 @@ import Avatar from './Avatar';
 import Icon from './Icon';
 import RespectButton from './RespectButton';
 import ReactionsSummary from './ReactionsSummary';
+import MeterHero from './MeterHero';
 import ProofPreview from './ProofPreview';
 import CommentSection from './CommentSection';
 
@@ -108,12 +109,16 @@ export default function WorkoutPostCard({
         </div>
 
         {/* Main stat — one dominant number */}
-        <div className="mt-4 flex max-w-full items-end gap-2 overflow-hidden">
-          <span className="font-display text-[40px] xs:text-[46px] sm:text-[52px] font-bold leading-[0.9] tracking-tightest text-charcoal tabular">
-            {formatPrimary(primary.value, primary.unit)}
-          </span>
-          <span className="shrink-0 pb-1 text-base font-medium text-charcoal-muted">{UNIT_LABEL[primary.unit] ?? primary.unit}</span>
-        </div>
+        {primary.unit === 'm' ? (
+          <MeterHero value={primary.value} />
+        ) : (
+          <div className="mt-4 flex max-w-full items-end gap-2 overflow-hidden">
+            <span className="font-display text-[40px] xs:text-[46px] sm:text-[52px] font-bold leading-[0.9] tracking-tightest text-charcoal tabular">
+              {formatPrimary(primary.value, primary.unit)}
+            </span>
+            <span className="shrink-0 pb-1 text-base font-medium text-charcoal-muted">{UNIT_LABEL[primary.unit] ?? primary.unit}</span>
+          </div>
+        )}
 
         {/* Badges — quiet tags */}
         {badges.length > 0 && (
