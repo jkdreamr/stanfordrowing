@@ -14,7 +14,7 @@ import { Badge, formatPrimary, timeAgo, workoutIcon } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
 import RespectButton from './RespectButton';
-import ProofPreview, { proofKind } from './ProofPreview';
+import ProofPreview from './ProofPreview';
 import CommentSection from './CommentSection';
 
 interface WorkoutPostCardProps {
@@ -63,13 +63,13 @@ export default function WorkoutPostCard({
 
   return (
     <article className="card group animate-fade-in overflow-hidden">
-      {/* Proof — a swipeable carousel when there are several, else a single full-bleed */}
+      {/* Proof — whole photo/video shown (never cropped). Carousel when several. */}
       {workout.proofUrls && workout.proofUrls.length > 1 ? (
         <div className="relative" data-no-swipe>
           <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto">
             {workout.proofUrls.map((u, i) => (
-              <div key={i} className="w-full shrink-0 snap-center">
-                <ProofPreview url={u} aspect="aspect-[16/10]" />
+              <div key={i} className="relative aspect-[4/3] w-full shrink-0 snap-center bg-black">
+                <ProofPreview url={u} fill />
               </div>
             ))}
           </div>
@@ -79,12 +79,7 @@ export default function WorkoutPostCard({
           </span>
         </div>
       ) : workout.proofUrl ? (
-        <div className="relative">
-          <ProofPreview url={workout.proofUrl} aspect="aspect-[16/10]" />
-          {proofKind(workout.proofUrl) === 'image' && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#141a18] to-transparent" />
-          )}
-        </div>
+        <ProofPreview url={workout.proofUrl} />
       ) : null}
 
       <div className="p-5">

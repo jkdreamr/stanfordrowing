@@ -454,12 +454,9 @@ export default function LogWorkout() {
           </>
         )}
 
-        {/* Sticky submit */}
+        {/* Submit — sits at the bottom of the form; scroll down to reach it. */}
         {category && (
-          <div
-            className="sticky z-10 pt-2"
-            style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 84px)' }}
-          >
+          <div className="pt-2">
             {formError && (
               <p role="alert" className="mb-2 rounded-lg bg-coral/10 px-3 py-2 text-center text-[12px] font-medium text-coral">
                 {formError}

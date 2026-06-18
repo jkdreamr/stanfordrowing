@@ -6,11 +6,16 @@ import Icon from './Icon';
 interface ProofPreviewProps {
   url: string;
   className?: string;
-  aspect?: string;
+  /** Fill a fixed-size parent (the multi-photo carousel). Default: natural size. */
+  fill?: boolean;
 }
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|heic)(\?|$)/i;
 const VIDEO_RE = /\.(mp4|mov|m4v|webm|ogv|ogg|avi|mkv|qt)(\?|$)/i;
+
+/** The whole photo/video is always shown (object-contain), capped so very tall media stays reasonable. */
+const NATURAL = 'block max-h-[80vh] w-full object-contain';
+const FILLED = 'absolute inset-0 h-full w-full object-contain';
 
 export type ProofKind = 'image' | 'video' | 'link';
 
@@ -27,7 +32,7 @@ export function proofKind(url: string): ProofKind {
  * Auto-playing feed video that only plays while on screen. Off-screen videos
  * pause and only preload metadata, so a video-heavy feed stays smooth.
  */
-function AutoPlayVideo({ url }: { url: string }) {
+function AutoPlayVideo({ url, fill }: { url: string; fill?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -53,37 +58,36 @@ function AutoPlayVideo({ url }: { url: string }) {
       playsInline
       controls
       preload="metadata"
-      className="h-full w-full object-cover"
+      className={fill ? FILLED : NATURAL}
     />
   );
 }
 
-export default function ProofPreview({ url, className = '', aspect = 'aspect-video' }: ProofPreviewProps) {
+export default function ProofPreview({ url, className = '', fill = false }: ProofPreviewProps) {
   const kind = proofKind(url);
 
   if (kind === 'video') {
+    if (fill) return <AutoPlayVideo url={url} fill />;
     return (
-      <div className={`relative w-full overflow-hidden bg-black ${aspect} ${className}`}>
+      <div className={`w-full bg-black ${className}`}>
         <AutoPlayVideo url={url} />
       </div>
     );
   }
 
   if (kind === 'image') {
+    if (fill) {
+      return (
+        <a href={url} target="_blank" rel="noreferrer" className="absolute inset-0 block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt="Workout proof" loading="lazy" className={FILLED} />
+        </a>
+      );
+    }
     return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className={`block overflow-hidden bg-stone-light ${aspect} ${className}`}
-      >
+      <a href={url} target="_blank" rel="noreferrer" className={`block bg-black ${className}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={url}
-          alt="Workout proof"
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-700 hover:scale-[1.02]"
-        />
+        <img src={url} alt="Workout proof" loading="lazy" className={NATURAL} />
       </a>
     );
   }
