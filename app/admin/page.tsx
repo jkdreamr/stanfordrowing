@@ -14,7 +14,7 @@ import {
 } from '@/lib/data';
 import { getProfileByAuthId } from '@/lib/userProfile';
 import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, clearLocalAuth } from '@/lib/supabaseClient';
 import {
   deleteWorkoutRow,
   fetchMultipliers,
@@ -131,14 +131,10 @@ export default function Admin() {
     });
   };
 
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut({ scope: 'local' });
-    } catch {
-      /* clear locally regardless */
-    }
+  const handleSignOut = () => {
     setIsAdmin(false);
     setSignedIn(false);
+    clearLocalAuth();
     window.location.href = '/';
   };
 

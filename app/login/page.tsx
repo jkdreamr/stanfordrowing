@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, clearLocalAuth } from '@/lib/supabaseClient';
 import { getProfileByAuthId, isStanfordEmail, Profile } from '@/lib/userProfile';
 import Icon from '../components/Icon';
 
@@ -38,7 +38,7 @@ export default function Login() {
         return;
       }
       if (!isStanfordEmail(sessionEmail)) {
-        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        clearLocalAuth();
         setState('not_stanford');
         return;
       }
@@ -100,11 +100,12 @@ export default function Login() {
     });
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+  const handleSignOut = () => {
     setProfile(null);
     setEmail(null);
     setState('signed_out');
+    clearLocalAuth();
+    window.location.href = '/';
   };
 
   return (

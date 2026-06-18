@@ -34,3 +34,29 @@ export const supabase = createClient(
     },
   }
 );
+
+/**
+ * Sign out reliably, even on a flaky mobile connection.
+ *
+ * supabase.auth.signOut() makes a server call to revoke the token and, on a
+ * network error, returns WITHOUT clearing local storage — so the session
+ * survives and the user gets "signed back in" on the next load. This fires the
+ * server revoke best-effort (never awaited) but guarantees the local session is
+ * removed immediately so sign-out always sticks.
+ */
+export function clearLocalAuth(): void {
+  try {
+    void supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+  } catch {
+    /* ignore */
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      for (const key of Object.keys(window.localStorage)) {
+        if (key.startsWith('sb-')) window.localStorage.removeItem(key);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+}

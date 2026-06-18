@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, clearLocalAuth } from '@/lib/supabaseClient';
 import { getTeamById } from '@/lib/data';
 import { getProfileByAuthId, Profile } from '@/lib/userProfile';
 import Avatar from './Avatar';
@@ -43,18 +43,13 @@ export default function AuthStatus() {
     );
   }
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     setOpen(false);
-    try {
-      // 'local' clears this device immediately without a server round-trip, so a
-      // flaky mobile connection can't leave sign-out half-done (the global default
-      // calls the server first and, on failure, never clears the local session).
-      await supabase.auth.signOut({ scope: 'local' });
-    } catch {
-      /* clear locally regardless of network */
-    }
     setProfile(null);
-    // Hard reload to fully reset app state and drop any already-loaded data.
+    // Clears the local session synchronously (server revoke is best-effort), so a
+    // flaky connection can't leave the token behind and sign the user back in.
+    clearLocalAuth();
+    // Hard reload to a clean, logged-out state.
     window.location.href = '/';
   };
 

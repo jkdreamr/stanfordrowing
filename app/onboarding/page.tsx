@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, clearLocalAuth } from '@/lib/supabaseClient';
 import { createProfile, getProfileByAuthId, isStanfordEmail } from '@/lib/userProfile';
 import Icon from '../components/Icon';
 
@@ -25,7 +25,7 @@ export default function OnboardingPage() {
       }
       const userEmail = session.user.email ?? '';
       if (!isStanfordEmail(userEmail)) {
-        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        clearLocalAuth();
         router.replace('/login?error=not_stanford');
         return;
       }
