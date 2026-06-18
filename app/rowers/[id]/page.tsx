@@ -8,7 +8,7 @@ import {
   getTeamById,
   getWorkoutLabel,
 } from '@/lib/data';
-import { getProfileByAuthId, profileToUser, uploadAvatar } from '@/lib/userProfile';
+import { getAllProfiles, getProfileByAuthId, profileToUser, uploadAvatar } from '@/lib/userProfile';
 import { User, Workout, WorkoutComment, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import {
   addWorkoutComment,
@@ -64,6 +64,8 @@ export default function RowerProfilePage() {
   const [editValues, setEditValues] = useState({ type: 'rowing_no_pieces' as WorkoutType, minutes: '', distance: '', notes: '' });
   const [editError, setEditError] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarById, setAvatarById] = useState<Record<string, string>>({});
+  const [usersById, setUsersById] = useState<Record<string, { name: string; avatarUrl?: string }>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -79,6 +81,20 @@ export default function RowerProfilePage() {
         setSignedOut(true);
       } finally {
         setLoading(false);
+      }
+      // Names + avatars for reaction lists and comments on this profile's posts.
+      try {
+        const profiles = await getAllProfiles();
+        const map: Record<string, string> = {};
+        const dir: Record<string, { name: string; avatarUrl?: string }> = {};
+        for (const p of profiles) {
+          if (p.avatarUrl) map[p.id] = p.avatarUrl;
+          dir[p.id] = { name: p.name, avatarUrl: p.avatarUrl ?? undefined };
+        }
+        setAvatarById(map);
+        setUsersById(dir);
+      } catch {
+        /* no profiles yet */
       }
     };
     const loadSession = async (authId: string | undefined) => {
@@ -302,7 +318,11 @@ export default function RowerProfilePage() {
               workout={w}
               configs={configs}
               currentUser={currentUser}
-              avatarById={profileUser.avatarUrl ? { [profileUser.id]: profileUser.avatarUrl } : undefined}
+              avatarById={{
+                ...(profileUser.avatarUrl ? { [profileUser.id]: profileUser.avatarUrl } : {}),
+                ...avatarById,
+              }}
+              usersById={usersById}
               onToggleRespect={toggleRespect}
               onAddComment={addComment}
               onDeleteComment={deleteComment}
@@ -348,8 +368,8 @@ export default function RowerProfilePage() {
                   <input type="number" value={editValues.minutes} onChange={(e) => setEditValues((v) => ({ ...v, minutes: e.target.value }))} className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (km)</label>
-                  <input type="number" value={editValues.distance} onChange={(e) => setEditValues((v) => ({ ...v, distance: e.target.value }))} step="0.1" className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
+                  <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (m)</label>
+                  <input type="number" value={editValues.distance} onChange={(e) => setEditValues((v) => ({ ...v, distance: e.target.value }))} step="1" className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
                 </div>
               </div>
               <div>

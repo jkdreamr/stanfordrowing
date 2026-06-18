@@ -110,7 +110,7 @@ export default function LogWorkout() {
     } else if (basis === 'minutes' && minutes <= 0) {
       setFormError('Enter how many minutes you did.'); return;
     } else if (basis === 'distance' && distanceValue <= 0) {
-      setFormError('Enter your distance in km.'); return;
+      setFormError('Enter your distance in meters.'); return;
     }
 
     setFormError('');
@@ -315,15 +315,15 @@ export default function LogWorkout() {
           <div className="space-y-3">
             {needsDistance ? (
               <div>
-                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (km)</label>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (m)</label>
                 <input
                   type="number"
-                  inputMode="decimal"
+                  inputMode="numeric"
                   enterKeyHint="next"
                   value={distanceKm}
                   onChange={(e) => { setDistanceKm(e.target.value); setFormError(''); }}
                   placeholder="0"
-                  step="0.1"
+                  step="1"
                   min="0"
                   className={inputClass}
                 />
@@ -347,15 +347,15 @@ export default function LogWorkout() {
             {/* Optional distance for time-based workouts */}
             {!needsDistance && (
               <div>
-                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance km (optional)</label>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (m, optional)</label>
                 <input
                   type="number"
-                  inputMode="decimal"
+                  inputMode="numeric"
                   enterKeyHint="next"
                   value={distanceKm}
                   onChange={(e) => { setDistanceKm(e.target.value); setFormError(''); }}
                   placeholder="0"
-                  step="0.1"
+                  step="1"
                   min="0"
                   className={inputClass}
                 />
@@ -375,7 +375,7 @@ export default function LogWorkout() {
             />
             {(planMileages[sessionDate] ?? 0) > 0 ? (
               <p className="mt-1.5 text-[11px] text-charcoal-muted">
-                Plan mileage: {formatPreciseNumber(planMileages[sessionDate] ?? 0)} km
+                Plan: {formatPreciseNumber(planMileages[sessionDate] ?? 0)} pts
               </p>
             ) : (
               <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-coral/30 bg-coral/10 px-3 py-2 text-[12px] font-medium text-coral">

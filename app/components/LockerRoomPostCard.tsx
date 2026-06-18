@@ -6,12 +6,14 @@ import { timeAgo } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
 import EmojiReactionBar from './EmojiReactionBar';
+import ReactionsSummary from './ReactionsSummary';
 import CommentSection from './CommentSection';
 
 interface LockerRoomPostCardProps {
   post: LockerPost;
   currentUser: User | null;
   avatarById?: Record<string, string>;
+  usersById?: Record<string, { name: string; avatarUrl?: string }>;
   isAdmin?: boolean;
   onToggleReaction: (post: LockerPost, emoji: string) => void;
   onAddComment: (post: LockerPost, body: string, parentId?: string) => Promise<boolean>;
@@ -43,6 +45,7 @@ export default function LockerRoomPostCard({
   post,
   currentUser,
   avatarById,
+  usersById,
   isAdmin = false,
   onToggleReaction,
   onAddComment,
@@ -152,11 +155,16 @@ export default function LockerRoomPostCard({
         )}
 
         {/* Reactions */}
-        <div className="mt-3.5">
+        <div className="mt-3.5 space-y-2.5">
           <EmojiReactionBar
             reactions={post.reactions ?? []}
             currentUserId={currentUser?.id}
             onToggle={(emoji) => onToggleReaction(post, emoji)}
+          />
+          <ReactionsSummary
+            reactors={(post.reactions ?? []).map((r) => ({ userId: r.userId, emoji: r.emoji }))}
+            usersById={usersById}
+            currentUserId={currentUser?.id}
           />
         </div>
 

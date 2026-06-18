@@ -446,7 +446,7 @@ export default function Admin() {
                         )}
                       </div>
                       <div>
-                        <p className="text-[11px] uppercase tracking-[0.2em] text-charcoal-light">Distance (km)</p>
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-charcoal-light">Distance (m)</p>
                         {isEditing ? (
                           <input
                             type="number"
@@ -547,7 +547,7 @@ export default function Admin() {
                     </div>
                     <input
                       type="number"
-                      step="0.05"
+                      step="any"
                       value={workoutMultiplierInputs[type] || ''}
                       onChange={(event) => handleWorkoutMultiplierChange(type, event.target.value)}
                       className="w-24 rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-3 py-2 text-sm text-charcoal"

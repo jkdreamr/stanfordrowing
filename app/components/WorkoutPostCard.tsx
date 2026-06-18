@@ -14,6 +14,7 @@ import { Badge, formatPrimary, timeAgo, workoutIcon } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
 import RespectButton from './RespectButton';
+import ReactionsSummary from './ReactionsSummary';
 import ProofPreview from './ProofPreview';
 import CommentSection from './CommentSection';
 
@@ -23,6 +24,7 @@ interface WorkoutPostCardProps {
   badges?: Badge[];
   currentUser: User | null;
   avatarById?: Record<string, string>;
+  usersById?: Record<string, { name: string; avatarUrl?: string }>;
   onToggleRespect: (workout: Workout) => void;
   onAddComment?: (workout: Workout, body: string, parentId?: string) => Promise<boolean>;
   onDeleteComment?: (workout: Workout, commentId: string) => void;
@@ -36,7 +38,7 @@ const BADGE_LABELS: Record<string, string> = {
   big_week: 'Big week',
 };
 
-const UNIT_LABEL: Record<string, string> = { km: 'km', mins: 'min', pts: 'pts' };
+const UNIT_LABEL: Record<string, string> = { m: 'm', mins: 'min', pts: 'pts' };
 
 export default function WorkoutPostCard({
   workout,
@@ -44,6 +46,7 @@ export default function WorkoutPostCard({
   badges = [],
   currentUser,
   avatarById,
+  usersById,
   onToggleRespect,
   onAddComment,
   onDeleteComment,
@@ -140,12 +143,19 @@ export default function WorkoutPostCard({
 
         {/* Footer */}
         <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3.5">
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 items-center gap-3">
             <RespectButton
               count={reactions.length}
               active={hasReacted}
               disabled={isOwn || !currentUser}
               onToggle={() => onToggleRespect(workout)}
+              showCount={false}
+            />
+            <ReactionsSummary
+              reactors={reactions.map((r) => ({ userId: r.userId }))}
+              usersById={usersById}
+              currentUserId={currentUser?.id}
+              title="Respects"
             />
             {commentsEnabled && (
               <button

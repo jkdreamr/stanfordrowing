@@ -129,6 +129,15 @@ export function formatPreciseNumber(value: number): string {
   return PRECISE_NUMBER_FORMATTER.format(normalized);
 }
 
+// Whole meters with thousands separators (e.g. 15382 -> "15,382"). Kept distinct
+// from compact "K" notation so a meters total never reads as kilometers.
+const METERS_FORMATTER = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+
+export function formatMeters(value: number): string {
+  if (!Number.isFinite(value)) return '0';
+  return METERS_FORMATTER.format(Math.round(value));
+}
+
 export function getUserByEmail(email: string | null | undefined): User | null {
   if (!email) return null;
   const userId = USER_EMAILS[email.toLowerCase()];
@@ -311,13 +320,13 @@ export function getWorkoutLabel(
 export function getWorkoutPrimaryValue(
   workout: Workout,
   workoutTypeConfigs: Record<WorkoutType, WorkoutTypeConfig> = getWorkoutTypeConfigs()
-): { value: number; unit: 'mins' | 'km' | 'pts' } {
+): { value: number; unit: 'mins' | 'm' | 'pts' } {
   if (workout.type === 'training_session') {
     return { value: workout.distance ?? 0, unit: 'pts' };
   }
   const config = workoutTypeConfigs[workout.type];
   if (config?.basis === 'distance') {
-    return { value: workout.distance ?? 0, unit: 'km' };
+    return { value: workout.distance ?? 0, unit: 'm' };
   }
   return { value: workout.minutes, unit: 'mins' };
 }

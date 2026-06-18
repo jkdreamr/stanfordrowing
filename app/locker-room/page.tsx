@@ -34,6 +34,7 @@ export default function LockerRoomPage() {
   const [error, setError] = useState('');
   const [needsSchema, setNeedsSchema] = useState(false);
   const [avatarById, setAvatarById] = useState<Record<string, string>>({});
+  const [usersById, setUsersById] = useState<Record<string, { name: string; avatarUrl?: string }>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -49,8 +50,13 @@ export default function LockerRoomPage() {
       try {
         const profiles = await getAllProfiles();
         const map: Record<string, string> = {};
-        for (const p of profiles) if (p.avatarUrl) map[p.id] = p.avatarUrl;
+        const dir: Record<string, { name: string; avatarUrl?: string }> = {};
+        for (const p of profiles) {
+          if (p.avatarUrl) map[p.id] = p.avatarUrl;
+          dir[p.id] = { name: p.name, avatarUrl: p.avatarUrl ?? undefined };
+        }
         setAvatarById(map);
+        setUsersById(dir);
       } catch {
         /* no profiles yet */
       }
@@ -191,6 +197,7 @@ export default function LockerRoomPage() {
               post={post}
               currentUser={currentUser}
               avatarById={avatarById}
+              usersById={usersById}
               isAdmin={isAdmin}
               onToggleReaction={toggleReaction}
               onAddComment={addComment}

@@ -33,7 +33,7 @@ export function last7DayLabels(): string[] {
 export interface RowerAggregate {
   totalWorkouts: number;
   totalPoints: number; // weighted score
-  totalKm: number; // sum of distance-basis raw values (km)
+  totalMeters: number; // sum of distance-basis raw values (meters)
   totalMinutes: number;
   streak: number;
   lastActiveDate: string | null;
@@ -44,7 +44,7 @@ export function aggregateRower(
   configs: Record<WorkoutType, WorkoutTypeConfig>
 ): RowerAggregate {
   let totalPoints = 0;
-  let totalKm = 0;
+  let totalMeters = 0;
   let totalMinutes = 0;
   let lastActiveDate: string | null = null;
 
@@ -52,14 +52,14 @@ export function aggregateRower(
     totalPoints += getWorkoutWeightedScore(w, configs);
     totalMinutes += w.minutes;
     const primary = getWorkoutPrimaryValue(w, configs);
-    if (primary.unit === 'km') totalKm += primary.value;
+    if (primary.unit === 'm') totalMeters += primary.value;
     if (!lastActiveDate || w.date > lastActiveDate) lastActiveDate = w.date;
   }
 
   return {
     totalWorkouts: workouts.length,
     totalPoints,
-    totalKm,
+    totalMeters,
     totalMinutes,
     streak: getStreak(workouts),
     lastActiveDate,
@@ -92,7 +92,7 @@ export function getStreak(workouts: Workout[]): number {
 export interface WeeklySummary {
   points: number;
   workouts: number;
-  km: number;
+  meters: number;
   perDayPoints: number[]; // length 7, oldest first
   dayLabels: string[];
 }
@@ -105,7 +105,7 @@ export function getWeeklySummary(
   const index = new Map(dates.map((d, i) => [d, i]));
   const perDayPoints = new Array(7).fill(0);
   let points = 0;
-  let km = 0;
+  let meters = 0;
   let count = 0;
 
   for (const w of workouts) {
@@ -116,10 +116,10 @@ export function getWeeklySummary(
     points += score;
     count += 1;
     const primary = getWorkoutPrimaryValue(w, configs);
-    if (primary.unit === 'km') km += primary.value;
+    if (primary.unit === 'm') meters += primary.value;
   }
 
-  return { points, workouts: count, km, perDayPoints, dayLabels: last7DayLabels() };
+  return { points, workouts: count, meters, perDayPoints, dayLabels: last7DayLabels() };
 }
 
 /** Per-day workout counts over the last 7 days (for sparklines). */
@@ -168,7 +168,7 @@ export function getWorkoutBadges(
 
   // Long one — a notably big single session
   const isLong =
-    (primary.unit === 'km' && primary.value >= 15) ||
+    (primary.unit === 'm' && primary.value >= 15000) ||
     (primary.unit === 'mins' && primary.value >= 90) ||
     (primary.unit === 'pts' && primary.value >= 20);
   if (isLong) badges.push({ kind: 'long', label: 'Long one' });
@@ -233,9 +233,9 @@ export function workoutIcon(type: string): string {
 }
 
 /** Pretty-print the primary value of a workout. */
-export function formatPrimary(value: number, unit: 'mins' | 'km' | 'pts'): string {
+export function formatPrimary(value: number, unit: 'mins' | 'm' | 'pts'): string {
   if (unit === 'mins') return value.toFixed(0);
-  if (unit === 'km') return value.toFixed(1);
+  if (unit === 'm') return Math.round(value).toLocaleString('en-US');
   // pts
   return value.toFixed(value >= 100 ? 0 : 1);
 }

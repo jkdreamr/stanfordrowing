@@ -7,20 +7,20 @@ import { formatPrimary, workoutIcon } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
 
-const UNIT_LABEL: Record<string, string> = { km: 'km', mins: 'min', pts: 'pts' };
+const UNIT_LABEL: Record<string, string> = { m: 'm', mins: 'min', pts: 'pts' };
 
 // Preview data — real rower names, plausible work, used only to make the
 // signed-out page feel alive. Never persisted, never editable.
 const SAMPLE: Array<Pick<Workout, 'id' | 'oderId' | 'type' | 'minutes' | 'distance' | 'notes' | 'createdAt'>> = [
-  { id: 's1', oderId: 'scalfi', type: 'rowing_no_pieces', minutes: 92, distance: 18.4, notes: 'Long steady before the heat. Kept it honest.', createdAt: new Date().toISOString() },
-  { id: 's2', oderId: 'freijo', type: 'cross_run', minutes: 58, distance: 12.1, notes: 'Trail loop. Legs are cooked.', createdAt: new Date().toISOString() },
-  { id: 's3', oderId: 'berwick', type: 'rowing_with_pieces', minutes: 74, distance: 15.2, notes: '6 x 1k. Negative split the last three.', createdAt: new Date().toISOString() },
+  { id: 's1', oderId: 'scalfi', type: 'rowing_no_pieces', minutes: 92, distance: 18400, notes: 'Long steady before the heat. Kept it honest.', createdAt: new Date().toISOString() },
+  { id: 's2', oderId: 'freijo', type: 'cross_run', minutes: 58, distance: 12100, notes: 'Trail loop. Legs are cooked.', createdAt: new Date().toISOString() },
+  { id: 's3', oderId: 'berwick', type: 'rowing_with_pieces', minutes: 74, distance: 15200, notes: '6 x 1k. Negative split the last three.', createdAt: new Date().toISOString() },
   { id: 's4', oderId: 'corbett', type: 'lifting_plan', minutes: 65, createdAt: new Date().toISOString() },
-  { id: 's5', oderId: 'harvey', type: 'rowing_no_pieces', minutes: 80, distance: 16.6, createdAt: new Date().toISOString() },
+  { id: 's5', oderId: 'harvey', type: 'rowing_no_pieces', minutes: 80, distance: 16600, createdAt: new Date().toISOString() },
   { id: 's6', oderId: 'george', type: 'cross_bike_outdoor', minutes: 95, createdAt: new Date().toISOString() },
   { id: 's7', oderId: 'salvi', type: 'cross_swim', minutes: 50, createdAt: new Date().toISOString() },
-  { id: 's8', oderId: 'donovan-davis', type: 'rowing_with_pieces', minutes: 70, distance: 14.8, createdAt: new Date().toISOString() },
-  { id: 's9', oderId: 'lorgen', type: 'cross_run', minutes: 45, distance: 9.2, createdAt: new Date().toISOString() },
+  { id: 's8', oderId: 'donovan-davis', type: 'rowing_with_pieces', minutes: 70, distance: 14800, createdAt: new Date().toISOString() },
+  { id: 's9', oderId: 'lorgen', type: 'cross_run', minutes: 45, distance: 9200, createdAt: new Date().toISOString() },
 ];
 
 const PREVIEW_BADGE: Record<string, string> = {
@@ -127,7 +127,7 @@ export default function LoggedOutFeed({ configs }: { configs: Record<WorkoutType
               <span className="font-display text-3xl font-bold tracking-tightest text-charcoal/40 blur-[5px] tabular">412</span>
               <span className="text-[12px] text-charcoal-muted">pts</span>
             </div>
-            <p className="mt-1 text-[12px] text-charcoal-muted blur-[3px]">28 sessions · 318 km</p>
+            <p className="mt-1 text-[12px] text-charcoal-muted blur-[3px]">28 sessions · 318,000 m</p>
             <div className="mt-4 flex h-16 items-end justify-between gap-1.5 opacity-50 blur-[2px]">
               {[40, 65, 30, 80, 55, 90, 70].map((h, i) => (
                 <div key={i} className="flex flex-1 flex-col items-center gap-1.5">

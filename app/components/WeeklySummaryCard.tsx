@@ -1,4 +1,4 @@
-import { formatPreciseNumber } from '@/lib/data';
+import { formatMeters, formatPreciseNumber } from '@/lib/data';
 import { WeeklySummary } from '@/lib/stats';
 
 interface WeeklySummaryCardProps {
@@ -20,7 +20,7 @@ export default function WeeklySummaryCard({ summary, className = '' }: WeeklySum
         <span className="text-[12px] text-charcoal-muted">pts</span>
       </div>
       <p className="mt-1 text-[12px] text-charcoal-muted">
-        {summary.workouts} sessions · {formatPreciseNumber(summary.km)} km
+        {summary.workouts} sessions · {formatMeters(summary.meters)} m
       </p>
 
       {/* Mini bar chart */}

@@ -40,6 +40,7 @@ export default function FeedPage() {
   const [storyError, setStoryError] = useState('');
   const [seenMap, setSeenMap] = useState<Record<string, string>>({});
   const [avatarById, setAvatarById] = useState<Record<string, string>>({});
+  const [usersById, setUsersById] = useState<Record<string, { name: string; avatarUrl?: string }>>({});
   const [composerOpen, setComposerOpen] = useState(false);
 
   const loadUser = async (authId: string | undefined) => {
@@ -67,12 +68,17 @@ export default function FeedPage() {
       } catch {
         /* no stories backend yet */
       }
-      // Avatars by user id, for feed + comment + rail avatars.
+      // Avatars + names by user id, for feed avatars, comments, and reaction lists.
       try {
         const profiles = await getAllProfiles();
         const map: Record<string, string> = {};
-        for (const p of profiles) if (p.avatarUrl) map[p.id] = p.avatarUrl;
+        const dir: Record<string, { name: string; avatarUrl?: string }> = {};
+        for (const p of profiles) {
+          if (p.avatarUrl) map[p.id] = p.avatarUrl;
+          dir[p.id] = { name: p.name, avatarUrl: p.avatarUrl ?? undefined };
+        }
         setAvatarById(map);
+        setUsersById(dir);
       } catch {
         /* no profiles yet */
       }
@@ -264,6 +270,7 @@ export default function FeedPage() {
                 configs={configs}
                 currentUser={currentUser}
                 avatarById={avatarById}
+                usersById={usersById}
                 onToggleRespect={toggleRespect}
                 onAddComment={addComment}
                 onDeleteComment={deleteComment}

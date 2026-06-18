@@ -108,6 +108,7 @@ module.exports = {
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out both',
         'slide-up': 'slideUp 0.6s cubic-bezier(0.16,1,0.3,1) both',
+        'sheet-up': 'sheetUp 0.34s cubic-bezier(0.16,1,0.3,1) both',
         'respect-pop': 'respectPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275)',
         'story-in': 'storyIn 0.35s cubic-bezier(0.16,1,0.3,1) both',
         'shimmer': 'shimmer 2.2s linear infinite',
@@ -117,6 +118,10 @@ module.exports = {
         slideUp: {
           '0%': { transform: 'translateY(16px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        sheetUp: {
+          '0%': { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
         },
         respectPop: {
           '0%': { transform: 'scale(1)' },

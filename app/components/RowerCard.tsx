@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { User, Workout } from '@/lib/types';
-import { formatPreciseNumber } from '@/lib/data';
+import { formatMeters, formatPreciseNumber } from '@/lib/data';
 import { RowerAggregate, timeAgo } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
@@ -46,8 +46,8 @@ export default function RowerCard({ user, aggregate, latestWorkout }: RowerCardP
           <p className="text-[9px] font-medium uppercase tracking-wider text-charcoal-light">Sessions</p>
         </div>
         <div className="flex-1">
-          <p className="text-[16px] font-bold tabular text-charcoal">{formatPreciseNumber(aggregate.totalKm)}</p>
-          <p className="text-[9px] font-medium uppercase tracking-wider text-charcoal-light">Km</p>
+          <p className="text-[16px] font-bold tabular text-charcoal">{formatMeters(aggregate.totalMeters)}</p>
+          <p className="text-[9px] font-medium uppercase tracking-wider text-charcoal-light">m</p>
         </div>
       </div>
     </Link>

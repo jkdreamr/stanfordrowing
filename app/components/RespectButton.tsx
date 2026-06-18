@@ -9,6 +9,8 @@ interface RespectButtonProps {
   disabled?: boolean;
   onToggle: () => void | Promise<void>;
   showLabel?: boolean;
+  /** Show the numeric count next to the heart. Off when a face-pile owns the count. */
+  showCount?: boolean;
   className?: string;
 }
 
@@ -18,6 +20,7 @@ export default function RespectButton({
   disabled = false,
   onToggle,
   showLabel = true,
+  showCount = true,
   className = '',
 }: RespectButtonProps) {
   const [popping, setPopping] = useState(false);
@@ -51,10 +54,10 @@ export default function RespectButton({
           active ? 'text-coral' : 'text-charcoal-light group-hover:text-coral'
         } transition-colors`}
       />
-      {(count > 0 || showLabel) && (
+      {((showCount && count > 0) || showLabel) && (
         <span className="text-[11px] font-medium tabular text-charcoal-muted">
-          {count > 0 && count}
-          {count > 0 && showLabel && ' '}
+          {showCount && count > 0 && count}
+          {showCount && count > 0 && showLabel && ' '}
           {showLabel && 'Respect'}
         </span>
       )}

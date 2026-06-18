@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { Team, User } from '@/lib/types';
-import { formatPreciseNumber } from '@/lib/data';
+import { formatMeters, formatPreciseNumber } from '@/lib/data';
 import { RowerAggregate } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
@@ -84,7 +84,7 @@ export default function RowerProfileHeader({
       <div className="mt-5 grid grid-cols-4 gap-px overflow-hidden rounded-xl bg-stone/30">
         <Stat label="Points" value={formatPreciseNumber(aggregate.totalPoints)} accent />
         <Stat label="Sessions" value={String(aggregate.totalWorkouts)} />
-        <Stat label="km" value={formatPreciseNumber(aggregate.totalKm)} />
+        <Stat label="m" value={formatMeters(aggregate.totalMeters)} />
         <Stat label="hrs" value={(aggregate.totalMinutes / 60).toFixed(1)} />
       </div>
     </section>

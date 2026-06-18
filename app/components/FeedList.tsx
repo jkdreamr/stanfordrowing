@@ -11,6 +11,7 @@ interface FeedListProps {
   configs: Record<WorkoutType, WorkoutTypeConfig>;
   currentUser: User | null;
   avatarById?: Record<string, string>;
+  usersById?: Record<string, { name: string; avatarUrl?: string }>;
   onToggleRespect: (workout: Workout) => void;
   onAddComment?: (workout: Workout, body: string, parentId?: string) => Promise<boolean>;
   onDeleteComment?: (workout: Workout, commentId: string) => void;
@@ -27,6 +28,7 @@ export default function FeedList({
   configs,
   currentUser,
   avatarById,
+  usersById,
   onToggleRespect,
   onAddComment,
   onDeleteComment,
@@ -71,6 +73,7 @@ export default function FeedList({
           badges={getWorkoutBadges(w, byAuthor.get(w.oderId) ?? [w], configs)}
           currentUser={currentUser}
           avatarById={avatarById}
+          usersById={usersById}
           onToggleRespect={onToggleRespect}
           onAddComment={onAddComment}
           onDeleteComment={onDeleteComment}

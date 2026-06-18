@@ -78,15 +78,15 @@ export const WORKOUT_TYPES: Record<WorkoutType, WorkoutTypeConfig> = {
   },
   rowing_no_pieces: {
     label: 'Rowing/erging (no pieces)',
-    multiplier: 1,
+    multiplier: 0.001,
     basis: 'distance',
-    description: 'Erg/rowing mileage without pieces'
+    description: 'Erg/rowing meters without pieces'
   },
   rowing_with_pieces: {
     label: 'Rowing/erging (with pieces)',
-    multiplier: 1.1,
+    multiplier: 0.0011,
     basis: 'distance',
-    description: 'Erg/rowing mileage with pieces'
+    description: 'Erg/rowing meters with pieces'
   },
   lifting_plan: {
     label: 'Lifting (from plan)',
@@ -114,9 +114,9 @@ export const WORKOUT_TYPES: Record<WorkoutType, WorkoutTypeConfig> = {
   },
   cross_run: {
     label: 'Run',
-    multiplier: 1,
+    multiplier: 0.001,
     basis: 'distance',
-    description: 'Run mileage'
+    description: 'Run meters'
   },
   cross_swim: {
     label: 'Swim',
