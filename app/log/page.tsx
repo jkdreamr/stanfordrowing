@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { DEFAULT_PLAN_MILEAGES, formatPreciseNumber, getPstDateString } from '@/lib/data';
+import { DEFAULT_PLAN_MILEAGES, formatMeters, formatPreciseNumber, getPstDateString } from '@/lib/data';
 import { getProfileByAuthId, isStanfordEmail, profileToUser } from '@/lib/userProfile';
 import { User, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { supabase } from '@/lib/supabaseClient';
@@ -27,6 +27,10 @@ const CATEGORIES: { value: Category; label: string; icon: string }[] = [
 const inputClass =
   'focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-4 py-3 text-charcoal text-[14px] placeholder:text-charcoal-light transition-colors disabled:opacity-40';
 
+// Exact international mile, so a run logged in miles converts to meters with no
+// rounding — points are scored on the precise meters, only the display rounds.
+const METERS_PER_MILE = 1609.344;
+
 export default function LogWorkout() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
@@ -36,6 +40,8 @@ export default function LogWorkout() {
   const [sessionDate, setSessionDate] = useState<string>(getPstDateString());
   const [minutes, setMinutes] = useState<number>(0);
   const [distanceKm, setDistanceKm] = useState<string>('');
+  // Runners can log in miles; we convert to meters on save so the feed/board stay in meters.
+  const [runUnit, setRunUnit] = useState<'m' | 'mi'>('m');
   const [notes, setNotes] = useState<string>('');
   const [proofUrl, setProofUrl] = useState<string>('');
   const [proofFiles, setProofFiles] = useState<File[]>([]);
@@ -99,7 +105,10 @@ export default function LogWorkout() {
     const type = resolveWorkoutType();
     const config = workoutTypeConfigs[type] ?? WORKOUT_TYPES[type];
     const basis = config?.basis ?? 'minutes';
-    const distanceValue = parseFloat(distanceKm) || 0;
+    const loggingMiles = category === 'run' && runUnit === 'mi';
+    const enteredDistance = parseFloat(distanceKm) || 0;
+    // Store meters always — convert from miles exactly so points stay precise.
+    const distanceValue = loggingMiles ? enteredDistance * METERS_PER_MILE : enteredDistance;
     const planMileage = planMileages[sessionDate] ?? 0;
 
     // Validate with visible feedback — never fail silently (a dead-looking button).
@@ -110,7 +119,7 @@ export default function LogWorkout() {
     } else if (basis === 'minutes' && minutes <= 0) {
       setFormError('Enter how many minutes you did.'); return;
     } else if (basis === 'distance' && distanceValue <= 0) {
-      setFormError('Enter your distance in meters.'); return;
+      setFormError(loggingMiles ? 'Enter your distance in miles.' : 'Enter your distance in meters.'); return;
     }
 
     setFormError('');
@@ -173,6 +182,7 @@ export default function LogWorkout() {
     setSessionDate(getPstDateString());
     setMinutes(0);
     setDistanceKm('');
+    setRunUnit('m');
     setNotes('');
     setProofUrl('');
     setProofFiles([]);
@@ -234,6 +244,10 @@ export default function LogWorkout() {
   const config = type ? workoutTypeConfigs[type] ?? WORKOUT_TYPES[type] : null;
   const basis = config?.basis ?? 'minutes';
   const needsDistance = basis === 'distance';
+  // Miles is a logging convenience for runs only; everything else is meters.
+  const distUnit = category === 'run' ? runUnit : 'm';
+  const milesPreviewMeters =
+    distUnit === 'mi' ? (parseFloat(distanceKm) || 0) * METERS_PER_MILE : 0;
 
   return (
     <div className="mx-auto max-w-lg px-4 py-6 sm:px-6">
@@ -300,6 +314,20 @@ export default function LogWorkout() {
           </div>
         )}
 
+        {category === 'run' && (
+          <div>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Log distance in</label>
+            <div className="flex gap-2" role="group" aria-label="Distance unit">
+              <button type="button" onClick={() => { setRunUnit('m'); setFormError(''); }} aria-pressed={runUnit === 'm'} className={`focus-ring flex-1 min-h-[44px] rounded-lg py-3 text-[13px] font-semibold transition-colors touch-manipulation ${runUnit === 'm' ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
+                Meters
+              </button>
+              <button type="button" onClick={() => { setRunUnit('mi'); setFormError(''); }} aria-pressed={runUnit === 'mi'} className={`focus-ring flex-1 min-h-[44px] rounded-lg py-3 text-[13px] font-semibold transition-colors touch-manipulation ${runUnit === 'mi' ? 'bg-charcoal text-bone' : 'border border-stone/40 text-charcoal-muted'}`}>
+                Miles
+              </button>
+            </div>
+          </div>
+        )}
+
         {category === 'other' && (
           <input
             type="text"
@@ -315,18 +343,25 @@ export default function LogWorkout() {
           <div className="space-y-3">
             {needsDistance ? (
               <div>
-                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Distance (m)</label>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">
+                  Distance ({distUnit === 'mi' ? 'miles' : 'm'})
+                </label>
                 <input
                   type="number"
                   inputMode="decimal"
                   enterKeyHint="next"
                   value={distanceKm}
                   onChange={(e) => { setDistanceKm(e.target.value); setFormError(''); }}
-                  placeholder="0"
+                  placeholder={distUnit === 'mi' ? 'e.g. 3.1' : '0'}
                   step="any"
                   min="0"
                   className={inputClass}
                 />
+                {distUnit === 'mi' && milesPreviewMeters > 0 && (
+                  <p className="mt-1.5 text-[11px] text-charcoal-muted">
+                    Logs as <span className="font-semibold text-charcoal-soft tabular">≈ {formatMeters(milesPreviewMeters)} m</span> · scored on the exact distance
+                  </p>
+                )}
               </div>
             ) : (
               <div>
