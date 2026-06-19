@@ -184,6 +184,7 @@ export default function CommentSection({
                 onHover={mention.setActiveIndex}
                 onPick={mention.select}
                 avatarById={avatarById}
+                query={mention.query}
               />
             )}
             <input

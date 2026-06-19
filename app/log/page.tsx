@@ -459,6 +459,7 @@ export default function LogWorkout() {
                     activeIndex={notesMention.activeIndex}
                     onHover={notesMention.setActiveIndex}
                     onPick={notesMention.select}
+                    query={notesMention.query}
                   />
                 )}
                 <textarea

@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment, ReactNode } from 'react';
 import { Mentionable } from '@/lib/mentions';
 import Avatar from './Avatar';
 
@@ -9,6 +10,23 @@ interface MentionDropdownProps {
   onHover: (index: number) => void;
   onPick: (m: Mentionable) => void;
   avatarById?: Record<string, string>;
+  /** Current `@query` — its first occurrence in each name is bolded. */
+  query?: string;
+}
+
+/** Render `name` with the first case-insensitive occurrence of `query` bolded. */
+function highlightMatch(name: string, query: string): ReactNode {
+  const q = query.trim().toLowerCase();
+  if (!q) return name;
+  const idx = name.toLowerCase().indexOf(q);
+  if (idx < 0) return name;
+  return (
+    <Fragment>
+      {name.slice(0, idx)}
+      <span className="font-semibold text-charcoal">{name.slice(idx, idx + q.length)}</span>
+      {name.slice(idx + q.length)}
+    </Fragment>
+  );
 }
 
 /**
@@ -21,6 +39,7 @@ export default function MentionDropdown({
   onHover,
   onPick,
   avatarById,
+  query = '',
 }: MentionDropdownProps) {
   return (
     <ul
@@ -45,7 +64,7 @@ export default function MentionDropdown({
             }`}
           >
             <Avatar name={m.name} size={26} src={avatarById?.[m.id]} />
-            <span className="truncate text-[13px] font-medium text-charcoal">{m.name}</span>
+            <span className="truncate text-[13px] text-charcoal-soft">{highlightMatch(m.name, query)}</span>
           </button>
         </li>
       ))}

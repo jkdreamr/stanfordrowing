@@ -56,6 +56,19 @@ export function parseMentions(text: string, mentionables: Mentionable[]): string
   return Array.from(new Set(findMentionSpans(text, mentionables).map((s) => s.id)));
 }
 
+/**
+ * Relevance of a name against a (lowercased) query, lower = better:
+ * 0 = name starts with the query, 1 = a word in the name starts with it,
+ * 2 = name contains it anywhere, -1 = no match. Drives autocomplete ranking.
+ */
+function rankMentionMatch(lowerName: string, q: string): number {
+  if (!q) return 0;
+  if (lowerName.startsWith(q)) return 0;
+  if (lowerName.split(/\s+/).some((w) => w.startsWith(q))) return 1;
+  if (lowerName.includes(q)) return 2;
+  return -1;
+}
+
 /** The in-progress `@query` immediately before the caret, if any. */
 function getActiveMentionQuery(
   text: string,
@@ -71,7 +84,7 @@ function getActiveMentionQuery(
       const query = text.slice(i + 1, caret);
       if (query.includes('\n')) return null;
       const q = query.toLowerCase();
-      const matches = mentionables.some((m) => m.name.toLowerCase().startsWith(q));
+      const matches = mentionables.some((m) => rankMentionMatch(m.name.toLowerCase(), q) >= 0);
       return matches ? { atIndex: i, query } : null;
     }
   }
@@ -112,7 +125,12 @@ export function useMentionAutocomplete(
   const suggestions = useMemo(() => {
     if (!active) return [];
     const q = active.query.toLowerCase();
-    return mentionables.filter((m) => m.name.toLowerCase().startsWith(q)).slice(0, 6);
+    return mentionables
+      .map((m) => ({ m, r: rankMentionMatch(m.name.toLowerCase(), q) }))
+      .filter((x) => x.r >= 0)
+      .sort((a, b) => a.r - b.r || a.m.name.length - b.m.name.length || a.m.name.localeCompare(b.m.name))
+      .map((x) => x.m)
+      .slice(0, 6);
   }, [active, mentionables]);
 
   const open = !!active && suggestions.length > 0;
@@ -156,5 +174,14 @@ export function useMentionAutocomplete(
     [open, suggestions, activeIndex, select]
   );
 
-  return { open, suggestions, activeIndex, setActiveIndex, select, onKeyDown, onSelectionChange: recompute };
+  return {
+    open,
+    suggestions,
+    activeIndex,
+    setActiveIndex,
+    select,
+    onKeyDown,
+    onSelectionChange: recompute,
+    query: active ? active.query : '',
+  };
 }
