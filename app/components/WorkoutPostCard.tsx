@@ -31,6 +31,8 @@ interface WorkoutPostCardProps {
   onAddComment?: (workout: Workout, body: string, parentId?: string) => Promise<boolean>;
   onDeleteComment?: (workout: Workout, commentId: string) => void;
   actions?: ReactNode;
+  /** Briefly outline this card (used when opened from a notification deep link). */
+  highlighted?: boolean;
 }
 
 const BADGE_LABELS: Record<string, string> = {
@@ -53,6 +55,7 @@ export default function WorkoutPostCard({
   onAddComment,
   onDeleteComment,
   actions,
+  highlighted = false,
 }: WorkoutPostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const author = getUserById(workout.oderId);
@@ -71,7 +74,7 @@ export default function WorkoutPostCard({
   );
 
   return (
-    <article className="card group animate-fade-in overflow-hidden">
+    <article id={`workout-${workout.id}`} className={`card group animate-fade-in overflow-hidden ${highlighted ? 'notif-highlight' : ''}`}>
       {/* Proof — whole photo/video shown (never cropped). Carousel when several. */}
       {workout.proofUrls && workout.proofUrls.length > 1 ? (
         <div className="relative" data-no-swipe>

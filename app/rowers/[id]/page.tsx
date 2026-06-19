@@ -21,6 +21,7 @@ import {
   updateWorkoutRow,
 } from '@/lib/supabaseData';
 import { aggregateRower, getWeeklySummary } from '@/lib/stats';
+import { useScrollToHash } from '@/lib/useScrollToHash';
 import RowerProfileHeader from '../../components/RowerProfileHeader';
 import WeeklySummaryCard from '../../components/WeeklySummaryCard';
 import WorkoutPostCard from '../../components/WorkoutPostCard';
@@ -66,6 +67,7 @@ export default function RowerProfilePage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarById, setAvatarById] = useState<Record<string, string>>({});
   const [usersById, setUsersById] = useState<Record<string, { name: string; avatarUrl?: string }>>({});
+  const highlightId = useScrollToHash('workout', !loading);
 
   useEffect(() => {
     const load = async () => {
@@ -318,6 +320,7 @@ export default function RowerProfilePage() {
               workout={w}
               configs={configs}
               currentUser={currentUser}
+              highlighted={w.id === highlightId}
               avatarById={{
                 ...(profileUser.avatarUrl ? { [profileUser.id]: profileUser.avatarUrl } : {}),
                 ...avatarById,

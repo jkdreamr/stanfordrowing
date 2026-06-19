@@ -31,8 +31,8 @@ function describe(n: AppNotification): string {
 }
 
 function targetHref(n: AppNotification): string {
-  if (n.targetType === 'locker_post') return '/locker-room';
-  return n.targetOwnerId ? `/rowers/${n.targetOwnerId}` : '/';
+  if (n.targetType === 'locker_post') return `/locker-room#post-${n.targetId}`;
+  return n.targetOwnerId ? `/rowers/${n.targetOwnerId}#workout-${n.targetId}` : '/';
 }
 
 export default function NotificationBell() {

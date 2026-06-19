@@ -184,3 +184,21 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Brief coral outline when a post is opened from a notification (deep link).
+   Outline (not box-shadow) so it never clobbers the card's own shadow. */
+.notif-highlight {
+  animation: notifHighlight 2.6s ease-out;
+}
+@keyframes notifHighlight {
+  0%,
+  100% {
+    outline: 2px solid rgba(200, 32, 43, 0);
+    outline-offset: 3px;
+  }
+  12%,
+  55% {
+    outline: 2px solid rgba(200, 32, 43, 0.85);
+    outline-offset: 3px;
+  }
+}

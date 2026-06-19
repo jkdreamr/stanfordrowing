@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { getAllProfiles, getProfileByAuthId, profileToUser } from '@/lib/userProfile';
 import { createNotifications, NewNotification } from '@/lib/notifications';
 import { parseMentions } from '@/lib/mentions';
+import { useScrollToHash } from '@/lib/useScrollToHash';
 import { LockerComment, LockerPost, LockerReaction, User } from '@/lib/types';
 import {
   addLockerComment,
@@ -37,6 +38,7 @@ export default function LockerRoomPage() {
   const [needsSchema, setNeedsSchema] = useState(false);
   const [avatarById, setAvatarById] = useState<Record<string, string>>({});
   const [usersById, setUsersById] = useState<Record<string, { name: string; avatarUrl?: string }>>({});
+  const highlightId = useScrollToHash('post', !loading);
 
   useEffect(() => {
     const load = async () => {
@@ -235,6 +237,7 @@ export default function LockerRoomPage() {
               currentUser={currentUser}
               avatarById={avatarById}
               usersById={usersById}
+              highlighted={post.id === highlightId}
               isAdmin={isAdmin}
               onToggleReaction={toggleReaction}
               onAddComment={addComment}

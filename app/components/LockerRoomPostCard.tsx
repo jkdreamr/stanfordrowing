@@ -22,6 +22,8 @@ interface LockerRoomPostCardProps {
   onDeleteComment: (post: LockerPost, commentId: string) => void;
   onDelete?: (post: LockerPost) => void;
   onTogglePin?: (post: LockerPost) => void;
+  /** Briefly outline this card (used when opened from a notification deep link). */
+  highlighted?: boolean;
 }
 
 function getVideoEmbed(url: string): string | null {
@@ -54,6 +56,7 @@ export default function LockerRoomPostCard({
   onDeleteComment,
   onDelete,
   onTogglePin,
+  highlighted = false,
 }: LockerRoomPostCardProps) {
   const canDelete = !!onDelete && (isAdmin || post.authorId === currentUser?.id);
   const canPin = !!onTogglePin && isAdmin;
@@ -65,8 +68,9 @@ export default function LockerRoomPostCard({
 
   return (
     <article
-      className={`card animate-fade-in overflow-hidden ${
-        post.pinned ? 'ring-1 ring-coral/40' : ''
+      id={`post-${post.id}`}
+      className={`card animate-fade-in overflow-hidden ${post.pinned ? 'ring-1 ring-coral/40' : ''} ${
+        highlighted ? 'notif-highlight' : ''
       }`}
     >
       {/* Media first — full bleed */}
