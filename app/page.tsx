@@ -16,6 +16,8 @@ import {
   removeWorkoutReaction,
 } from '@/lib/supabaseData';
 import { createStory, deleteStory, fetchStories, uploadStoryMedia } from '@/lib/stories';
+import { createNotifications, NewNotification } from '@/lib/notifications';
+import { parseMentions } from '@/lib/mentions';
 import { getWeeklySummary } from '@/lib/stats';
 import FeedList from './components/FeedList';
 import WeeklySummaryCard from './components/WeeklySummaryCard';
@@ -117,6 +119,11 @@ export default function FeedPage() {
     setWorkouts((prev) => prev.map((w) => (w.id === id ? { ...w, reactions: updater(w.reactions ?? []) } : w)));
   };
 
+  const mentionables = useMemo(
+    () => Object.entries(usersById).map(([id, u]) => ({ id, name: u.name })),
+    [usersById]
+  );
+
   const toggleRespect = async (workout: Workout) => {
     if (!currentUser || workout.oderId === currentUser.id) return;
     const hasReacted = (workout.reactions ?? []).some((r) => r.userId === currentUser.id);
@@ -127,6 +134,17 @@ export default function FeedPage() {
       } else {
         updateReactions(workout.id, (r) => [...r, { userId: currentUser.id, createdAt: new Date().toISOString() }]);
         await addWorkoutReaction({ workoutId: workout.id, userId: currentUser.id });
+        void createNotifications([
+          {
+            recipientId: workout.oderId,
+            actorId: currentUser.id,
+            actorName: currentUser.name,
+            kind: 'respect',
+            targetType: 'workout',
+            targetId: workout.id,
+            targetOwnerId: workout.oderId,
+          },
+        ]);
       }
     } catch {
       updateReactions(workout.id, (r) =>
@@ -147,6 +165,22 @@ export default function FeedPage() {
     try {
       const comment = await addWorkoutComment({ workoutId: workout.id, userId: currentUser.id, userName: currentUser.name, body, parentId });
       updateComments(workout.id, (c) => [...c, comment]);
+      const base = {
+        actorId: currentUser.id,
+        actorName: currentUser.name,
+        targetType: 'workout' as const,
+        targetId: workout.id,
+        targetOwnerId: workout.oderId,
+        preview: body,
+      };
+      const notes: NewNotification[] = [];
+      if (parentId) {
+        const parent = (workout.comments ?? []).find((c) => c.id === parentId);
+        if (parent) notes.push({ ...base, recipientId: parent.userId, kind: 'workout_reply' });
+      }
+      notes.push({ ...base, recipientId: workout.oderId, kind: 'workout_comment' });
+      for (const id of parseMentions(body, mentionables)) notes.push({ ...base, recipientId: id, kind: 'mention' });
+      void createNotifications(notes);
       return true;
     } catch {
       return false;

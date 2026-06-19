@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { getProfileByAuthId } from '@/lib/userProfile';
 import { isAdminEmail } from '@/lib/data';
 import AuthStatus from './AuthStatus';
+import NotificationBell from './NotificationBell';
 
 const NAV = [
   { href: '/', label: 'Feed' },
@@ -99,7 +100,8 @@ export default function TopNav() {
           )}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <NotificationBell />
           <AuthStatus />
         </div>
       </div>

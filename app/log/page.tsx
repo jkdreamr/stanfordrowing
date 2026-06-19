@@ -1,14 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { DEFAULT_PLAN_MILEAGES, formatMeters, formatPreciseNumber, getPstDateString } from '@/lib/data';
-import { getProfileByAuthId, isStanfordEmail, profileToUser } from '@/lib/userProfile';
+import { getAllProfiles, getProfileByAuthId, isStanfordEmail, profileToUser } from '@/lib/userProfile';
+import { createNotifications } from '@/lib/notifications';
+import { Mentionable, parseMentions, useMentionAutocomplete } from '@/lib/mentions';
 import { User, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { supabase } from '@/lib/supabaseClient';
 import { createWorkout, fetchMultipliers } from '@/lib/supabaseData';
 import { getWorkoutWeightedScore } from '@/lib/data';
 import Icon from '../components/Icon';
+import MentionDropdown from '../components/MentionDropdown';
 
 /** Simplified category for the big-button picker. */
 type Category = 'erg' | 'row' | 'lift' | 'run' | 'bike' | 'swim' | 'other' | 'session';
@@ -57,6 +60,10 @@ export default function LogWorkout() {
   const [planMileages, setPlanMileages] = useState<Record<string, number>>({});
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [notStanford, setNotStanford] = useState(false);
+  const [mentionables, setMentionables] = useState<Mentionable[]>([]);
+  const [notesFocused, setNotesFocused] = useState(false);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+  const notesMention = useMentionAutocomplete(notes, setNotes, mentionables, notesRef);
 
   const resolveUser = async (authId: string | undefined, email: string | undefined) => {
     if (!authId || !email) { setSelectedUser(null); setIsAuthLoading(false); return; }
@@ -78,6 +85,9 @@ export default function LogWorkout() {
       }
     };
     loadMultipliers();
+    getAllProfiles()
+      .then((profiles) => setMentionables(profiles.map((p) => ({ id: p.id, name: p.name }))))
+      .catch(() => {});
     supabase.auth.getSession().then(({ data }) =>
       resolveUser(data.session?.user.id, data.session?.user.email)
     );
@@ -160,6 +170,22 @@ export default function LogWorkout() {
         activityName: activityName.trim() || undefined,
         date,
       });
+
+      const mentioned = notes.trim() ? parseMentions(notes, mentionables) : [];
+      if (mentioned.length > 0) {
+        void createNotifications(
+          mentioned.map((id) => ({
+            recipientId: id,
+            actorId: selectedUser.id,
+            actorName: selectedUser.name,
+            kind: 'mention' as const,
+            targetType: 'workout' as const,
+            targetId: createdWorkout.id,
+            targetOwnerId: selectedUser.id,
+            preview: notes,
+          }))
+        );
+      }
 
       setLastScore(getWorkoutWeightedScore(createdWorkout, workoutTypeConfigs));
       setShowSuccess(true);
@@ -426,13 +452,29 @@ export default function LogWorkout() {
           <>
             <div>
               <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Notes (optional)</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="How did it feel?"
-                rows={2}
-                className={inputClass}
-              />
+              <div className="relative">
+                {notesMention.open && notesFocused && (
+                  <MentionDropdown
+                    suggestions={notesMention.suggestions}
+                    activeIndex={notesMention.activeIndex}
+                    onHover={notesMention.setActiveIndex}
+                    onPick={notesMention.select}
+                  />
+                )}
+                <textarea
+                  ref={notesRef}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  onKeyDown={notesMention.onKeyDown}
+                  onKeyUp={notesMention.onSelectionChange}
+                  onClick={notesMention.onSelectionChange}
+                  onFocus={() => setNotesFocused(true)}
+                  onBlur={() => setTimeout(() => setNotesFocused(false), 120)}
+                  placeholder="How did it feel? Tag a teammate with @"
+                  rows={2}
+                  className={inputClass}
+                />
+              </div>
             </div>
 
             <div>

@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { getAllProfiles, getProfileByAuthId, profileToUser } from '@/lib/userProfile';
+import { createNotifications, NewNotification } from '@/lib/notifications';
+import { parseMentions } from '@/lib/mentions';
 import { LockerComment, LockerPost, LockerReaction, User } from '@/lib/types';
 import {
   addLockerComment,
@@ -80,6 +82,11 @@ export default function LockerRoomPage() {
     setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, reactions: updater(p.reactions) } : p)));
   };
 
+  const mentionables = useMemo(
+    () => Object.entries(usersById).map(([id, u]) => ({ id, name: u.name })),
+    [usersById]
+  );
+
   const toggleReaction = async (post: LockerPost, emoji: string) => {
     if (!currentUser) return;
     const uid = currentUser.id;
@@ -91,7 +98,21 @@ export default function LockerRoomPage() {
     );
     try {
       if (mine) await removeLockerReaction({ postId: post.id, userId: uid, emoji });
-      else await addLockerReaction({ postId: post.id, userId: uid, emoji });
+      else {
+        await addLockerReaction({ postId: post.id, userId: uid, emoji });
+        void createNotifications([
+          {
+            recipientId: post.authorId,
+            actorId: uid,
+            actorName: currentUser.name,
+            kind: 'locker_reaction',
+            targetType: 'locker_post',
+            targetId: post.id,
+            targetOwnerId: post.authorId,
+            emoji,
+          },
+        ]);
+      }
     } catch {
       updateReactions(post.id, (r) =>
         mine
@@ -111,6 +132,22 @@ export default function LockerRoomPage() {
     try {
       const c = await addLockerComment({ postId: post.id, userId: currentUser.id, userName: currentUser.name, body, parentId });
       updateComments(post.id, (cs) => [...cs, c]);
+      const base = {
+        actorId: currentUser.id,
+        actorName: currentUser.name,
+        targetType: 'locker_post' as const,
+        targetId: post.id,
+        targetOwnerId: post.authorId,
+        preview: body,
+      };
+      const notes: NewNotification[] = [];
+      if (parentId) {
+        const parent = post.comments.find((x) => x.id === parentId);
+        if (parent) notes.push({ ...base, recipientId: parent.userId, kind: 'locker_reply' });
+      }
+      notes.push({ ...base, recipientId: post.authorId, kind: 'locker_comment' });
+      for (const id of parseMentions(body, mentionables)) notes.push({ ...base, recipientId: id, kind: 'mention' });
+      void createNotifications(notes);
       return true;
     } catch {
       return false;

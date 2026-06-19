@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import { Workout, WorkoutType, WorkoutTypeConfig, User } from '@/lib/types';
 import {
   formatPreciseNumber,
@@ -16,6 +16,7 @@ import Icon from './Icon';
 import RespectButton from './RespectButton';
 import ReactionsSummary from './ReactionsSummary';
 import MeterHero from './MeterHero';
+import MentionText from './MentionText';
 import ProofPreview from './ProofPreview';
 import CommentSection from './CommentSection';
 
@@ -64,6 +65,10 @@ export default function WorkoutPostCard({
   const isOwn = workout.oderId === currentUser?.id;
   const caption = workout.notes?.trim();
   const commentsEnabled = Boolean(onAddComment && onDeleteComment);
+  const mentionables = useMemo(
+    () => (usersById ? Object.entries(usersById).map(([id, u]) => ({ id, name: u.name })) : []),
+    [usersById]
+  );
 
   return (
     <article className="card group animate-fade-in overflow-hidden">
@@ -142,7 +147,7 @@ export default function WorkoutPostCard({
         {(caption || workout.activityName) && (
           <p className="mt-3 break-words text-[13.5px] leading-relaxed text-charcoal-soft">
             {workout.activityName ? <span className="font-semibold text-charcoal">{workout.activityName} — </span> : null}
-            {caption}
+            {caption ? <MentionText text={caption} mentionables={mentionables} /> : null}
           </p>
         )}
 
@@ -190,6 +195,7 @@ export default function WorkoutPostCard({
               comments={comments}
               currentUser={currentUser}
               avatarById={avatarById}
+              mentionables={mentionables}
               onAdd={(body, parentId) => onAddComment!(workout, body, parentId)}
               onDelete={(commentId) => onDeleteComment!(workout, commentId)}
             />

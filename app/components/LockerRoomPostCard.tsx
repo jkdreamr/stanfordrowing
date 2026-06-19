@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { LockerPost, User } from '@/lib/types';
 import { timeAgo } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
 import EmojiReactionBar from './EmojiReactionBar';
 import ReactionsSummary from './ReactionsSummary';
+import MentionText from './MentionText';
 import CommentSection from './CommentSection';
 
 interface LockerRoomPostCardProps {
@@ -56,6 +58,10 @@ export default function LockerRoomPostCard({
   const canDelete = !!onDelete && (isAdmin || post.authorId === currentUser?.id);
   const canPin = !!onTogglePin && isAdmin;
   const embed = post.linkUrl ? getVideoEmbed(post.linkUrl) : null;
+  const mentionables = useMemo(
+    () => (usersById ? Object.entries(usersById).map(([id, u]) => ({ id, name: u.name })) : []),
+    [usersById]
+  );
 
   return (
     <article
@@ -137,7 +143,9 @@ export default function LockerRoomPostCard({
 
         {/* Body */}
         {post.body && (
-          <p className="mt-3 whitespace-pre-line break-words text-[14px] leading-relaxed text-charcoal">{post.body}</p>
+          <p className="mt-3 whitespace-pre-line break-words text-[14px] leading-relaxed text-charcoal">
+            <MentionText text={post.body} mentionables={mentionables} />
+          </p>
         )}
 
         {/* Link (non-embed) */}
@@ -174,6 +182,7 @@ export default function LockerRoomPostCard({
             comments={post.comments ?? []}
             currentUser={currentUser}
             avatarById={avatarById}
+            mentionables={mentionables}
             onAdd={(body, parentId) => onAddComment(post, body, parentId)}
             onDelete={(commentId) => onDeleteComment(post, commentId)}
             tone="card"

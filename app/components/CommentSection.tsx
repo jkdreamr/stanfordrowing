@@ -4,8 +4,11 @@ import { useMemo, useRef, useState } from 'react';
 import { User, WorkoutComment } from '@/lib/types';
 import { getUserById } from '@/lib/data';
 import { timeAgo } from '@/lib/stats';
+import { Mentionable, useMentionAutocomplete } from '@/lib/mentions';
 import Avatar from './Avatar';
 import Icon from './Icon';
+import MentionText from './MentionText';
+import MentionDropdown from './MentionDropdown';
 
 interface CommentSectionProps {
   comments: WorkoutComment[];
@@ -16,6 +19,8 @@ interface CommentSectionProps {
   /** 'card' for the dark feed card; 'overlay' for the story modal over media. */
   tone?: 'card' | 'overlay';
   avatarById?: Record<string, string>;
+  /** People who can be @-mentioned (enables autocomplete + highlighting). */
+  mentionables?: Mentionable[];
 }
 
 const MAX_LENGTH = 280;
@@ -31,12 +36,17 @@ export default function CommentSection({
   onDelete,
   tone = 'card',
   avatarById,
+  mentionables = [],
 }: CommentSectionProps) {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [replyTo, setReplyTo] = useState<{ parentId: string; name: string } | null>(null);
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const applyDraft = (v: string) => setDraft(v.slice(0, MAX_LENGTH));
+  const mention = useMentionAutocomplete(draft, applyDraft, mentionables, inputRef);
 
   const overlay = tone === 'overlay';
   const nameClass = overlay ? 'text-white' : 'text-charcoal';
@@ -95,7 +105,13 @@ export default function CommentSection({
             <span className={`text-[12.5px] font-semibold tracking-editorial ${nameClass}`}>{name}</span>
             <span className={`text-[10.5px] ${metaClass}`}>{timeAgo(c.createdAt)}</span>
           </div>
-          <p className={`mt-0.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed ${bodyClass}`}>{c.body}</p>
+          <p className={`mt-0.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed ${bodyClass}`}>
+            <MentionText
+              text={c.body}
+              mentionables={mentionables}
+              mentionClassName={overlay ? 'font-semibold text-white' : 'font-semibold text-coral'}
+            />
+          </p>
           {currentUser && (
             <button
               type="button"
@@ -160,13 +176,27 @@ export default function CommentSection({
               </button>
             </div>
           )}
-          <form onSubmit={handleSubmit} className="flex items-center gap-2">
+          <form onSubmit={handleSubmit} className="relative flex items-center gap-2">
+            {mention.open && focused && (
+              <MentionDropdown
+                suggestions={mention.suggestions}
+                activeIndex={mention.activeIndex}
+                onHover={mention.setActiveIndex}
+                onPick={mention.select}
+                avatarById={avatarById}
+              />
+            )}
             <input
               ref={inputRef}
               type="text"
               enterKeyHint="send"
               value={draft}
-              onChange={(e) => setDraft(e.target.value.slice(0, MAX_LENGTH))}
+              onChange={(e) => applyDraft(e.target.value)}
+              onKeyDown={mention.onKeyDown}
+              onKeyUp={mention.onSelectionChange}
+              onClick={mention.onSelectionChange}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setTimeout(() => setFocused(false), 120)}
               placeholder={replyTo ? `Reply to ${replyTo.name}…` : 'Add a comment…'}
               disabled={sending}
               className={`focus-ring min-w-0 flex-1 rounded-pill border px-3.5 py-2.5 text-[14px] transition-colors disabled:opacity-50 ${inputClass}`}
