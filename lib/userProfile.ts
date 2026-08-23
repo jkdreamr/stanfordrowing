@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import { User } from './types';
-import { isAdminEmail } from './data';
+import { getTeamIdForEmail, isAdminEmail } from './data';
 
 export interface Profile {
   id: string;
@@ -86,7 +86,7 @@ export async function createProfile({
       id: authId,
       email: email.toLowerCase(),
       name: name.trim(),
-      team_id: 'unassigned',
+      team_id: getTeamIdForEmail(email),
       is_admin: isAdmin,
     })
     .select()

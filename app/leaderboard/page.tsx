@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { formatPreciseNumber, getWorkoutWeightedScore } from '@/lib/data';
+import { formatPreciseNumber, getWorkoutWeightedScore, TEAMS } from '@/lib/data';
 import { User, Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { fetchMultipliers, fetchWorkouts } from '@/lib/supabaseData';
 import { getAllProfiles, profileToUser } from '@/lib/userProfile';
@@ -11,10 +11,11 @@ import FilterTabs, { FilterTab } from '../components/FilterTabs';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
 
-type View = 'overall' | 'weekly' | 'respect' | 'consistent';
+type View = 'overall' | 'teams' | 'weekly' | 'respect' | 'consistent';
 
 const TABS: FilterTab[] = [
   { key: 'overall', label: 'Overall' },
+  { key: 'teams', label: 'Teams' },
   { key: 'weekly', label: 'Weekly' },
   { key: 'respect', label: 'Most Respected' },
   { key: 'consistent', label: 'Streaks' },
@@ -69,6 +70,23 @@ export default function LeaderboardPage() {
     });
   }, [rowerUsers, byUser, configs]);
 
+  // Team standings — total points of everyone in the group (not per-member
+  // average), so a group's combined work is what puts it on top.
+  const teamRows = useMemo(() => {
+    return TEAMS.map((team) => {
+      const members = rows.filter((r) => r.user.teamId === team.id);
+      return {
+        team,
+        points: members.reduce((s, r) => s + r.points, 0),
+        memberCount: members.length,
+      };
+    })
+      .filter((t) => t.memberCount > 0)
+      .sort((a, b) => b.points - a.points);
+  }, [rows]);
+
+  const teamMax = teamRows[0]?.points || 1;
+
   const ranked = useMemo(() => {
     if (view === 'weekly') return [...rows].filter((r) => r.week > 0).sort((a, b) => b.week - a.week);
     if (view === 'respect') return [...rows].filter((r) => r.kudos > 0).sort((a, b) => b.kudos - a.kudos);
@@ -107,6 +125,26 @@ export default function LeaderboardPage() {
         <LoadingState count={5} variant="list" />
       ) : signedOut ? (
         <EmptyState icon="lock" title="Sign in to see the board" actionLabel="Log in" actionHref="/login" />
+      ) : view === 'teams' ? (
+        teamRows.length === 0 ? (
+          <EmptyState icon="groups" title="No groups yet." message="Rowers join their group when they sign in." />
+        ) : (
+          <div className="space-y-2.5">
+            {teamRows.map((t, i) => (
+              <LeaderboardCard
+                key={t.team.id}
+                rank={i + 1}
+                title={t.team.name}
+                subtitle={`${t.memberCount} rower${t.memberCount === 1 ? '' : 's'} signed up`}
+                value={formatPreciseNumber(t.points)}
+                unit="pts"
+                percentage={(t.points / teamMax) * 100}
+                color={t.team.color}
+                highlight={i === 0}
+              />
+            ))}
+          </div>
+        )
       ) : ranked.length === 0 ? (
         <EmptyState
           icon="leaderboard"

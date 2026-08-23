@@ -56,7 +56,8 @@ export default function LeaderboardCard({
       {avatarName ? (
         <Avatar name={avatarName} size={36} src={avatarUrl} />
       ) : (
-        <span className="h-9 w-9 shrink-0 rounded-lg bg-stone-light" />
+        // Team rows have no avatar — the tile carries the team colour instead.
+        <span className="h-9 w-9 shrink-0 rounded-lg" style={{ backgroundColor: color }} />
       )}
 
       <div className="min-w-0 flex-1">
@@ -70,6 +71,10 @@ export default function LeaderboardCard({
             {unit && <span className="ml-0.5 text-[10px] text-charcoal-muted">{unit}</span>}
           </div>
         </div>
+
+        {subtitle && (
+          <p className="mt-0.5 truncate text-[11px] text-charcoal-muted">{subtitle}</p>
+        )}
 
         <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-stone-light">
           <div
