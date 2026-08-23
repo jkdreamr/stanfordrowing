@@ -74,13 +74,10 @@ export async function createProfile({
   authId,
   email,
   name,
-  teamId,
 }: {
   authId: string;
   email: string;
   name: string;
-  /** Overrides the automatic match when the rower picks their own group. */
-  teamId?: string;
 }): Promise<Profile | null> {
   const isAdmin = isAdminEmail(email);
   const { data, error } = await supabase
@@ -89,7 +86,7 @@ export async function createProfile({
       id: authId,
       email: email.toLowerCase(),
       name: name.trim(),
-      team_id: teamId ?? getTeamIdForPerson(email, name),
+      team_id: getTeamIdForPerson(email, name),
       is_admin: isAdmin,
     })
     .select()

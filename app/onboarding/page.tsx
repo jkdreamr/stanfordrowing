@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, clearLocalAuth } from '@/lib/supabaseClient';
 import { createProfile, getProfileByAuthId, isStanfordEmail } from '@/lib/userProfile';
-import { getTeamIdForPerson, TEAMS, UNASSIGNED_TEAM_ID } from '@/lib/data';
 import Icon from '../components/Icon';
 
 export default function OnboardingPage() {
@@ -12,10 +11,6 @@ export default function OnboardingPage() {
   const [authId, setAuthId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [name, setName] = useState('');
-  // Matched from their email, or their surname on the training-group sheet.
-  // Stays in sync as they type until they pick a group themselves.
-  const [teamId, setTeamId] = useState<string>(UNASSIGNED_TEAM_ID);
-  const [teamPicked, setTeamPicked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -46,17 +41,12 @@ export default function OnboardingPage() {
     init();
   }, [router]);
 
-  useEffect(() => {
-    if (teamPicked) return;
-    setTeamId(getTeamIdForPerson(email, name));
-  }, [email, name, teamPicked]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authId || !email || !name.trim()) return;
     setIsSubmitting(true);
     setError('');
-    const profile = await createProfile({ authId, email, name, teamId });
+    const profile = await createProfile({ authId, email, name });
     if (!profile) {
       setError('Something went wrong. Try again.');
       setIsSubmitting(false);
@@ -101,29 +91,6 @@ export default function OnboardingPage() {
               className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-4 py-3.5 text-[15px] text-charcoal placeholder:text-charcoal-light"
             />
             <p className="mt-1.5 text-[11px] text-charcoal-muted">How you appear on the feed.</p>
-
-            <label
-              htmlFor="training-group"
-              className="mb-1.5 mt-4 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted"
-            >
-              Training group
-            </label>
-            <select
-              id="training-group"
-              value={teamId}
-              onChange={(e) => { setTeamId(e.target.value); setTeamPicked(true); }}
-              className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-4 py-3.5 text-[15px] text-charcoal"
-            >
-              {TEAMS.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-              <option value={UNASSIGNED_TEAM_ID}>Not sure yet</option>
-            </select>
-            <p className="mt-1.5 text-[11px] text-charcoal-muted">
-              {teamId === UNASSIGNED_TEAM_ID
-                ? 'Pick your group — you can ask a coach if you’re unsure.'
-                : 'We matched this from the squad list. Change it if it’s wrong.'}
-            </p>
           </div>
 
           {error && <p className="text-[12px] text-coral">{error}</p>}

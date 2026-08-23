@@ -26,7 +26,7 @@ export const ALL_USERS: User[] = [
   { id: 'corbett', name: 'Corbett', teamId: 'group-4' },
   { id: 'salvi', name: 'Salvi', teamId: 'group-3' },
   { id: 'george', name: 'George', teamId: 'group-3' },
-  { id: 'hainlein', name: 'L. Hainlein', teamId: 'group-2' },
+  { id: 'hainlein', name: 'Leo Hainlein', teamId: 'group-2' },
   { id: 'lorgen', name: 'Lorgen', teamId: 'group-1' },
   { id: 'harvey', name: 'Harvey', teamId: 'group-3' },
   { id: 'smith', name: 'Smith', teamId: 'group-1' },
@@ -98,9 +98,11 @@ export interface GroupMember {
  * The training-group sheet — the source of truth for team assignment and for
  * showing who is in which group (including teammates who haven't signed up).
  *
- * An account is matched to its group on sign-up by email, falling back to
- * surname (see getTeamIdForPerson), so the rowers whose email we don't have
- * yet — Pakulis, Frye, Kelly — still land in the right group.
+ * An account is matched to its group on sign-up by email, falling back to the
+ * name on this sheet (see getTeamIdForPerson), so the rowers whose email we
+ * don't have yet — Pakulis, Frye, Kelly — still land in the right group.
+ *
+ * 36 rowers (nine per group) plus the four coxswains.
  */
 export const GROUP_ROSTER: GroupMember[] = [
   // ── Group 1 ──
@@ -111,13 +113,13 @@ export const GROUP_ROSTER: GroupMember[] = [
   { name: 'Celli', email: 'bcelli@stanford.edu', teamId: 'group-1' },
   { name: 'Lorgen', email: 'florgen@stanford.edu', teamId: 'group-1' },
   { name: 'Skottowe', email: 'raph21@stanford.edu', teamId: 'group-1' },
-  { name: 'F. Hainlein', email: 'ferdirfh@stanford.edu', teamId: 'group-1' },
+  { name: 'Ferdi Hainlein', email: 'ferdirfh@stanford.edu', teamId: 'group-1' },
   { name: 'Piersma', email: 'jpiersma@stanford.edu', teamId: 'group-1' },
 
   // ── Group 2 ──
   { name: 'Scalfi', email: 'sandrosc@stanford.edu', teamId: 'group-2' },
   { name: 'Ericson', email: 'mericson@stanford.edu', teamId: 'group-2' },
-  { name: 'L. Hainlein', email: 'hainlein@stanford.edu', teamId: 'group-2' },
+  { name: 'Leo Hainlein', email: 'hainlein@stanford.edu', teamId: 'group-2' },
   { name: 'Albrecht', email: 'marcus06@stanford.edu', teamId: 'group-2' },
   { name: 'Freijo', email: 'abfreijo@stanford.edu', teamId: 'group-2' },
   { name: 'Murphy', email: 'tmurphy6@stanford.edu', teamId: 'group-2' },
@@ -180,26 +182,19 @@ export function surnameKeys(name: string | null | undefined): string[] {
   return keys;
 }
 
-/**
- * Surname → group, but only for surnames that belong to exactly one group.
- * "Hainlein" is deliberately absent: there is one in Group 1 and one in
- * Group 2, so a bare "Hainlein" must not be guessed at.
- */
-export const TEAM_BY_SURNAME: Record<string, string> = (() => {
-  const teamsByKey = new Map<string, Set<string>>();
-  for (const member of GROUP_ROSTER) {
-    for (const key of surnameKeys(member.name)) {
-      const teams = teamsByKey.get(key) ?? new Set<string>();
-      teams.add(member.teamId);
-      teamsByKey.set(key, teams);
-    }
-  }
-  const unique: Record<string, string> = {};
-  teamsByKey.forEach((teams, key) => {
-    if (teams.size === 1) unique[key] = Array.from(teams)[0];
-  });
-  return unique;
-})();
+/** First name, normalised. Empty when the name is a bare surname. */
+function firstNameKey(name: string | null | undefined): string {
+  if (!name) return '';
+  const parts = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z\s-]/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  return parts.length > 1 ? parts[0] : '';
+}
 
 /** Training group for an email, or 'unassigned' when we don't know them yet. */
 export function getTeamIdForEmail(email: string | null | undefined): string {
@@ -208,9 +203,34 @@ export function getTeamIdForEmail(email: string | null | undefined): string {
 }
 
 /**
+ * The roster entry whose name matches, by surname and — when a surname is
+ * shared — by first name too. There are two Hainleins (Ferdi in Group 1, Leo
+ * in Group 2), so "Ferdi Hainlein" and "Leopold Hainlein" both resolve while a
+ * bare "Hainlein" stays unmatched rather than being guessed at. First names
+ * match on either being a prefix of the other, so Leo also matches Leopold.
+ */
+function rosterEntryByName(name: string | null | undefined): GroupMember | undefined {
+  const keys = surnameKeys(name);
+  if (keys.length === 0) return undefined;
+  const candidates = GROUP_ROSTER.filter((m) =>
+    surnameKeys(m.name).some((k) => keys.includes(k))
+  );
+  if (candidates.length === 1) return candidates[0];
+  if (candidates.length === 0) return undefined;
+
+  const first = firstNameKey(name);
+  if (!first) return undefined; // shared surname with nothing to tell them apart
+  const narrowed = candidates.filter((m) => {
+    const theirs = firstNameKey(m.name);
+    return !!theirs && (theirs.startsWith(first) || first.startsWith(theirs));
+  });
+  return narrowed.length === 1 ? narrowed[0] : undefined;
+}
+
+/**
  * Training group for someone signing up: their email if we have it, otherwise
- * their surname if it points at exactly one group. Falls back to 'unassigned',
- * and the sign-up screen lets them correct it either way.
+ * their name against the sheet. Falls back to 'unassigned' rather than guessing
+ * when a name could belong to more than one rower.
  */
 export function getTeamIdForPerson(
   email: string | null | undefined,
@@ -218,22 +238,17 @@ export function getTeamIdForPerson(
 ): string {
   const byEmail = getTeamIdForEmail(email);
   if (byEmail !== UNASSIGNED_TEAM_ID) return byEmail;
-  for (const key of surnameKeys(name)) {
-    if (TEAM_BY_SURNAME[key]) return TEAM_BY_SURNAME[key];
-  }
-  return UNASSIGNED_TEAM_ID;
+  return rosterEntryByName(name)?.teamId ?? UNASSIGNED_TEAM_ID;
 }
 
-/** The roster entry an account corresponds to — email first, then surname. */
+/** The roster entry an account corresponds to — email first, then name. */
 export function rosterEntryFor(
   email: string | null | undefined,
   name: string | null | undefined
 ): GroupMember | undefined {
   const e = email?.trim().toLowerCase();
   const byEmail = e ? GROUP_ROSTER.find((m) => m.email === e) : undefined;
-  if (byEmail) return byEmail;
-  const keys = surnameKeys(name);
-  return GROUP_ROSTER.find((m) => surnameKeys(m.name).some((k) => keys.includes(k)));
+  return byEmail ?? rosterEntryByName(name);
 }
 
 export const ADMIN_EMAILS = [
