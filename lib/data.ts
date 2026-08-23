@@ -1,47 +1,53 @@
 import { Team, User, Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from './types';
 
-// Teams are reset for the fresh start — groupings will be defined later.
-// Everyone is "unassigned" for now; team UI stays hidden until TEAMS is populated.
+// Summer training groups, per the coaches' sheet: four training groups plus the
+// coxswains. A rower's live team is their `profiles.team_id`, set at signup from
+// TEAM_BY_EMAIL below — TEAMS is the display metadata (name + colour) for it.
 export const UNASSIGNED_TEAM_ID = 'unassigned';
 
-export const TEAMS: Team[] = [];
+// `members` is intentionally empty: membership is per-account and lives in the
+// database (profiles.team_id), not in this static file.
+export const TEAMS: Team[] = [
+  { id: 'group-1', name: 'Group 1', color: '#c8202b', members: [], scoreMultiplier: 1 },
+  { id: 'group-2', name: 'Group 2', color: '#9aa07e', members: [], scoreMultiplier: 1 },
+  { id: 'group-3', name: 'Group 3', color: '#6f93a8', members: [], scoreMultiplier: 1 },
+  { id: 'group-4', name: 'Group 4', color: '#cf9445', members: [], scoreMultiplier: 1 },
+  { id: 'coxswains', name: 'Coxswains', color: '#c4c8c0', members: [], scoreMultiplier: 1 },
+];
 
 // The roster (individuals). Kept independent of teams so we can regroup later
 // without touching identities or the email→roster mapping.
 export const ALL_USERS: User[] = [
-  { id: 'scalfi', name: 'Scalfi', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'berwick', name: 'Berwick', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'wolfensberger', name: 'Wolfensberger', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'donovan-davis', name: 'Donovan-Davis', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'freijo', name: 'Freijo', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'corbett', name: 'Corbett', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'salvi', name: 'Salvi', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'george', name: 'George', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'hainlein', name: 'Hainlein', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'lorgen', name: 'Lorgen', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'harvey', name: 'Harvey', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'smith', name: 'Smith', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'ericson', name: 'Ericson', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'albrecht', name: 'Albrecht', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'muehl', name: 'Muehl', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'endicott', name: 'Endicott', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'c-griffin', name: 'C. Griffin', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'j-griffin', name: 'J. Griffin', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'orio', name: 'Orio', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'amodio', name: 'Amodio', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'murphy', name: 'Murphy', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'skottowe', name: 'Skottowe', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'pullinger', name: 'Pullinger', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'rivera', name: 'Rivera', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'vachris', name: 'Vachris', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'celli', name: 'Celli', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'routley', name: 'Routley', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'stephenson', name: 'Stephenson', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'koo', name: 'Koo', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'alford', name: 'Alford', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'bernstein', name: 'Bernstein', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'zammit', name: 'Zammit', teamId: UNASSIGNED_TEAM_ID },
-  { id: 'herzog', name: 'Theo Herzog', teamId: UNASSIGNED_TEAM_ID },
+  { id: 'scalfi', name: 'Scalfi', teamId: 'group-2' },
+  { id: 'berwick', name: 'Berwick', teamId: 'group-4' },
+  { id: 'wolfensberger', name: 'Wolfensberger', teamId: 'group-1' },
+  { id: 'donovan-davis', name: 'Donovan-Davis', teamId: 'group-1' },
+  { id: 'freijo', name: 'Freijo', teamId: 'group-2' },
+  { id: 'corbett', name: 'Corbett', teamId: 'group-4' },
+  { id: 'salvi', name: 'Salvi', teamId: 'group-3' },
+  { id: 'george', name: 'George', teamId: 'group-3' },
+  { id: 'hainlein', name: 'L. Hainlein', teamId: 'group-2' },
+  { id: 'lorgen', name: 'Lorgen', teamId: 'group-1' },
+  { id: 'harvey', name: 'Harvey', teamId: 'group-3' },
+  { id: 'smith', name: 'Smith', teamId: 'group-1' },
+  { id: 'ericson', name: 'Ericson', teamId: 'group-2' },
+  { id: 'albrecht', name: 'Albrecht', teamId: 'group-2' },
+  { id: 'muehl', name: 'Muehl', teamId: 'group-3' },
+  { id: 'endicott', name: 'Endicott', teamId: 'group-3' },
+  { id: 'j-griffin', name: 'Jack Griffin', teamId: 'group-1' },
+  { id: 'orio', name: 'Orio', teamId: 'group-3' },
+  { id: 'amodio', name: 'Hanna-Amodio', teamId: 'group-4' },
+  { id: 'murphy', name: 'Murphy', teamId: 'group-2' },
+  { id: 'skottowe', name: 'Skottowe', teamId: 'group-1' },
+  { id: 'vachris', name: 'Vachris', teamId: 'group-4' },
+  { id: 'celli', name: 'Celli', teamId: 'group-1' },
+  { id: 'routley', name: 'Routley', teamId: 'group-4' },
+  { id: 'stephenson', name: 'Stephenson', teamId: 'group-2' },
+  { id: 'koo', name: 'Koo', teamId: 'coxswains' },
+  { id: 'alford', name: 'Alford', teamId: 'coxswains' },
+  { id: 'bernstein', name: 'Bernstein', teamId: 'coxswains' },
+  { id: 'zammit', name: 'Zammit', teamId: 'coxswains' },
+  { id: 'herzog', name: 'Theo Herzog', teamId: 'group-4' },
 ];
 
 export const USER_EMAILS: Record<string, string> = {
@@ -51,7 +57,6 @@ export const USER_EMAILS: Record<string, string> = {
   'bcelli@stanford.edu': 'celli',
   'braun11@stanford.edu': 'endicott',
   'calber05@stanford.edu': 'berwick',
-  'casparg@stanford.edu': 'c-griffin',
   'cvac05@stanford.edu': 'vachris',
   'cmuehl@stanford.edu': 'muehl',
   'dannys29@stanford.edu': 'stephenson',
@@ -61,9 +66,7 @@ export const USER_EMAILS: Record<string, string> = {
   'zammit@stanford.edu': 'zammit',
   'vbern@stanford.edu': 'bernstein',
   'hylton@stanford.edu': 'harvey',
-  'jacobriv@stanford.edu': 'rivera',
   'code@stanford.edu': 'j-griffin',
-  'jamesp26@stanford.edu': 'pullinger',
   'jsalvi05@stanford.edu': 'salvi',
   'thebig0z@stanford.edu': 'routley',
   'herzogt@stanford.edu': 'herzog',
@@ -82,6 +85,69 @@ export const USER_EMAILS: Record<string, string> = {
   'pojednic@stanford.edu': 'coach-pojednic',
   'tsobolew@stanford.edu': 'coach-sobolewski',
 };
+
+/**
+ * Training group by Stanford email — the source of truth for team assignment.
+ * Applied when an account is created (see createProfile) and mirrored onto
+ * existing accounts by supabase/teams.sql. Comments give the name on the sheet.
+ *
+ * Not listed here (emails unknown, so they land unassigned until an admin sets
+ * them): Pakulis (Group 3), Frye and Kelly (Group 4).
+ */
+export const TEAM_BY_EMAIL: Record<string, string> = {
+  // ── Group 1 ──
+  'lsmith88@stanford.edu': 'group-1', // Smith
+  'code@stanford.edu': 'group-1', // Jack Griffin
+  'elliott5@stanford.edu': 'group-1', // Donovan-Davies
+  'pwolfens@stanford.edu': 'group-1', // Wolfensberger
+  'bcelli@stanford.edu': 'group-1', // Celli
+  'florgen@stanford.edu': 'group-1', // Lorgen
+  'raph21@stanford.edu': 'group-1', // Skottowe
+  'ferdirfh@stanford.edu': 'group-1', // F. Hainlein
+  'jpiersma@stanford.edu': 'group-1', // Piersma
+
+  // ── Group 2 ──
+  'sandrosc@stanford.edu': 'group-2', // Scalfi
+  'mericson@stanford.edu': 'group-2', // Ericson
+  'hainlein@stanford.edu': 'group-2', // L. Hainlein
+  'marcus06@stanford.edu': 'group-2', // Albrecht
+  'abfreijo@stanford.edu': 'group-2', // Freijo
+  'tmurphy6@stanford.edu': 'group-2', // Murphy
+  'dannys29@stanford.edu': 'group-2', // Stephenson
+  'mtm1@stanford.edu': 'group-2', // Madigan
+  'dompucc@stanford.edu': 'group-2', // Puccinelli
+
+  // ── Group 3 ──
+  'jsalvi05@stanford.edu': 'group-3', // Salvi
+  'hylton@stanford.edu': 'group-3', // Harvey
+  'ggeorge8@stanford.edu': 'group-3', // George
+  'orio@stanford.edu': 'group-3', // Orio
+  'braun11@stanford.edu': 'group-3', // Endicott
+  'cmuehl@stanford.edu': 'group-3', // Muehl
+  'auth@stanford.edu': 'group-3', // Auth
+  'zorbalzr@stanford.edu': 'group-3', // Tubidis
+
+  // ── Group 4 ──
+  'tcorbett@stanford.edu': 'group-4', // Corbett
+  'calber05@stanford.edu': 'group-4', // Berwick
+  'herzogt@stanford.edu': 'group-4', // Herzog
+  'cvac05@stanford.edu': 'group-4', // Vachris
+  'amodio@stanford.edu': 'group-4', // Hanna-Amodio
+  'thebig0z@stanford.edu': 'group-4', // Routley
+  'gzpetrow@stanford.edu': 'group-4', // Petrow
+
+  // ── Coxswains ──
+  'joskoo@stanford.edu': 'coxswains', // Koo
+  'kjalford@stanford.edu': 'coxswains', // Alford
+  'zammit@stanford.edu': 'coxswains', // Zammit
+  'vbern@stanford.edu': 'coxswains', // Bernstein
+};
+
+/** Training group for an email, or 'unassigned' when we don't know them yet. */
+export function getTeamIdForEmail(email: string | null | undefined): string {
+  if (!email) return UNASSIGNED_TEAM_ID;
+  return TEAM_BY_EMAIL[email.trim().toLowerCase()] ?? UNASSIGNED_TEAM_ID;
+}
 
 export const ADMIN_EMAILS = [
   'joskoo@stanford.edu', // Koo
