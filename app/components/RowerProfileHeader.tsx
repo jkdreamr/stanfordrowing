@@ -6,6 +6,7 @@ import { formatMeters, formatPreciseNumber } from '@/lib/data';
 import { RowerAggregate } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
+import TeamPill from './TeamPill';
 
 interface RowerProfileHeaderProps {
   user: User;
@@ -60,16 +61,7 @@ export default function RowerProfileHeader({
             {isSelf && <span className="ml-2 text-[12px] font-normal text-charcoal-muted">(you)</span>}
           </h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-charcoal-muted">
-            {team && (
-              <span className="flex items-center gap-1.5 rounded-pill border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[11px] font-medium text-charcoal-soft">
-                <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: team.color }}
-                  aria-hidden
-                />
-                {team.name}
-              </span>
-            )}
+            {team && <TeamPill team={team} size="md" />}
             {aggregate.streak > 0 && (
               <span className="flex items-center gap-1 text-coral">
                 <Icon name="local_fire_department" size={14} fill />

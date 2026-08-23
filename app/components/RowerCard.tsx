@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { User, Workout } from '@/lib/types';
-import { formatMeters, formatPreciseNumber } from '@/lib/data';
+import { formatMeters, formatPreciseNumber, getTeamById } from '@/lib/data';
 import { RowerAggregate, timeAgo } from '@/lib/stats';
 import Avatar from './Avatar';
 import Icon from './Icon';
+import TeamPill from './TeamPill';
 
 interface RowerCardProps {
   user: User;
@@ -13,6 +14,7 @@ interface RowerCardProps {
 }
 
 export default function RowerCard({ user, aggregate, latestWorkout }: RowerCardProps) {
+  const team = getTeamById(user.teamId);
   return (
     <Link
       href={`/rowers/${user.id}`}
@@ -22,11 +24,14 @@ export default function RowerCard({ user, aggregate, latestWorkout }: RowerCardP
         <Avatar name={user.name} size={42} src={user.avatarUrl} />
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[14px] font-semibold text-charcoal">{user.name}</h3>
-          {latestWorkout && (
-            <p className="mt-0.5 truncate text-[11px] text-charcoal-muted">
-              Last active {timeAgo(latestWorkout.createdAt)}
-            </p>
-          )}
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {team && <TeamPill team={team} />}
+            {latestWorkout && (
+              <span className="truncate text-[11px] text-charcoal-muted">
+                Last active {timeAgo(latestWorkout.createdAt)}
+              </span>
+            )}
+          </div>
         </div>
         {aggregate.streak > 0 && (
           <span className="flex items-center gap-0.5 text-coral">

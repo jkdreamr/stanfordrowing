@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import { User } from './types';
-import { getTeamIdForEmail, isAdminEmail } from './data';
+import { getTeamIdForPerson, isAdminEmail } from './data';
 
 export interface Profile {
   id: string;
@@ -74,10 +74,13 @@ export async function createProfile({
   authId,
   email,
   name,
+  teamId,
 }: {
   authId: string;
   email: string;
   name: string;
+  /** Overrides the automatic match when the rower picks their own group. */
+  teamId?: string;
 }): Promise<Profile | null> {
   const isAdmin = isAdminEmail(email);
   const { data, error } = await supabase
@@ -86,7 +89,7 @@ export async function createProfile({
       id: authId,
       email: email.toLowerCase(),
       name: name.trim(),
-      team_id: getTeamIdForEmail(email),
+      team_id: teamId ?? getTeamIdForPerson(email, name),
       is_admin: isAdmin,
     })
     .select()
