@@ -1,15 +1,27 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { DEFAULT_PLAN_MILEAGES, formatMeters, formatPreciseNumber, getPstDateString } from '@/lib/data';
+import { formatMeters, formatPreciseNumber, formatPstDate, getPstDateString } from '@/lib/data';
 import { getAllProfiles, getProfileByAuthId, isStanfordEmail, profileToUser } from '@/lib/userProfile';
 import { createNotifications } from '@/lib/notifications';
 import { Mentionable, parseMentions, useMentionAutocomplete } from '@/lib/mentions';
-import { User, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
+import { User, Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { supabase } from '@/lib/supabaseClient';
-import { createWorkout, fetchMultipliers } from '@/lib/supabaseData';
-import { getWorkoutWeightedScore } from '@/lib/data';
+import { createWorkout, fetchMultipliers, fetchWorkouts } from '@/lib/supabaseData';
+import { claimedSlots, scoreDay } from '@/lib/scoring';
+import {
+  encodeSlots,
+  isAfterPlan,
+  isLegacyDate,
+  PLAN_CLAIM_PREFIX,
+  PLAN_END,
+  PLAN_START,
+  SESSION_BONUS,
+  SessionSlot,
+  sessionRequirement,
+  sessionsFor,
+} from '@/lib/trainingPlan';
 import Icon from '../components/Icon';
 import MentionDropdown from '../components/MentionDropdown';
 
@@ -57,7 +69,15 @@ export default function LogWorkout() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [lastScore, setLastScore] = useState(0);
   const [workoutTypeConfigs, setWorkoutTypeConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
-  const [planMileages, setPlanMileages] = useState<Record<string, number>>({});
+  const [allWorkouts, setAllWorkouts] = useState<Workout[]>([]);
+  /** Which of the day's prescribed sessions the rower is logging. */
+  const [selectedSlots, setSelectedSlots] = useState<SessionSlot[]>([]);
+  /** What they actually did for each ticked session — metres or minutes. */
+  const [sessionWork, setSessionWork] = useState<Record<string, string>>({});
+  /** For a "Your Choice" session, the discipline they actually did. */
+  const [choiceType, setChoiceType] = useState<Record<string, WorkoutType>>({});
+  /** Time on a session scored by distance — recorded, not scored. */
+  const [sessionMinutes, setSessionMinutes] = useState<Record<string, string>>({});
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [notStanford, setNotStanford] = useState(false);
   const [mentionables, setMentionables] = useState<Mentionable[]>([]);
@@ -76,15 +96,15 @@ export default function LogWorkout() {
   useEffect(() => {
     const loadMultipliers = async () => {
       try {
-        const { workoutTypeConfigs: configs, planMileages: planData } = await fetchMultipliers();
+        const { workoutTypeConfigs: configs } = await fetchMultipliers();
         setWorkoutTypeConfigs(configs);
-        setPlanMileages({ ...DEFAULT_PLAN_MILEAGES, ...planData });
       } catch {
         setWorkoutTypeConfigs(WORKOUT_TYPES);
-        setPlanMileages(DEFAULT_PLAN_MILEAGES);
       }
     };
     loadMultipliers();
+    // The rower's own log, so we know which sessions they've already ticked off.
+    fetchWorkouts().then(setAllWorkouts).catch(() => {});
     getAllProfiles()
       .then((profiles) => setMentionables(profiles.map((p) => ({ id: p.id, name: p.name }))))
       .catch(() => {});
@@ -96,6 +116,47 @@ export default function LogWorkout() {
     });
     return () => authListener.subscription.unsubscribe();
   }, []);
+
+  const myWorkouts = useMemo(
+    () => (selectedUser ? allWorkouts.filter((w) => w.oderId === selectedUser.id) : []),
+    [allWorkouts, selectedUser]
+  );
+  /** What the sheet prescribes for the chosen date. */
+  const daySessions = useMemo(() => sessionsFor(sessionDate), [sessionDate]);
+  /** Sessions already logged for that date — can't be claimed twice. */
+  const alreadyClaimed = useMemo(
+    () => claimedSlots(sessionDate, myWorkouts),
+    [sessionDate, myWorkouts]
+  );
+  const beforePlan = isLegacyDate(sessionDate);
+  const afterPlan = isAfterPlan(sessionDate);
+  const openSlots = daySessions.filter((s) => !alreadyClaimed.includes(s.slot));
+
+  const toggleSlot = (slot: SessionSlot) => {
+    setFormError('');
+    setSelectedSlots((prev) =>
+      prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot]
+    );
+  };
+
+  /**
+   * The discipline a session is logged as. Fixed for prescribed sessions; for
+   * "Your Choice" the rower picks, so their work is scored like any other.
+   */
+  const typeForSession = (session: { slot: SessionSlot; scoreAs?: WorkoutType }): WorkoutType =>
+    choiceType[session.slot] ?? session.scoreAs ?? 'rowing_no_pieces';
+
+  /** Disciplines a session may be logged as; more than one means the rower picks. */
+  const optionsForSession = (session: { types: WorkoutType[] }): WorkoutType[] =>
+    session.types.length > 0
+      ? session.types
+      : (Object.keys(WORKOUT_TYPES) as WorkoutType[]).filter((x) => x !== 'training_session');
+
+  /** Whether a session's work is measured in metres rather than minutes. */
+  const sessionBasis = (session: { slot: SessionSlot; scoreAs?: WorkoutType }): 'minutes' | 'distance' => {
+    const t = typeForSession(session);
+    return (workoutTypeConfigs[t] ?? WORKOUT_TYPES[t]).basis;
+  };
 
   const resolveWorkoutType = (): WorkoutType => {
     if (category === 'session') return 'training_session';
@@ -119,11 +180,33 @@ export default function LogWorkout() {
     const enteredDistance = parseFloat(distanceKm) || 0;
     // Store meters always — convert from miles exactly so points stay precise.
     const distanceValue = loggingMiles ? enteredDistance * METERS_PER_MILE : enteredDistance;
-    const planMileage = planMileages[sessionDate] ?? 0;
+    // Never let a typed activity name look like a plan claim.
+    const safeActivityName = activityName.trim().toLowerCase().startsWith(PLAN_CLAIM_PREFIX)
+      ? activityName.trim().slice(PLAN_CLAIM_PREFIX.length).trim()
+      : activityName.trim();
 
     // Validate with visible feedback — never fail silently (a dead-looking button).
     if (category === 'session') {
-      if (planMileage <= 0) { setFormError('No session mileage is set for this date yet.'); return; }
+      if (sessionDate > getPstDateString()) {
+        setFormError("You can't log a session before you've done it."); return;
+      }
+      const validSlots = selectedSlots.filter((slot) => daySessions.some((x) => x.slot === slot));
+      if (validSlots.length === 0) { setFormError('Pick which session you completed.'); return; }
+      for (const session of daySessions.filter((x) => validSlots.includes(x.slot))) {
+        const asDist = sessionBasis(session) === 'distance';
+        const work = Number(sessionWork[session.slot] ?? '');
+        const mins = Number(sessionMinutes[session.slot] ?? '');
+        if (!Number.isFinite(work) || work <= 0) {
+          setFormError(`Enter your ${asDist ? 'distance' : 'minutes'} for the ${session.slot.toUpperCase()} session.`);
+          return;
+        }
+        // The bonus is pro-rated against the sheet's target, so we need the
+        // measure that target is written in.
+        if (asDist && !session.minMeters && (!Number.isFinite(mins) || mins <= 0)) {
+          setFormError(`Enter how many minutes the ${session.slot.toUpperCase()} session took.`);
+          return;
+        }
+      }
     } else if (category === 'other' && !activityName.trim()) {
       setFormError('Name the activity first.'); return;
     } else if (basis === 'minutes' && minutes <= 0) {
@@ -159,17 +242,45 @@ export default function LogWorkout() {
 
       const proofUrlValue = uploadedUrls[0] ?? (proofUrl.trim() || undefined);
 
-      const createdWorkout = await createWorkout({
-        user: selectedUser,
-        type,
-        minutes: category === 'session' ? 0 : basis === 'minutes' ? minutes : 0,
-        distance: category === 'session' ? planMileage : distanceValue > 0 ? distanceValue : undefined,
-        notes: notes || undefined,
-        proofUrl: proofUrlValue,
-        proofUrls: uploadedUrls.length > 1 ? uploadedUrls : undefined,
-        activityName: activityName.trim() || undefined,
-        date,
-      });
+      // A plan log is one row per prescribed session, so each carries its own
+      // work and earns its own bonus.
+      const created: Workout[] = [];
+      if (category === 'session') {
+        for (const session of daySessions.filter((x) => selectedSlots.includes(x.slot))) {
+          const raw = Number(sessionWork[session.slot] ?? '');
+          const value = Number.isFinite(raw) && raw > 0 ? raw : 0;
+          const asDistance = sessionBasis(session) === 'distance';
+          created.push(
+            await createWorkout({
+              user: selectedUser,
+              type: typeForSession(session),
+              minutes: asDistance ? Math.max(0, Number(sessionMinutes[session.slot] ?? '') || 0) : value,
+              distance: asDistance && value > 0 ? value : undefined,
+              notes: notes || undefined,
+              proofUrl: proofUrlValue,
+              proofUrls: uploadedUrls.length > 1 ? uploadedUrls : undefined,
+              // Records which prescribed session this row covered.
+              activityName: encodeSlots([session.slot]),
+              date,
+            })
+          );
+        }
+      } else {
+        created.push(
+          await createWorkout({
+            user: selectedUser,
+            type,
+            minutes: basis === 'minutes' ? minutes : 0,
+            distance: distanceValue > 0 ? distanceValue : undefined,
+            notes: notes || undefined,
+            proofUrl: proofUrlValue,
+            proofUrls: uploadedUrls.length > 1 ? uploadedUrls : undefined,
+            activityName: safeActivityName || undefined,
+            date,
+          })
+        );
+      }
+      const createdWorkout = created[0];
 
       const mentioned = notes.trim() ? parseMentions(notes, mentionables) : [];
       if (mentioned.length > 0) {
@@ -187,7 +298,10 @@ export default function LogWorkout() {
         );
       }
 
-      setLastScore(getWorkoutWeightedScore(createdWorkout, workoutTypeConfigs));
+      const sameDay = [...myWorkouts.filter((w) => w.date === date), ...created];
+      const dayScores = scoreDay(date, sameDay, workoutTypeConfigs).perWorkout;
+      setLastScore(created.reduce((sum, w) => sum + (dayScores.get(w.id)?.points ?? 0), 0));
+      setAllWorkouts((prev) => [...prev, ...created]);
       setShowSuccess(true);
       setTimeout(() => { setShowSuccess(false); resetForm(); }, 2500);
     } catch (err) {
@@ -206,6 +320,10 @@ export default function LogWorkout() {
     setLiftPlan(true);
     setBikeOutdoor(false);
     setSessionDate(getPstDateString());
+    setSelectedSlots([]);
+    setSessionWork({});
+    setSessionMinutes({});
+    setChoiceType({});
     setMinutes(0);
     setDistanceKm('');
     setRunUnit('m');
@@ -427,21 +545,193 @@ export default function LogWorkout() {
 
         {category === 'session' && (
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Session date</label>
+            <div className="mb-1.5 flex items-baseline justify-between gap-2">
+              <label className="block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">
+                Session date
+              </label>
+              <Link href="/plan" className="text-[11px] font-semibold text-coral hover:underline">
+                See the full plan
+              </Link>
+            </div>
             <input
               type="date"
               value={sessionDate}
-              onChange={(e) => setSessionDate(e.target.value)}
+              min={PLAN_START}
+              max={getPstDateString()}
+              onChange={(e) => {
+                // A different day has a different plan — start its ticks clean.
+                setSessionDate(e.target.value);
+                setSelectedSlots([]);
+                setSessionWork({});
+                setSessionMinutes({});
+                setChoiceType({});
+                setFormError('');
+              }}
               className={inputClass}
             />
-            {(planMileages[sessionDate] ?? 0) > 0 ? (
-              <p className="mt-1.5 text-[11px] text-charcoal-muted">
-                Plan: {formatPreciseNumber(planMileages[sessionDate] ?? 0)} pts
-              </p>
+            {beforePlan ? (
+              <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[12px] text-charcoal-muted">
+                <Icon name="history" size={15} className="mt-px shrink-0" />
+                The plan starts {formatPstDate(PLAN_START, { month: 'short', day: 'numeric' })}. Anything
+                logged before then is kept as legacy and isn&apos;t scored.
+              </div>
+            ) : afterPlan ? (
+              <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[12px] text-charcoal-muted">
+                <Icon name="flag" size={15} className="mt-px shrink-0" />
+                Preseason finished on {formatPstDate(PLAN_END, { month: 'short', day: 'numeric' })}.
+              </div>
+            ) : daySessions.length === 0 ? (
+              <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[12px] text-charcoal-muted">
+                <Icon name="bedtime" size={15} className="mt-px shrink-0" />
+                Rest day — nothing scheduled. Log it under another category if you trained.
+              </div>
             ) : (
-              <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-coral/30 bg-coral/10 px-3 py-2 text-[12px] font-medium text-coral">
-                <Icon name="event_busy" size={15} />
-                Unavailable for this date — no session mileage set.
+              <div className="mt-3 space-y-2">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">
+                  What did you complete?
+                </p>
+                {daySessions.map((session) => {
+                  const claimed = alreadyClaimed.includes(session.slot);
+                  const picked = selectedSlots.includes(session.slot);
+                  const asDistance = sessionBasis(session) === 'distance';
+                  // The sheet states most targets in minutes; the k-piece days
+                  // in metres. Whichever it is, we need that number to pro-rate.
+                  const targetIsMeters = !!session.minMeters;
+                  return (
+                    <div key={session.slot}>
+                      <button
+                        type="button"
+                        onClick={() => toggleSlot(session.slot)}
+                        disabled={claimed}
+                        aria-pressed={picked}
+                        className={`focus-ring flex w-full min-h-[56px] items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors touch-manipulation ${
+                          claimed
+                            ? 'cursor-default border-white/[0.06] bg-white/[0.02] opacity-60'
+                            : picked
+                              ? 'border-coral/60 bg-coral/10'
+                              : 'border-stone/40 bg-bone-dark/40 hover:border-stone-dark'
+                        }`}
+                      >
+                        <Icon
+                          name={claimed ? 'task_alt' : picked ? 'check_circle' : 'radio_button_unchecked'}
+                          size={22}
+                          fill={picked || claimed}
+                          className={`shrink-0 ${picked ? 'text-coral' : 'text-charcoal-light'}`}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[13.5px] font-semibold leading-snug text-charcoal">
+                            <span className="uppercase tracking-wider text-charcoal-muted">
+                              {session.slot}
+                            </span>{' '}
+                            {session.label}
+                          </span>
+                          <span className="mt-0.5 block text-[11px] text-charcoal-muted">
+                            {claimed
+                              ? 'Already logged'
+                              : `Target ${sessionRequirement(session)} · +${SESSION_BONUS} bonus`}
+                          </span>
+                        </span>
+                      </button>
+
+                      {picked && !claimed && optionsForSession(session).length > 1 && (
+                        <div className="mt-2 pl-3">
+                          <label
+                            htmlFor={`what-${session.slot}`}
+                            className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted"
+                          >
+                            What did you do?
+                          </label>
+                          <select
+                            id={`what-${session.slot}`}
+                            value={typeForSession(session)}
+                            onChange={(e) =>
+                              setChoiceType((prev) => ({
+                                ...prev,
+                                [session.slot]: e.target.value as WorkoutType,
+                              }))
+                            }
+                            className={inputClass}
+                          >
+                            {optionsForSession(session).map((value) => (
+                              <option key={value} value={value}>
+                                {(workoutTypeConfigs[value] ?? WORKOUT_TYPES[value]).label}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="mt-1.5 text-[11px] text-charcoal-muted">
+                            Scored like any workout of that kind — plus the bonus.
+                          </p>
+                        </div>
+                      )}
+
+                      {picked && !claimed && (
+                        <div className="mt-2 space-y-2.5 pl-3">
+                          <div>
+                            <label
+                              htmlFor={`work-${session.slot}`}
+                              className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted"
+                            >
+                              {asDistance ? 'Distance (m)' : 'Minutes'}
+                            </label>
+                            <input
+                              id={`work-${session.slot}`}
+                              type="number"
+                              inputMode="decimal"
+                              step="any"
+                              min="0"
+                              value={sessionWork[session.slot] ?? ''}
+                              onChange={(e) =>
+                                setSessionWork((prev) => ({ ...prev, [session.slot]: e.target.value }))
+                              }
+                              placeholder={asDistance ? 'e.g. 15000' : String(session.minMinutes ?? '')}
+                              className={inputClass}
+                            />
+                            <p className="mt-1.5 text-[11px] text-charcoal-muted">
+                              {asDistance
+                                ? `Scored on metres. The sheet asks for ${sessionRequirement(session)}.`
+                                : 'Earns its normal points on top of the bonus.'}
+                            </p>
+                          </div>
+
+                          {asDistance && (
+                            <div>
+                              <label
+                                htmlFor={`mins-${session.slot}`}
+                                className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted"
+                              >
+                                {targetIsMeters ? 'Minutes (optional)' : 'Minutes'}
+                              </label>
+                              <input
+                                id={`mins-${session.slot}`}
+                                type="number"
+                                inputMode="numeric"
+                                min="0"
+                                value={sessionMinutes[session.slot] ?? ''}
+                                onChange={(e) =>
+                                  setSessionMinutes((prev) => ({ ...prev, [session.slot]: e.target.value }))
+                                }
+                                placeholder={String(session.minMinutes ?? '')}
+                                className={inputClass}
+                              />
+                              {!targetIsMeters && (
+                                <p className="mt-1.5 text-[11px] text-charcoal-muted">
+                                  The sheet asks for {session.minMinutes} min — the bonus is
+                                  pro-rated if you were short.
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })}
+                {openSlots.length === 0 && (
+                  <p className="text-[11px] text-charcoal-muted">
+                    Both of today&apos;s sessions are logged. Nice.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -541,7 +831,8 @@ export default function LogWorkout() {
               </p>
             )}
             {(() => {
-              const sessionUnavailable = category === 'session' && (planMileages[sessionDate] ?? 0) <= 0;
+              const sessionUnavailable =
+                category === 'session' && (daySessions.length === 0 || beforePlan || afterPlan);
               return (
                 <button
                   type="submit"
@@ -554,7 +845,7 @@ export default function LogWorkout() {
                       {isUploadingProof ? 'Uploading...' : 'Logging...'}
                     </span>
                   ) : sessionUnavailable ? (
-                    'Unavailable for this date'
+                    'Nothing scheduled for this date'
                   ) : (
                     'Log this workout'
                   )}

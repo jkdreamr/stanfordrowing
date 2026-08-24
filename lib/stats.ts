@@ -3,8 +3,8 @@ import {
   APP_TIME_ZONE,
   getPstDateString,
   getWorkoutPrimaryValue,
-  getWorkoutWeightedScore,
 } from './data';
+import { scoringWorkouts, scoreWorkouts } from './scoring';
 
 // ---- date helpers ----
 
@@ -43,13 +43,19 @@ export function aggregateRower(
   workouts: Workout[],
   configs: Record<WorkoutType, WorkoutTypeConfig>
 ): RowerAggregate {
+  // Legacy work (before the plan began) stays visible on a profile but is not
+  // counted here — the board reset to zero when the plan started.
+  const counted = scoringWorkouts(workouts);
   let totalPoints = 0;
   let totalMeters = 0;
   let totalMinutes = 0;
   let lastActiveDate: string | null = null;
 
-  for (const w of workouts) {
-    totalPoints += getWorkoutWeightedScore(w, configs);
+  scoreWorkouts(counted, configs).forEach((score) => {
+    totalPoints += score.points;
+  });
+
+  for (const w of counted) {
     totalMinutes += w.minutes;
     const primary = getWorkoutPrimaryValue(w, configs);
     if (primary.unit === 'm') totalMeters += primary.value;
@@ -57,11 +63,11 @@ export function aggregateRower(
   }
 
   return {
-    totalWorkouts: workouts.length,
+    totalWorkouts: counted.length,
     totalPoints,
     totalMeters,
     totalMinutes,
-    streak: getStreak(workouts),
+    streak: getStreak(counted),
     lastActiveDate,
   };
 }
@@ -108,10 +114,13 @@ export function getWeeklySummary(
   let meters = 0;
   let count = 0;
 
-  for (const w of workouts) {
+  const counted = scoringWorkouts(workouts);
+  const scores = scoreWorkouts(counted, configs);
+
+  for (const w of counted) {
     const i = index.get(w.date);
     if (i === undefined) continue;
-    const score = getWorkoutWeightedScore(w, configs);
+    const score = scores.get(w.id)?.points ?? 0;
     perDayPoints[i] += score;
     points += score;
     count += 1;
@@ -187,14 +196,15 @@ export function getWorkoutBadges(
     }
   }
 
-  // Big week — author has stacked serious volume in the last 7 days,
-  // attached only to their most recent workout to avoid spamming the feed.
+  // Big week — a serious seven days. A full week of the plan is 90 points of
+  // session bonus alone, so the bar sits above "followed the plan" to stay
+  // meaningful now that completion pays as well as volume.
   const week = getWeeklySummary(authorWorkouts, configs);
   const mostRecent = authorWorkouts.reduce<string>(
     (acc, w) => ((w.createdAt || '') > acc ? w.createdAt || '' : acc),
     ''
   );
-  if (week.points >= 60 && workout.createdAt === mostRecent && mostRecent !== '') {
+  if (week.points >= 120 && workout.createdAt === mostRecent && mostRecent !== '') {
     badges.push({ kind: 'big_week', label: 'Big week' });
   }
 

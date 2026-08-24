@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Workout, WorkoutType, WorkoutTypeConfig, User } from '@/lib/types';
 import { getWorkoutBadges } from '@/lib/stats';
+import { scoreWorkouts } from '@/lib/scoring';
 import WorkoutPostCard from './WorkoutPostCard';
 import EmptyState from './EmptyState';
 
@@ -38,6 +39,12 @@ export default function FeedList({
 }: FeedListProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
+  // Points depend on the rower's whole day, so score everything once here.
+  const scores = useMemo(
+    () => scoreWorkouts(allWorkouts ?? workouts, configs),
+    [allWorkouts, workouts, configs]
+  );
+
   const byAuthor = useMemo(() => {
     const map = new Map<string, Workout[]>();
     for (const w of allWorkouts ?? workouts) {
@@ -71,6 +78,7 @@ export default function FeedList({
           workout={w}
           configs={configs}
           badges={getWorkoutBadges(w, byAuthor.get(w.oderId) ?? [w], configs)}
+          score={scores.get(w.id)}
           currentUser={currentUser}
           avatarById={avatarById}
           usersById={usersById}

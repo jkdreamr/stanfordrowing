@@ -216,6 +216,7 @@ export async function createWorkout(params: {
 export async function updateWorkoutRow(workout: Workout): Promise<void> {
   const payload = {
     type: workout.type,
+    date: workout.date,
     minutes: workout.minutes,
     distance: workout.distance ?? null,
     notes: workout.notes ?? null,
