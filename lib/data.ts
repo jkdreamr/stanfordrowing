@@ -26,7 +26,7 @@ export const ALL_USERS: User[] = [
   { id: 'corbett', name: 'Corbett', teamId: 'group-4' },
   { id: 'salvi', name: 'Salvi', teamId: 'group-3' },
   { id: 'george', name: 'George', teamId: 'group-3' },
-  { id: 'hainlein', name: 'L. Hainlein', teamId: 'group-2' },
+  { id: 'hainlein', name: 'Leo Hainlein', teamId: 'group-2' },
   { id: 'lorgen', name: 'Lorgen', teamId: 'group-1' },
   { id: 'harvey', name: 'Harvey', teamId: 'group-3' },
   { id: 'smith', name: 'Smith', teamId: 'group-1' },
@@ -86,67 +86,169 @@ export const USER_EMAILS: Record<string, string> = {
   'tsobolew@stanford.edu': 'coach-sobolewski',
 };
 
+export interface GroupMember {
+  /** Name as written on the coaches' sheet. */
+  name: string;
+  /** Stanford email, when we know it. Blank for rowers we haven't got one for. */
+  email?: string;
+  teamId: string;
+}
+
 /**
- * Training group by Stanford email — the source of truth for team assignment.
- * Applied when an account is created (see createProfile) and mirrored onto
- * existing accounts by supabase/teams.sql. Comments give the name on the sheet.
+ * The training-group sheet — the source of truth for team assignment and for
+ * showing who is in which group (including teammates who haven't signed up).
  *
- * Not listed here (emails unknown, so they land unassigned until an admin sets
- * them): Pakulis (Group 3), Frye and Kelly (Group 4).
+ * An account is matched to its group on sign-up by email, falling back to the
+ * name on this sheet (see getTeamIdForPerson), so the rowers whose email we
+ * don't have yet — Pakulis, Frye, Kelly — still land in the right group.
+ *
+ * 36 rowers (nine per group) plus the four coxswains.
  */
-export const TEAM_BY_EMAIL: Record<string, string> = {
+export const GROUP_ROSTER: GroupMember[] = [
   // ── Group 1 ──
-  'lsmith88@stanford.edu': 'group-1', // Smith
-  'code@stanford.edu': 'group-1', // Jack Griffin
-  'elliott5@stanford.edu': 'group-1', // Donovan-Davies
-  'pwolfens@stanford.edu': 'group-1', // Wolfensberger
-  'bcelli@stanford.edu': 'group-1', // Celli
-  'florgen@stanford.edu': 'group-1', // Lorgen
-  'raph21@stanford.edu': 'group-1', // Skottowe
-  'ferdirfh@stanford.edu': 'group-1', // F. Hainlein
-  'jpiersma@stanford.edu': 'group-1', // Piersma
+  { name: 'Smith', email: 'lsmith88@stanford.edu', teamId: 'group-1' },
+  { name: 'Jack Griffin', email: 'code@stanford.edu', teamId: 'group-1' },
+  { name: 'Donovan-Davies', email: 'elliott5@stanford.edu', teamId: 'group-1' },
+  { name: 'Wolfensberger', email: 'pwolfens@stanford.edu', teamId: 'group-1' },
+  { name: 'Celli', email: 'bcelli@stanford.edu', teamId: 'group-1' },
+  { name: 'Lorgen', email: 'florgen@stanford.edu', teamId: 'group-1' },
+  { name: 'Skottowe', email: 'raph21@stanford.edu', teamId: 'group-1' },
+  { name: 'Ferdi Hainlein', email: 'ferdirfh@stanford.edu', teamId: 'group-1' },
+  { name: 'Piersma', email: 'jpiersma@stanford.edu', teamId: 'group-1' },
 
   // ── Group 2 ──
-  'sandrosc@stanford.edu': 'group-2', // Scalfi
-  'mericson@stanford.edu': 'group-2', // Ericson
-  'hainlein@stanford.edu': 'group-2', // L. Hainlein
-  'marcus06@stanford.edu': 'group-2', // Albrecht
-  'abfreijo@stanford.edu': 'group-2', // Freijo
-  'tmurphy6@stanford.edu': 'group-2', // Murphy
-  'dannys29@stanford.edu': 'group-2', // Stephenson
-  'mtm1@stanford.edu': 'group-2', // Madigan
-  'dompucc@stanford.edu': 'group-2', // Puccinelli
+  { name: 'Scalfi', email: 'sandrosc@stanford.edu', teamId: 'group-2' },
+  { name: 'Ericson', email: 'mericson@stanford.edu', teamId: 'group-2' },
+  { name: 'Leo Hainlein', email: 'hainlein@stanford.edu', teamId: 'group-2' },
+  { name: 'Albrecht', email: 'marcus06@stanford.edu', teamId: 'group-2' },
+  { name: 'Freijo', email: 'abfreijo@stanford.edu', teamId: 'group-2' },
+  { name: 'Murphy', email: 'tmurphy6@stanford.edu', teamId: 'group-2' },
+  { name: 'Stephenson', email: 'dannys29@stanford.edu', teamId: 'group-2' },
+  { name: 'Madigan', email: 'mtm1@stanford.edu', teamId: 'group-2' },
+  { name: 'Puccinelli', email: 'dompucc@stanford.edu', teamId: 'group-2' },
 
   // ── Group 3 ──
-  'jsalvi05@stanford.edu': 'group-3', // Salvi
-  'hylton@stanford.edu': 'group-3', // Harvey
-  'ggeorge8@stanford.edu': 'group-3', // George
-  'orio@stanford.edu': 'group-3', // Orio
-  'braun11@stanford.edu': 'group-3', // Endicott
-  'cmuehl@stanford.edu': 'group-3', // Muehl
-  'auth@stanford.edu': 'group-3', // Auth
-  'zorbalzr@stanford.edu': 'group-3', // Tubidis
+  { name: 'Salvi', email: 'jsalvi05@stanford.edu', teamId: 'group-3' },
+  { name: 'Harvey', email: 'hylton@stanford.edu', teamId: 'group-3' },
+  { name: 'George', email: 'ggeorge8@stanford.edu', teamId: 'group-3' },
+  { name: 'Orio', email: 'orio@stanford.edu', teamId: 'group-3' },
+  { name: 'Endicott', email: 'braun11@stanford.edu', teamId: 'group-3' },
+  { name: 'Muehl', email: 'cmuehl@stanford.edu', teamId: 'group-3' },
+  { name: 'Auth', email: 'auth@stanford.edu', teamId: 'group-3' },
+  { name: 'Pakulis', teamId: 'group-3' },
+  { name: 'Tubidis', email: 'zorbalzr@stanford.edu', teamId: 'group-3' },
 
   // ── Group 4 ──
-  'tcorbett@stanford.edu': 'group-4', // Corbett
-  'calber05@stanford.edu': 'group-4', // Berwick
-  'herzogt@stanford.edu': 'group-4', // Herzog
-  'cvac05@stanford.edu': 'group-4', // Vachris
-  'amodio@stanford.edu': 'group-4', // Hanna-Amodio
-  'thebig0z@stanford.edu': 'group-4', // Routley
-  'gzpetrow@stanford.edu': 'group-4', // Petrow
+  { name: 'Corbett', email: 'tcorbett@stanford.edu', teamId: 'group-4' },
+  { name: 'Berwick', email: 'calber05@stanford.edu', teamId: 'group-4' },
+  { name: 'Herzog', email: 'herzogt@stanford.edu', teamId: 'group-4' },
+  { name: 'Vachris', email: 'cvac05@stanford.edu', teamId: 'group-4' },
+  { name: 'Hanna-Amodio', email: 'amodio@stanford.edu', teamId: 'group-4' },
+  { name: 'Routley', email: 'thebig0z@stanford.edu', teamId: 'group-4' },
+  { name: 'Frye', teamId: 'group-4' },
+  { name: 'Petrow', email: 'gzpetrow@stanford.edu', teamId: 'group-4' },
+  { name: 'Kelly', teamId: 'group-4' },
 
   // ── Coxswains ──
-  'joskoo@stanford.edu': 'coxswains', // Koo
-  'kjalford@stanford.edu': 'coxswains', // Alford
-  'zammit@stanford.edu': 'coxswains', // Zammit
-  'vbern@stanford.edu': 'coxswains', // Bernstein
-};
+  { name: 'Koo', email: 'joskoo@stanford.edu', teamId: 'coxswains' },
+  { name: 'Alford', email: 'kjalford@stanford.edu', teamId: 'coxswains' },
+  { name: 'Zammit', email: 'zammit@stanford.edu', teamId: 'coxswains' },
+  { name: 'Bernstein', email: 'vbern@stanford.edu', teamId: 'coxswains' },
+];
+
+/** Training group by email. Derived from GROUP_ROSTER so the two can't drift. */
+export const TEAM_BY_EMAIL: Record<string, string> = Object.fromEntries(
+  GROUP_ROSTER.filter((m) => m.email).map((m) => [m.email as string, m.teamId])
+);
+
+/**
+ * Normalised surname keys for a name: the surname itself plus, for hyphenated
+ * surnames, the trailing part ("Hanna-Amodio" → "hanna-amodio" and "amodio"),
+ * so someone who signs up as just "Amodio" still matches.
+ */
+export function surnameKeys(name: string | null | undefined): string[] {
+  if (!name) return [];
+  const cleaned = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // strip accents
+    .toLowerCase()
+    .replace(/[^a-z\s-]/g, ' ') // drop periods, digits, punctuation
+    .trim();
+  const last = cleaned.split(/\s+/).filter(Boolean).pop();
+  if (!last) return [];
+  const keys = [last];
+  const tail = last.split('-').filter(Boolean).pop();
+  if (tail && tail !== last) keys.push(tail);
+  return keys;
+}
+
+/** First name, normalised. Empty when the name is a bare surname. */
+function firstNameKey(name: string | null | undefined): string {
+  if (!name) return '';
+  const parts = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z\s-]/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  return parts.length > 1 ? parts[0] : '';
+}
 
 /** Training group for an email, or 'unassigned' when we don't know them yet. */
 export function getTeamIdForEmail(email: string | null | undefined): string {
   if (!email) return UNASSIGNED_TEAM_ID;
   return TEAM_BY_EMAIL[email.trim().toLowerCase()] ?? UNASSIGNED_TEAM_ID;
+}
+
+/**
+ * The roster entry whose name matches, by surname and — when a surname is
+ * shared — by first name too. There are two Hainleins (Ferdi in Group 1, Leo
+ * in Group 2), so "Ferdi Hainlein" and "Leopold Hainlein" both resolve while a
+ * bare "Hainlein" stays unmatched rather than being guessed at. First names
+ * match on either being a prefix of the other, so Leo also matches Leopold.
+ */
+function rosterEntryByName(name: string | null | undefined): GroupMember | undefined {
+  const keys = surnameKeys(name);
+  if (keys.length === 0) return undefined;
+  const candidates = GROUP_ROSTER.filter((m) =>
+    surnameKeys(m.name).some((k) => keys.includes(k))
+  );
+  if (candidates.length === 1) return candidates[0];
+  if (candidates.length === 0) return undefined;
+
+  const first = firstNameKey(name);
+  if (!first) return undefined; // shared surname with nothing to tell them apart
+  const narrowed = candidates.filter((m) => {
+    const theirs = firstNameKey(m.name);
+    return !!theirs && (theirs.startsWith(first) || first.startsWith(theirs));
+  });
+  return narrowed.length === 1 ? narrowed[0] : undefined;
+}
+
+/**
+ * Training group for someone signing up: their email if we have it, otherwise
+ * their name against the sheet. Falls back to 'unassigned' rather than guessing
+ * when a name could belong to more than one rower.
+ */
+export function getTeamIdForPerson(
+  email: string | null | undefined,
+  name: string | null | undefined
+): string {
+  const byEmail = getTeamIdForEmail(email);
+  if (byEmail !== UNASSIGNED_TEAM_ID) return byEmail;
+  return rosterEntryByName(name)?.teamId ?? UNASSIGNED_TEAM_ID;
+}
+
+/** The roster entry an account corresponds to — email first, then name. */
+export function rosterEntryFor(
+  email: string | null | undefined,
+  name: string | null | undefined
+): GroupMember | undefined {
+  const e = email?.trim().toLowerCase();
+  const byEmail = e ? GROUP_ROSTER.find((m) => m.email === e) : undefined;
+  return byEmail ?? rosterEntryByName(name);
 }
 
 export const ADMIN_EMAILS = [

@@ -6,7 +6,7 @@ import Icon from './Icon';
 interface LeaderboardCardProps {
   rank: number;
   title: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   href?: string;
   value: string;
   unit?: string;
@@ -73,7 +73,7 @@ export default function LeaderboardCard({
         </div>
 
         {subtitle && (
-          <p className="mt-0.5 truncate text-[11px] text-charcoal-muted">{subtitle}</p>
+          <div className="mt-1 flex min-w-0 items-center text-[11px] text-charcoal-muted">{subtitle}</div>
         )}
 
         <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-stone-light">

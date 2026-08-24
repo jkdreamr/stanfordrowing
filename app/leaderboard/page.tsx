@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { formatPreciseNumber, getWorkoutWeightedScore, TEAMS } from '@/lib/data';
+import { formatPreciseNumber, getTeamById, getWorkoutWeightedScore, TEAMS } from '@/lib/data';
 import { User, Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { fetchMultipliers, fetchWorkouts } from '@/lib/supabaseData';
 import { getAllProfiles, profileToUser } from '@/lib/userProfile';
 import { getStreak, getWeeklySummary } from '@/lib/stats';
 import LeaderboardCard from '../components/LeaderboardCard';
+import TeamPill from '../components/TeamPill';
 import FilterTabs, { FilterTab } from '../components/FilterTabs';
 import LoadingState from '../components/LoadingState';
 import EmptyState from '../components/EmptyState';
@@ -135,7 +136,8 @@ export default function LeaderboardPage() {
                 key={t.team.id}
                 rank={i + 1}
                 title={t.team.name}
-                subtitle={`${t.memberCount} rower${t.memberCount === 1 ? '' : 's'} signed up`}
+                subtitle={`${t.memberCount} rower${t.memberCount === 1 ? '' : 's'} signed up · see the group`}
+                href={`/rowers?group=${t.team.id}`}
                 value={formatPreciseNumber(t.points)}
                 unit="pts"
                 percentage={(t.points / teamMax) * 100}
@@ -157,11 +159,13 @@ export default function LeaderboardPage() {
         <div className="space-y-2.5">
           {ranked.map((r, i) => {
             const m = metricFor(r);
+            const team = getTeamById(r.user.teamId);
             return (
               <LeaderboardCard
                 key={r.user.id}
                 rank={i + 1}
                 title={r.user.name}
+                subtitle={team ? <TeamPill team={team} /> : undefined}
                 href={`/rowers/${r.user.id}`}
                 value={m.value}
                 unit={m.unit}
