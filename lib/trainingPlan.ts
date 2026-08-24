@@ -16,10 +16,13 @@ export const PLAN_END = '2026-09-20';
 
 /**
  * Bonus for completing one prescribed session, paid on top of what the work
- * itself is worth. Every workout still earns its normal points by type, so
- * doing the plan is always the best — and the easiest — way to score.
+ * itself is worth. It is deliberately large relative to volume: doing the
+ * training is what the board rewards, and a bigger erg only breaks ties.
+ *
+ * Fall short of the session's target and the bonus is pro-rated — 45 minutes
+ * of a 60-minute session earns three quarters of it.
  */
-export const SESSION_BONUS = 10;
+export const SESSION_BONUS = 25;
 
 /** Minimum for a "Lift" session — the lift itself plus core and mobility. */
 export const LIFT_MIN_MINUTES = 45;

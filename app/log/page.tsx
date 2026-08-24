@@ -192,6 +192,21 @@ export default function LogWorkout() {
       }
       const validSlots = selectedSlots.filter((slot) => daySessions.some((x) => x.slot === slot));
       if (validSlots.length === 0) { setFormError('Pick which session you completed.'); return; }
+      for (const session of daySessions.filter((x) => validSlots.includes(x.slot))) {
+        const asDist = sessionBasis(session) === 'distance';
+        const work = Number(sessionWork[session.slot] ?? '');
+        const mins = Number(sessionMinutes[session.slot] ?? '');
+        if (!Number.isFinite(work) || work <= 0) {
+          setFormError(`Enter your ${asDist ? 'distance' : 'minutes'} for the ${session.slot.toUpperCase()} session.`);
+          return;
+        }
+        // The bonus is pro-rated against the sheet's target, so we need the
+        // measure that target is written in.
+        if (asDist && !session.minMeters && (!Number.isFinite(mins) || mins <= 0)) {
+          setFormError(`Enter how many minutes the ${session.slot.toUpperCase()} session took.`);
+          return;
+        }
+      }
     } else if (category === 'other' && !activityName.trim()) {
       setFormError('Name the activity first.'); return;
     } else if (basis === 'minutes' && minutes <= 0) {
@@ -579,6 +594,9 @@ export default function LogWorkout() {
                   const claimed = alreadyClaimed.includes(session.slot);
                   const picked = selectedSlots.includes(session.slot);
                   const asDistance = sessionBasis(session) === 'distance';
+                  // The sheet states most targets in minutes; the k-piece days
+                  // in metres. Whichever it is, we need that number to pro-rate.
+                  const targetIsMeters = !!session.minMeters;
                   return (
                     <div key={session.slot}>
                       <button
@@ -681,7 +699,7 @@ export default function LogWorkout() {
                                 htmlFor={`mins-${session.slot}`}
                                 className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted"
                               >
-                                Minutes (optional)
+                                {targetIsMeters ? 'Minutes (optional)' : 'Minutes'}
                               </label>
                               <input
                                 id={`mins-${session.slot}`}
@@ -695,6 +713,12 @@ export default function LogWorkout() {
                                 placeholder={String(session.minMinutes ?? '')}
                                 className={inputClass}
                               />
+                              {!targetIsMeters && (
+                                <p className="mt-1.5 text-[11px] text-charcoal-muted">
+                                  The sheet asks for {session.minMinutes} min — the bonus is
+                                  pro-rated if you were short.
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>

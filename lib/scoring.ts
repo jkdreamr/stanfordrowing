@@ -42,6 +42,8 @@ export interface WorkoutScore {
 export interface SessionProgress {
   session: PlanSession;
   done: boolean;
+  /** 0–1 of the session's target that was met. */
+  fraction: number;
 }
 
 export interface DayResult {
@@ -79,6 +81,19 @@ export function volumePoints(
   return value * config.multiplier;
 }
 
+/**
+ * How much of a session's target the logged work covers, 0–1. The target is in
+ * whatever unit the sheet states it in — metres for the k-piece days, minutes
+ * everywhere else — and the log form requires that measure, so a rower is never
+ * penalised for leaving an optional box empty.
+ */
+export function sessionFraction(workout: Workout, session: PlanSession): number {
+  const required = session.minMeters ?? session.minMinutes ?? 0;
+  if (required <= 0) return 1;
+  const achieved = session.minMeters ? workout.distance ?? 0 : workout.minutes;
+  return Math.max(0, Math.min(1, achieved / required));
+}
+
 /** Score one rower's workouts for one date. A slot can only be claimed once. */
 export function scoreDay(
   date: string,
@@ -104,6 +119,7 @@ export function scoreDay(
   const planned = sessionsFor(date);
   const bySlot = new Map<SessionSlot, PlanSession>(planned.map((s) => [s.slot, s]));
   const claimed = new Set<SessionSlot>();
+  const fractionBySlot = new Map<SessionSlot, number>();
 
   const ordered = [...workouts].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
 
@@ -123,7 +139,16 @@ export function scoreDay(
     // The work is scored as the first session it covered.
     const scoreAs = got.length > 0 ? bySlot.get(got[0])?.scoreAs : undefined;
     const volume = volumePoints(w, configs, scoreAs);
-    const bonus = got.length * SESSION_BONUS;
+    // Pro-rated: hitting the sheet's target pays the full bonus, falling short
+    // pays that share of it.
+    const bonus = got.reduce((sum, slot) => {
+      const session = bySlot.get(slot);
+      return sum + (session ? SESSION_BONUS * sessionFraction(w, session) : 0);
+    }, 0);
+    got.forEach((slot) => {
+      const session = bySlot.get(slot);
+      if (session) fractionBySlot.set(slot, sessionFraction(w, session));
+    });
     perWorkout.set(w.id, {
       volume, bonus, points: volume + bonus, legacy: false, slots: got, duplicate: got.length === 0,
     });
@@ -145,7 +170,11 @@ export function scoreDay(
 
   return {
     perWorkout,
-    sessions: planned.map((session) => ({ session, done: claimed.has(session.slot) })),
+    sessions: planned.map((session) => ({
+      session,
+      done: claimed.has(session.slot),
+      fraction: fractionBySlot.get(session.slot) ?? 0,
+    })),
     total,
   };
 }

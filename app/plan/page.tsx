@@ -53,7 +53,9 @@ export default function PlanPage() {
             <Icon name="star" size={17} fill className="mt-px shrink-0 text-coral" />
             <span>
               <span className="font-semibold text-charcoal">Log it as the day&apos;s session and you get +{SESSION_BONUS} on top.</span>{' '}
-              Same work, more points — following the plan is always the easiest way to score.
+              That bonus is the biggest thing on the board, so doing the training beats piling up
+              volume. Fall short of the target and it&apos;s pro-rated — 45 minutes of a 60-minute
+              session earns three quarters of it.
             </span>
           </li>
           <li className="flex gap-2.5">
