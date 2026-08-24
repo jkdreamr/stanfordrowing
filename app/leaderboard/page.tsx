@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { formatPreciseNumber, getTeamById, getWorkoutWeightedScore, TEAMS } from '@/lib/data';
+import { formatPreciseNumber, getTeamById, TEAMS } from '@/lib/data';
+import { scoringWorkouts, totalPoints } from '@/lib/scoring';
 import { User, Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { fetchMultipliers, fetchWorkouts } from '@/lib/supabaseData';
 import { getAllProfiles, profileToUser } from '@/lib/userProfile';
@@ -62,8 +64,8 @@ export default function LeaderboardPage() {
 
   const rows = useMemo(() => {
     return rowerUsers.map((user) => {
-      const uw = byUser.get(user.id) ?? [];
-      const points = uw.reduce((s, w) => s + getWorkoutWeightedScore(w, configs), 0);
+      const uw = scoringWorkouts(byUser.get(user.id) ?? []);
+      const points = totalPoints(uw, configs);
       const week = getWeeklySummary(uw, configs).points;
       const kudos = uw.reduce((s, w) => s + (w.reactions?.length ?? 0), 0);
       const streak = getStreak(uw);
@@ -117,7 +119,13 @@ export default function LeaderboardPage() {
         <h1 className="font-display text-xl font-semibold tracking-editorial text-charcoal sm:text-2xl">
           Board
         </h1>
-        <p className="mt-1 text-[13px] text-charcoal-muted">The work shows up here.</p>
+        <p className="mt-1 text-[13px] text-charcoal-muted">
+          Every workout scores; the day&apos;s{' '}
+          <Link href="/plan" className="font-semibold text-coral hover:underline">
+            plan session
+          </Link>{' '}
+          pays a bonus on top.
+        </p>
       </div>
 
       <FilterTabs tabs={TABS} active={view} onChange={(k) => setView(k as View)} className="mb-5" />

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import {
+  formatPstDate,
   getTeamById,
   getWorkoutLabel,
 } from '@/lib/data';
@@ -21,6 +22,8 @@ import {
   updateWorkoutRow,
 } from '@/lib/supabaseData';
 import { aggregateRower, getWeeklySummary } from '@/lib/stats';
+import { scoreWorkouts } from '@/lib/scoring';
+import { isLegacyDate, PLAN_START } from '@/lib/trainingPlan';
 import { useScrollToHash } from '@/lib/useScrollToHash';
 import RowerProfileHeader from '../../components/RowerProfileHeader';
 import WeeklySummaryCard from '../../components/WeeklySummaryCard';
@@ -118,6 +121,12 @@ export default function RowerProfilePage() {
         .filter((w) => w.oderId === rowerId)
         .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')),
     [allWorkouts, rowerId]
+  );
+
+  const workoutScores = useMemo(() => scoreWorkouts(userWorkouts, configs), [userWorkouts, configs]);
+  const legacyCount = useMemo(
+    () => userWorkouts.filter((w) => isLegacyDate(w.date)).length,
+    [userWorkouts]
   );
 
   // Resolve the rower from their profile; fall back to the name on their workouts.
@@ -282,6 +291,18 @@ export default function RowerProfilePage() {
         <WeeklySummaryCard summary={weekly} />
       </div>
 
+      {legacyCount > 0 && (
+        <div className="mt-8 flex items-start gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5">
+          <Icon name="history" size={16} className="mt-px shrink-0 text-charcoal-light" />
+          <p className="text-[12px] leading-relaxed text-charcoal-muted">
+            {legacyCount} session{legacyCount === 1 ? '' : 's'} logged before the preseason plan
+            started on {formatPstDate(PLAN_START, { month: 'long', day: 'numeric' })} are kept here as{' '}
+            <span className="font-semibold text-charcoal-soft">legacy</span> — still yours to look
+            back on, but the board started everyone at zero.
+          </p>
+        </div>
+      )}
+
       <div className="mb-3 mt-8 flex items-center justify-between gap-3">
         <h2 className="text-[15px] font-semibold text-charcoal">Training log</h2>
         {isSelf && (
@@ -320,6 +341,7 @@ export default function RowerProfilePage() {
               workout={w}
               configs={configs}
               currentUser={currentUser}
+              score={workoutScores.get(w.id)}
               highlighted={w.id === highlightId}
               avatarById={{
                 ...(profileUser.avatarUrl ? { [profileUser.id]: profileUser.avatarUrl } : {}),

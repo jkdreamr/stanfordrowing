@@ -3,16 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
-  DEFAULT_PLAN_MILEAGES,
   TEAMS,
   formatPreciseNumber,
   formatPstDate,
-  getChallengeDates,
+  getTeamById,
   getWorkoutLabel,
-  getWorkoutWeightedScore,
   isAdminEmail,
 } from '@/lib/data';
-import { getProfileByAuthId } from '@/lib/userProfile';
+import { getAllProfiles, getProfileByAuthId, Profile } from '@/lib/userProfile';
+import { scoreWorkouts, totalPoints as sumPoints } from '@/lib/scoring';
+import { decodeSlots, PLAN_END, PLAN_START, sessionAt } from '@/lib/trainingPlan';
 import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { supabase, clearLocalAuth } from '@/lib/supabaseClient';
 import {
@@ -20,11 +20,12 @@ import {
   fetchMultipliers,
   fetchWorkouts,
   saveMultipliers,
-  updateTrainingSessionDistanceForDate,
   updateWorkoutRow,
 } from '@/lib/supabaseData';
 
 const emptyEdit = {
+  type: 'rowing_no_pieces' as WorkoutType,
+  date: '',
   minutes: '',
   distance: '',
   notes: '',
@@ -38,7 +39,7 @@ export default function Admin() {
   const [workoutTypeConfigs, setWorkoutTypeConfigs] = useState<Record<WorkoutType, WorkoutTypeConfig>>(WORKOUT_TYPES);
   const [workoutMultiplierInputs, setWorkoutMultiplierInputs] = useState<Record<WorkoutType, string>>({} as Record<WorkoutType, string>);
   const [teamMultiplierInputs, setTeamMultiplierInputs] = useState<Record<string, string>>({});
-  const [planMileageInputs, setPlanMileageInputs] = useState<Record<string, string>>({});
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState(emptyEdit);
   const [loadError, setLoadError] = useState('');
@@ -47,13 +48,10 @@ export default function Admin() {
   // Refs mirror the latest inputs so debounced autosave never reads stale state.
   const workoutInputsRef = useRef(workoutMultiplierInputs);
   const teamInputsRef = useRef(teamMultiplierInputs);
-  const planInputsRef = useRef(planMileageInputs);
   useEffect(() => { workoutInputsRef.current = workoutMultiplierInputs; }, [workoutMultiplierInputs]);
   useEffect(() => { teamInputsRef.current = teamMultiplierInputs; }, [teamMultiplierInputs]);
-  useEffect(() => { planInputsRef.current = planMileageInputs; }, [planMileageInputs]);
 
   const multTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const planTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const savedResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -80,21 +78,19 @@ export default function Admin() {
     if (!isAdmin) return;
     const loadAdminData = async () => {
       try {
-        const [workoutsData, multiplierData] = await Promise.all([fetchWorkouts(), fetchMultipliers()]);
+        const [workoutsData, multiplierData, profileData] = await Promise.all([
+          fetchWorkouts(),
+          fetchMultipliers(),
+          getAllProfiles(),
+        ]);
         setWorkouts(workoutsData);
+        setProfiles(profileData);
         setWorkoutTypeConfigs(multiplierData.workoutTypeConfigs);
         setWorkoutMultiplierInputs(
           (Object.entries(multiplierData.workoutTypeConfigs) as [WorkoutType, WorkoutTypeConfig][]).reduce((acc, [type, config]) => {
             acc[type] = config.multiplier.toString();
             return acc;
           }, {} as Record<WorkoutType, string>)
-        );
-        const mergedPlanMileages = { ...DEFAULT_PLAN_MILEAGES, ...multiplierData.planMileages };
-        setPlanMileageInputs(
-          getChallengeDates().reduce((acc, date) => {
-            acc[date] = mergedPlanMileages[date]?.toString() || '';
-            return acc;
-          }, {} as Record<string, string>)
         );
         setTeamMultiplierInputs(
           TEAMS.reduce((acc, team) => {
@@ -116,10 +112,9 @@ export default function Admin() {
   }, [workouts]);
 
   const totalMinutes = useMemo(() => workouts.reduce((sum, workout) => sum + workout.minutes, 0), [workouts]);
-  const totalPoints = useMemo(
-    () => workouts.reduce((sum, workout) => sum + getWorkoutWeightedScore(workout, workoutTypeConfigs), 0),
-    [workouts, workoutTypeConfigs]
-  );
+  /** Scored against the plan, so the log always agrees with the board. */
+  const scores = useMemo(() => scoreWorkouts(workouts, workoutTypeConfigs), [workouts, workoutTypeConfigs]);
+  const totalPoints = useMemo(() => sumPoints(workouts, workoutTypeConfigs), [workouts, workoutTypeConfigs]);
 
   const handleGoogleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
@@ -138,14 +133,23 @@ export default function Admin() {
     window.location.href = '/';
   };
 
-  const getUserName = (userId: string) =>
-    workouts.find((w) => w.oderId === userId)?.userName || 'Unknown';
+  const profileById = useMemo(() => new Map(profiles.map((p) => [p.id, p])), [profiles]);
 
-  const getUserTeam = (_userId: string): { color: string; name: string } | null => null;
+  const getUserName = (userId: string) =>
+    profileById.get(userId)?.name ||
+    workouts.find((w) => w.oderId === userId)?.userName ||
+    'Unknown';
+
+  const getUserTeam = (userId: string) => {
+    const teamId = profileById.get(userId)?.teamId;
+    return teamId ? getTeamById(teamId) : undefined;
+  };
 
   const startEdit = (workout: Workout) => {
     setEditingWorkoutId(workout.id);
     setEditValues({
+      type: workout.type,
+      date: workout.date,
       minutes: workout.minutes.toString(),
       distance: workout.distance?.toString() || '',
       notes: workout.notes || '',
@@ -160,24 +164,26 @@ export default function Admin() {
   const saveEdit = (workout: Workout) => {
     const distanceValue = editValues.distance ? Number(editValues.distance) : undefined;
     const minutesValue = Number(editValues.minutes);
-    const config = workoutTypeConfigs[workout.type] ?? WORKOUT_TYPES[workout.type];
-    const basis = config?.basis ?? 'minutes';
-    const hasMinutes = Number.isFinite(minutesValue) && minutesValue > 0;
     const hasDistance = Number.isFinite(distanceValue) && (distanceValue ?? 0) > 0;
-    if ((basis === 'minutes' && !hasMinutes) || (basis === 'distance' && !hasDistance)) {
+    if (!editValues.date) {
+      setLoadError('A workout needs a date.');
       return;
     }
     const updatedWorkout: Workout = {
       ...workout,
-      minutes: basis === 'minutes' && hasMinutes ? minutesValue : 0,
+      type: editValues.type,
+      date: editValues.date,
+      minutes: Number.isFinite(minutesValue) && minutesValue > 0 ? minutesValue : 0,
       distance: hasDistance ? distanceValue : undefined,
       notes: editValues.notes ? editValues.notes.trim() : undefined,
     };
-    updatedWorkout.weightedScore = getWorkoutWeightedScore(updatedWorkout, workoutTypeConfigs);
 
-    updateWorkoutRow(updatedWorkout).then(() => {
-      setWorkouts(prev => prev.map(item => (item.id === workout.id ? updatedWorkout : item)));
-    });
+    updateWorkoutRow(updatedWorkout)
+      .then(() => {
+        setWorkouts(prev => prev.map(item => (item.id === workout.id ? updatedWorkout : item)));
+        setLoadError('');
+      })
+      .catch(() => setLoadError('Unable to save that change.'));
     cancelEdit();
   };
 
@@ -194,17 +200,14 @@ export default function Admin() {
   // Clear any pending autosave timers on unmount.
   const multTimerForCleanup = multTimer;
   const savedTimerForCleanup = savedResetTimer;
-  const planTimersForCleanup = planTimers;
   useEffect(() => {
     const mult = multTimerForCleanup;
     const saved = savedTimerForCleanup;
-    const plans = planTimersForCleanup;
     return () => {
       if (mult.current) clearTimeout(mult.current);
       if (saved.current) clearTimeout(saved.current);
-      Object.values(plans.current).forEach((t) => clearTimeout(t));
     };
-  }, [multTimerForCleanup, savedTimerForCleanup, planTimersForCleanup]);
+  }, [multTimerForCleanup, savedTimerForCleanup]);
 
   const buildPayload = () => {
     const workoutMultipliers = (Object.keys(WORKOUT_TYPES) as WorkoutType[]).reduce((acc, type) => {
@@ -220,13 +223,7 @@ export default function Admin() {
       return acc;
     }, {} as Record<string, number>);
 
-    const planMileages = Object.entries(planInputsRef.current).reduce((acc, [date, value]) => {
-      const numeric = Number(value);
-      if (value !== '' && Number.isFinite(numeric) && numeric > 0) acc[date] = numeric;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return { workoutMultipliers, teamMultipliers, planMileages };
+    return { workoutMultipliers, teamMultipliers };
   };
 
   const flashSaved = () => {
@@ -260,35 +257,6 @@ export default function Admin() {
     setTeamMultiplierInputs((prev) => ({ ...prev, [teamId]: value }));
     if (multTimer.current) clearTimeout(multTimer.current);
     multTimer.current = setTimeout(() => { void persistMultipliers(); }, 700);
-  };
-
-  // Editing a date's plan mileage autosaves AND retroactively updates the
-  // points of every training session logged on that date.
-  const handlePlanMileageChange = (date: string, value: string) => {
-    setPlanMileageInputs((prev) => ({ ...prev, [date]: value }));
-    if (planTimers.current[date]) clearTimeout(planTimers.current[date]);
-    planTimers.current[date] = setTimeout(async () => {
-      setSaveStatus('saving');
-      setLoadError('');
-      try {
-        await saveMultipliers(buildPayload());
-        const numeric = Number(planInputsRef.current[date]);
-        if (planInputsRef.current[date] !== '' && Number.isFinite(numeric) && numeric > 0) {
-          await updateTrainingSessionDistanceForDate(date, numeric);
-          setWorkouts((prev) =>
-            prev.map((w) =>
-              w.type === 'training_session' && w.date === date ? { ...w, distance: numeric } : w
-            )
-          );
-        }
-        const data = await fetchMultipliers();
-        setWorkoutTypeConfigs(data.workoutTypeConfigs);
-        flashSaved();
-      } catch {
-        setSaveStatus('error');
-        setLoadError('Unable to update plan mileage for that date.');
-      }
-    }, 800);
   };
 
   if (isAuthLoading) {
@@ -400,6 +368,10 @@ export default function Admin() {
             <div className="space-y-3">
               {sortedWorkouts.map(workout => {
                 const team = getUserTeam(workout.oderId);
+                const score = scores.get(workout.id);
+                const planSlots = decodeSlots(workout.activityName)
+                  .map((slot) => sessionAt(workout.date, slot))
+                  .filter((x): x is NonNullable<typeof x> => !!x);
                 const isEditing = editingWorkoutId === workout.id;
                 return (
                   <div
@@ -421,16 +393,69 @@ export default function Admin() {
                             </span>
                           </div>
                           <p className="text-xs text-charcoal-light">{formatPstDate(workout.date)}</p>
+                          {planSlots.length > 0 && (
+                            <p className="mt-0.5 text-xs text-charcoal-muted">
+                              {planSlots.map((ps) => `${ps.slot.toUpperCase()} · ${ps.label}`).join('  |  ')}
+                            </p>
+                          )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-coral">
-                          {formatPreciseNumber(getWorkoutWeightedScore(workout, workoutTypeConfigs))} pts
-                        </p>
+                      <div className="shrink-0 text-right">
+                        {score?.legacy ? (
+                          <span
+                            className="rounded-full border border-white/[0.08] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-charcoal-light"
+                            title={`Logged before the plan started on ${formatPstDate(PLAN_START, { month: 'short', day: 'numeric' })} — not counted`}
+                          >
+                            Legacy
+                          </span>
+                        ) : (
+                          <>
+                            <p className="text-sm font-semibold text-coral">
+                              {formatPreciseNumber(score?.points ?? 0)} pts
+                            </p>
+                            {(score?.bonus ?? 0) > 0 && (
+                              <p className="text-[10px] text-charcoal-muted">
+                                {formatPreciseNumber(score?.volume ?? 0)} work + {score?.bonus} plan
+                              </p>
+                            )}
+                            {score?.duplicate && (
+                              <p className="text-[10px] text-coral">Session already claimed</p>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
 
                     <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      {isEditing && (
+                        <>
+                          <div>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-charcoal-light">Type</p>
+                            <select
+                              value={editValues.type}
+                              onChange={(event) =>
+                                setEditValues(prev => ({ ...prev, type: event.target.value as WorkoutType }))
+                              }
+                              className="mt-2 w-full rounded-2xl border border-white/[0.07] bg-white/[0.04] px-3 py-2 text-sm text-charcoal"
+                            >
+                              {(Object.entries(workoutTypeConfigs) as [WorkoutType, WorkoutTypeConfig][])
+                                .filter(([value]) => value !== 'training_session')
+                                .map(([value, config]) => (
+                                  <option key={value} value={value}>{config.label}</option>
+                                ))}
+                            </select>
+                          </div>
+                          <div>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-charcoal-light">Date</p>
+                            <input
+                              type="date"
+                              value={editValues.date}
+                              onChange={(event) => setEditValues(prev => ({ ...prev, date: event.target.value }))}
+                              className="mt-2 w-full rounded-2xl border border-white/[0.07] bg-white/[0.04] px-3 py-2 text-sm text-charcoal"
+                            />
+                          </div>
+                        </>
+                      )}
                       <div>
                         <p className="text-[11px] uppercase tracking-[0.2em] text-charcoal-light">Time (mins)</p>
                         {isEditing ? (
@@ -512,7 +537,7 @@ export default function Admin() {
                             onClick={() => startEdit(workout)}
                             className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-charcoal"
                           >
-                            Edit numbers
+                            Edit
                           </button>
                           <button
                             onClick={() => handleDelete(workout.id)}
@@ -551,29 +576,6 @@ export default function Admin() {
                       value={workoutMultiplierInputs[type] || ''}
                       onChange={(event) => handleWorkoutMultiplierChange(type, event.target.value)}
                       className="w-24 rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-3 py-2 text-sm text-charcoal"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6 shadow-card">
-              <h3 className="text-lg font-semibold text-charcoal mb-2">Plan mileage by date</h3>
-              <p className="mb-5 text-xs text-charcoal-muted">Set mileage for training sessions (points equal mileage).</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {getChallengeDates().map(date => (
-                  <div key={date} className="rounded-2xl border border-white/[0.07] bg-white/[0.04] px-4 py-4 text-sm">
-                    <p className="text-xs uppercase tracking-[0.2em] text-charcoal-light">Date</p>
-                    <p className="mt-1 font-semibold text-charcoal text-sm sm:text-base leading-tight break-words">
-                      {formatPstDate(date, { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </p>
-                    <label className="mt-4 block text-xs font-semibold text-charcoal-muted">Mileage (pts)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={planMileageInputs[date] || ''}
-                      onChange={(event) => handlePlanMileageChange(date, event.target.value)}
-                      className="mt-2 w-full rounded-2xl border border-white/[0.07] bg-bone-dark/40 px-3 py-2 text-sm text-charcoal"
                     />
                   </div>
                 ))}

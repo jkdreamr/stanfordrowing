@@ -467,16 +467,8 @@ export function getTeamScoreMultiplierMap(): Record<string, number> {
   }, {} as Record<string, number>);
 }
 
-export function getWorkoutWeightedScore(
-  workout: Workout,
-  workoutTypeConfigs: Record<WorkoutType, WorkoutTypeConfig> = getWorkoutTypeConfigs()
-): number {
-  const config = workoutTypeConfigs[workout.type];
-  const multiplier = config?.multiplier ?? 1;
-  const basis = config?.basis ?? 'minutes';
-  const value = basis === 'distance' ? workout.distance ?? 0 : workout.minutes;
-  return value * multiplier;
-}
+// Scoring lives in lib/scoring.ts now: every workout earns its volume points
+// (type multiplier x value) and a completed plan session adds a flat bonus.
 
 export function getWorkoutLabel(
   workout: Workout,

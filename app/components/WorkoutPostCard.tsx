@@ -8,9 +8,10 @@ import {
   getUserById,
   getWorkoutLabel,
   getWorkoutPrimaryValue,
-  getWorkoutWeightedScore,
 } from '@/lib/data';
 import { Badge, formatPrimary, timeAgo, workoutIcon } from '@/lib/stats';
+import { WorkoutScore } from '@/lib/scoring';
+import { decodeSlots, sessionAt } from '@/lib/trainingPlan';
 import Avatar from './Avatar';
 import Icon from './Icon';
 import RespectButton from './RespectButton';
@@ -33,6 +34,8 @@ interface WorkoutPostCardProps {
   actions?: ReactNode;
   /** Briefly outline this card (used when opened from a notification deep link). */
   highlighted?: boolean;
+  /** How this workout scored, in the context of its rower's day. */
+  score?: WorkoutScore;
 }
 
 const BADGE_LABELS: Record<string, string> = {
@@ -56,12 +59,22 @@ export default function WorkoutPostCard({
   onDeleteComment,
   actions,
   highlighted = false,
+  score,
 }: WorkoutPostCardProps) {
   const [showComments, setShowComments] = useState(false);
+  // A plan log is any workout that claimed a prescribed session for its date.
+  const planSlots = decodeSlots(workout.activityName);
+  const isPlanSession = planSlots.length > 0;
   const author = getUserById(workout.oderId);
   const displayName = author?.name ?? workout.userName ?? 'Unknown';
   const primary = getWorkoutPrimaryValue(workout, configs);
-  const points = getWorkoutWeightedScore(workout, configs);
+  const points = score?.points ?? 0;
+  const isLegacy = score?.legacy ?? false;
+  // Which prescribed sessions it covered, for the badge under the stat.
+  const planSessions = planSlots
+    .map((slot) => sessionAt(workout.date, slot))
+    .filter((s): s is NonNullable<typeof s> => !!s);
+  const bonus = score?.bonus ?? 0;
   const reactions = workout.reactions ?? [];
   const comments = workout.comments ?? [];
   const hasReacted = reactions.some((r) => r.userId === currentUser?.id);
@@ -111,9 +124,18 @@ export default function WorkoutPostCard({
               </div>
             </div>
           </Link>
-          <span className="shrink-0 rounded-pill border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold tabular text-charcoal-muted">
-            +{formatPreciseNumber(points)}
-          </span>
+          {isLegacy ? (
+            <span
+              className="shrink-0 rounded-pill border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-charcoal-light"
+              title="Logged before the training plan started — not counted on the board"
+            >
+              Legacy
+            </span>
+          ) : (
+            <span className="shrink-0 rounded-pill border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold tabular text-charcoal-muted">
+              +{formatPreciseNumber(points)}
+            </span>
+          )}
         </div>
 
         {/* Main stat — one dominant number */}
@@ -125,6 +147,27 @@ export default function WorkoutPostCard({
               {formatPrimary(primary.value, primary.unit)}
             </span>
             <span className="shrink-0 pb-1 text-base font-medium text-charcoal-muted">{UNIT_LABEL[primary.unit] ?? primary.unit}</span>
+          </div>
+        )}
+
+        {/* Completed the day's prescribed session */}
+        {planSessions.length > 0 && (
+          <div className="mt-3 space-y-1.5">
+            {planSessions.map((ps) => (
+              <div
+                key={ps.slot}
+                className="flex items-start gap-2 rounded-xl border border-coral/25 bg-coral/[0.07] px-3 py-2"
+              >
+                <Icon name="check_circle" size={16} fill className="mt-px shrink-0 text-coral" />
+                <p className="min-w-0 text-[12px] leading-snug text-charcoal-soft">
+                  <span className="font-semibold text-charcoal">Plan session</span>
+                  <span className="mx-1 text-charcoal-light">·</span>
+                  <span className="uppercase tracking-wider text-charcoal-muted">{ps.slot}</span>{' '}
+                  {ps.label}
+                  {bonus > 0 && <span className="ml-1 font-semibold text-coral">+{bonus}</span>}
+                </p>
+              </div>
+            ))}
           </div>
         )}
 
@@ -147,9 +190,11 @@ export default function WorkoutPostCard({
         )}
 
         {/* Caption */}
-        {(caption || workout.activityName) && (
+        {(caption || (workout.activityName && !isPlanSession)) && (
           <p className="mt-3 break-words text-[13.5px] leading-relaxed text-charcoal-soft">
-            {workout.activityName ? <span className="font-semibold text-charcoal">{workout.activityName} — </span> : null}
+            {workout.activityName && !isPlanSession ? (
+              <span className="font-semibold text-charcoal">{workout.activityName} — </span>
+            ) : null}
             {caption ? <MentionText text={caption} mentionables={mentionables} /> : null}
           </p>
         )}

@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { formatPreciseNumber, getDaysRemaining, getWorkoutWeightedScore } from '@/lib/data';
+import { formatPreciseNumber, getDaysRemaining } from '@/lib/data';
+import { scoreWorkouts, scoringWorkouts, totalPoints as sumPoints } from '@/lib/scoring';
 import { getAllProfiles, getProfileByAuthId, profileToUser } from '@/lib/userProfile';
 import { getSeenMap, markSeen } from '@/lib/storySeen';
 import { Story, User, Workout, WorkoutComment, WorkoutReaction, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
@@ -228,16 +229,16 @@ export default function FeedPage() {
   };
 
   // ---- derived ----
-  const totalPoints = useMemo(
-    () => workouts.reduce((sum, w) => sum + getWorkoutWeightedScore(w, configs), 0),
-    [workouts, configs]
-  );
+  // One pass over every workout; each card and total reads from this.
+  const scores = useMemo(() => scoreWorkouts(workouts, configs), [workouts, configs]);
+
+  const totalPoints = useMemo(() => sumPoints(workouts, configs), [workouts, configs]);
 
   const topRowers = useMemo(() => {
     const map = new Map<string, { name: string; total: number }>();
     for (const w of workouts) {
       const cur = map.get(w.oderId) ?? { name: w.userName ?? 'Rower', total: 0 };
-      cur.total += getWorkoutWeightedScore(w, configs);
+      cur.total += scores.get(w.id)?.points ?? 0;
       if (w.userName) cur.name = w.userName;
       map.set(w.oderId, cur);
     }
@@ -246,7 +247,7 @@ export default function FeedPage() {
       .filter((r) => r.total > 0)
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
-  }, [workouts, configs]);
+  }, [workouts, scores]);
 
   const myWeek = useMemo(() => {
     if (!currentUser) return null;
@@ -350,7 +351,9 @@ export default function FeedPage() {
             <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5">
               <p className="label-caps text-charcoal-muted">All rowers, all summer</p>
               <p className="mt-2 font-display text-3xl font-bold tracking-tightest tabular text-charcoal">{formatPreciseNumber(totalPoints)}</p>
-              <p className="mt-0.5 text-[12px] text-charcoal-muted">{workouts.length} workouts logged</p>
+              <p className="mt-0.5 text-[12px] text-charcoal-muted">
+                {scoringWorkouts(workouts).length} workouts logged
+              </p>
             </div>
           </aside>
         </div>
