@@ -1,5 +1,5 @@
 import { Workout, WorkoutType, WorkoutTypeConfig } from './types';
-import { getWorkoutTypeConfigs } from './data';
+import { getPstDateString, getWorkoutTypeConfigs } from './data';
 import {
   decodeSlots,
   isLegacyDate,
@@ -87,8 +87,12 @@ export function scoreDay(
 ): DayResult {
   const perWorkout = new Map<string, WorkoutScore>();
   const legacy = isLegacyDate(date);
+  // Nobody can have trained tomorrow. The log form blocks future dates, but the
+  // client isn't the authority — a row written straight to the API would
+  // otherwise let someone claim the whole plan on day one.
+  const future = date > getPstDateString();
 
-  if (legacy) {
+  if (legacy || future) {
     for (const w of workouts) {
       perWorkout.set(w.id, {
         volume: 0, bonus: 0, points: 0, legacy: true, slots: [], duplicate: false,
@@ -107,7 +111,14 @@ export function scoreDay(
   const claimsSlot = (w: Workout) => decodeSlots(w.activityName).length > 0;
   for (const w of ordered) {
     if (!claimsSlot(w)) continue;
-    const got = decodeSlots(w.activityName).filter((slot) => bySlot.has(slot) && !claimed.has(slot));
+    // A claim only counts if the work is something that session could be: you
+    // can't tick the morning erg with a game of basketball. Sessions the sheet
+    // leaves open ("Your Choice") accept anything.
+    const got = decodeSlots(w.activityName).filter((slot) => {
+      const session = bySlot.get(slot);
+      if (!session || claimed.has(slot)) return false;
+      return session.types.length === 0 || session.types.includes(w.type);
+    });
     got.forEach((slot) => claimed.add(slot));
     // The work is scored as the first session it covered.
     const scoreAs = got.length > 0 ? bySlot.get(got[0])?.scoreAs : undefined;
