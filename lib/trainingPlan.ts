@@ -24,6 +24,23 @@ export const PLAN_END = '2026-09-20';
  */
 export const SESSION_BONUS = 25;
 
+/**
+ * Reference paces in metres per minute, used only to read how much of a session
+ * a log covers when the rower recorded the other measure. A 15,000 m erg with
+ * no minutes on it plainly clears a 30-minute target, and should be read that
+ * way rather than as nothing done.
+ *
+ * These are deliberately ordinary club paces (2:00/500m on the erg, 6:00/km
+ * running). They never change what the work itself is worth — only whether a
+ * prescribed session reads as completed — so the fallback can never inflate a
+ * score beyond the one bonus that session was already going to pay.
+ */
+export const REFERENCE_PACE_M_PER_MIN: Partial<Record<WorkoutType, number>> = {
+  rowing_no_pieces: 250,
+  rowing_with_pieces: 250,
+  cross_run: 167,
+};
+
 /** Minimum for a "Lift" session — the lift itself plus core and mobility. */
 export const LIFT_MIN_MINUTES = 45;
 /** Minimum for a "Your Choice" session, which the sheet leaves open. */

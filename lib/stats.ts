@@ -8,11 +8,21 @@ import { scoringWorkouts, scoreWorkouts } from './scoring';
 
 // ---- date helpers ----
 
-/** YYYY-MM-DD (PST) for N days before today. offset 0 = today. */
+/**
+ * YYYY-MM-DD (PST) for N days before today. offset 0 = today.
+ *
+ * The step has to happen in the shared calendar, not the viewer's. Taking an
+ * instant, subtracting a day in whatever zone the device happens to be in, and
+ * only then formatting in Pacific mixes two calendars: on a day the viewer's
+ * zone changes its offset and Pacific doesn't — Europe moves a week earlier than
+ * the US — the 24-hour step lands on the same Pacific date twice, and one day
+ * silently drops out of the week. Anchoring on the Pacific date and stepping in
+ * UTC keeps the seven days exactly seven, wherever it is read.
+ */
 function pstDateNDaysAgo(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - offset);
-  return getPstDateString(d);
+  const anchor = new Date(`${getPstDateString()}T12:00:00Z`);
+  anchor.setUTCDate(anchor.getUTCDate() - offset);
+  return anchor.toISOString().slice(0, 10);
 }
 
 /** Last 7 calendar dates (PST), oldest first. */
@@ -87,10 +97,11 @@ export function getStreak(workouts: Workout[]): number {
 
   let streak = 0;
   const d = new Date(`${cursor}T12:00:00Z`);
-  // walk backwards while each day has activity
-  while (days.has(getPstDateString(d))) {
+  // Walk backwards while each day has activity, stepping in UTC for the same
+  // reason as pstDateNDaysAgo: a device-local step can repeat or skip a day.
+  while (days.has(d.toISOString().slice(0, 10))) {
     streak += 1;
-    d.setDate(d.getDate() - 1);
+    d.setUTCDate(d.getUTCDate() - 1);
   }
   return streak;
 }
@@ -182,7 +193,10 @@ export function getWorkoutBadges(
     (primary.unit === 'pts' && primary.value >= 20);
   if (isLong) badges.push({ kind: 'long', label: 'Long one' });
 
-  // Early — logged before 7am local time
+  // Early — logged before 7am Pacific. This is the squad's shared clock, not the
+  // rower's: we don't store the zone they logged from, so a rower training in
+  // Europe can't earn it and one in Australia can earn it in the afternoon.
+  // Fixing that properly needs the logger's offset stored on the row.
   if (workout.createdAt) {
     const hour = Number(
       new Date(workout.createdAt).toLocaleTimeString('en-US', {

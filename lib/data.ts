@@ -21,7 +21,7 @@ export const ALL_USERS: User[] = [
   { id: 'scalfi', name: 'Scalfi', teamId: 'group-2' },
   { id: 'berwick', name: 'Berwick', teamId: 'group-4' },
   { id: 'wolfensberger', name: 'Wolfensberger', teamId: 'group-1' },
-  { id: 'donovan-davis', name: 'Donovan-Davis', teamId: 'group-1' },
+  { id: 'donovan-davies', name: 'Donovan-Davies', teamId: 'group-1' },
   { id: 'freijo', name: 'Freijo', teamId: 'group-2' },
   { id: 'corbett', name: 'Corbett', teamId: 'group-4' },
   { id: 'salvi', name: 'Salvi', teamId: 'group-3' },
@@ -60,7 +60,7 @@ export const USER_EMAILS: Record<string, string> = {
   'cvac05@stanford.edu': 'vachris',
   'cmuehl@stanford.edu': 'muehl',
   'dannys29@stanford.edu': 'stephenson',
-  'elliott5@stanford.edu': 'donovan-davis',
+  'elliott5@stanford.edu': 'donovan-davies',
   'florgen@stanford.edu': 'lorgen',
   'ggeorge8@stanford.edu': 'george',
   'zammit@stanford.edu': 'zammit',
@@ -98,9 +98,9 @@ export interface GroupMember {
  * The training-group sheet — the source of truth for team assignment and for
  * showing who is in which group (including teammates who haven't signed up).
  *
- * An account is matched to its group on sign-up by email, falling back to the
- * name on this sheet (see getTeamIdForPerson), so the rowers whose email we
- * don't have yet — Pakulis, Frye, Kelly — still land in the right group.
+ * This is what every screen reads (see resolveTeamId): the group stored on a
+ * profile is only a fallback for someone the sheet has never heard of. Correct
+ * a name here and the whole app agrees on the next load.
  *
  * 36 rowers (nine per group) plus the four coxswains.
  */
@@ -135,7 +135,7 @@ export const GROUP_ROSTER: GroupMember[] = [
   { name: 'Endicott', email: 'braun11@stanford.edu', teamId: 'group-3' },
   { name: 'Muehl', email: 'cmuehl@stanford.edu', teamId: 'group-3' },
   { name: 'Auth', email: 'auth@stanford.edu', teamId: 'group-3' },
-  { name: 'Pakulis', teamId: 'group-3' },
+  { name: 'Pakulis', email: 'tpakulis@stanford.edu', teamId: 'group-3' },
   { name: 'Tubidis', email: 'zorbalzr@stanford.edu', teamId: 'group-3' },
 
   // ── Group 4 ──
@@ -145,9 +145,9 @@ export const GROUP_ROSTER: GroupMember[] = [
   { name: 'Vachris', email: 'cvac05@stanford.edu', teamId: 'group-4' },
   { name: 'Hanna-Amodio', email: 'amodio@stanford.edu', teamId: 'group-4' },
   { name: 'Routley', email: 'thebig0z@stanford.edu', teamId: 'group-4' },
-  { name: 'Frye', teamId: 'group-4' },
+  { name: 'Frye', email: 'jackfrye@stanford.edu', teamId: 'group-4' },
   { name: 'Petrow', email: 'gzpetrow@stanford.edu', teamId: 'group-4' },
-  { name: 'Kelly', teamId: 'group-4' },
+  { name: 'Kelly', email: 'tjkelly@stanford.edu', teamId: 'group-4' },
 
   // ── Coxswains ──
   { name: 'Koo', email: 'joskoo@stanford.edu', teamId: 'coxswains' },
@@ -251,6 +251,40 @@ export function rosterEntryFor(
   return byEmail ?? rosterEntryByName(name);
 }
 
+/**
+ * The group an account belongs to.
+ *
+ * profiles.team_id is stamped once at sign-up and never revisited, so anyone
+ * who joined before the sheet existed — or before we had their email — keeps a
+ * stale group for good. That is how Kelly and Frye ended up 'unassigned' while
+ * the sheet had them in Group 4 all along. Reading the sheet here instead means
+ * a correction lands everywhere on the next load, with no data migration and no
+ * way for the two to drift apart again.
+ *
+ * Someone the sheet has never heard of — a walk-on, a coach — keeps whatever
+ * their profile was given.
+ */
+export function resolveTeamId(
+  email: string | null | undefined,
+  name: string | null | undefined,
+  storedTeamId?: string | null
+): string {
+  // `||`, not `??`: team_id is NOT NULL in the database, so a missing group
+  // arrives as an empty string rather than null.
+  const stored = storedTeamId || UNASSIGNED_TEAM_ID;
+
+  // An address on the sheet identifies someone outright, so it always wins.
+  const byEmail = getTeamIdForEmail(email);
+  if (byEmail !== UNASSIGNED_TEAM_ID) return byEmail;
+
+  // A surname is only a guess. It is good enough to place a rower the sheet has
+  // never assigned, and not good enough to move one who already has a group —
+  // otherwise a walk-on who happens to be another Smith would be dragged into
+  // Group 1 on sight.
+  if (stored !== UNASSIGNED_TEAM_ID) return stored;
+  return rosterEntryFor(email, name)?.teamId ?? UNASSIGNED_TEAM_ID;
+}
+
 export const ADMIN_EMAILS = [
   'joskoo@stanford.edu', // Koo
   'kjalford@stanford.edu', // Kannan Alford
@@ -262,9 +296,10 @@ export const APP_TIME_ZONE = 'America/Los_Angeles';
 // this only formats the rendered label (so pills read "+5.1", not "+5.06275").
 const PRECISE_NUMBER_FORMATTER = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
 
-export function getPstDateString(date: Date = new Date()): string {
+/** YYYY-MM-DD for an instant, read in a particular zone. */
+function dateStringInZone(date: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: APP_TIME_ZONE,
+    timeZone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -278,6 +313,43 @@ export function getPstDateString(date: Date = new Date()): string {
     if (part.type === 'day') day = part.value;
   }
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * The squad's shared calendar day. Anything every rower sees the same way —
+ * streaks, the weekly card, badges — is anchored here on purpose, so the board
+ * reads identically whether you open it in Palo Alto or in Athens.
+ */
+export function getPstDateString(date: Date = new Date()): string {
+  return dateStringInZone(date, APP_TIME_ZONE);
+}
+
+/**
+ * The date on the rower's own wall, from their device.
+ *
+ * Half the squad trains abroad over the summer, and their day is the one that
+ * matters when they log: someone finishing a session at 21:00 in Germany is
+ * eight hours into a day California has not started yet. Used for what a rower
+ * may pick in the log form — never for anything another rower reads, which
+ * would make the board depend on who is looking at it.
+ */
+export function getLocalDateString(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * The latest calendar date in progress anywhere on earth (UTC+14).
+ *
+ * The scorer needs a "nobody can have trained later than this" line that is the
+ * same for every viewer. Reading it in the furthest-ahead zone means a rower in
+ * Auckland is never told their Thursday session is in the future, while still
+ * refusing a row dated next week.
+ */
+export function getLatestDateAnywhere(date: Date = new Date()): string {
+  return dateStringInZone(date, 'Pacific/Kiritimati');
 }
 
 export function formatPstDate(dateStr: string, options?: Intl.DateTimeFormatOptions): string {

@@ -19,7 +19,7 @@ const SAMPLE: Array<Pick<Workout, 'id' | 'oderId' | 'type' | 'minutes' | 'distan
   { id: 's5', oderId: 'harvey', type: 'rowing_no_pieces', minutes: 80, distance: 16600, createdAt: new Date().toISOString() },
   { id: 's6', oderId: 'george', type: 'cross_bike_outdoor', minutes: 95, createdAt: new Date().toISOString() },
   { id: 's7', oderId: 'salvi', type: 'cross_swim', minutes: 50, createdAt: new Date().toISOString() },
-  { id: 's8', oderId: 'donovan-davis', type: 'rowing_with_pieces', minutes: 70, distance: 14800, createdAt: new Date().toISOString() },
+  { id: 's8', oderId: 'donovan-davies', type: 'rowing_with_pieces', minutes: 70, distance: 14800, createdAt: new Date().toISOString() },
   { id: 's9', oderId: 'lorgen', type: 'cross_run', minutes: 45, distance: 9200, createdAt: new Date().toISOString() },
 ];
 

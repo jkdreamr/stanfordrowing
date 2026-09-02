@@ -9,10 +9,11 @@ import {
   getTeamById,
   getWorkoutLabel,
   isAdminEmail,
+  getLatestDateAnywhere,
 } from '@/lib/data';
 import { getAllProfiles, getProfileByAuthId, Profile } from '@/lib/userProfile';
 import { scoreWorkouts, totalPoints as sumPoints } from '@/lib/scoring';
-import { decodeSlots, PLAN_END, PLAN_START, sessionAt } from '@/lib/trainingPlan';
+import { decodeSlots, PLAN_END, PLAN_START, sessionAt, sessionsFor } from '@/lib/trainingPlan';
 import { Workout, WorkoutType, WorkoutTypeConfig, WORKOUT_TYPES } from '@/lib/types';
 import { supabase, clearLocalAuth } from '@/lib/supabaseClient';
 import {
@@ -169,11 +170,68 @@ export default function Admin() {
       setLoadError('A workout needs a date.');
       return;
     }
+    // The scorer refuses to score a day that hasn't happened, so dating a
+    // workout forward would silently zero everything that rower logged that day.
+    if (editValues.date > getLatestDateAnywhere()) {
+      setLoadError('That date is in the future — the day would score nothing.');
+      return;
+    }
+
+    // Editing must not quietly break a plan claim. A claim survives only while
+    // the row still sits on its session's date and stays a discipline that
+    // session allows, and its bonus is pro-rated against the measure the sheet
+    // states — so an edit that drops any of those has to say so first.
+    const claimed = decodeSlots(workout.activityName);
+    if (claimed.length > 0) {
+      const stillPrescribed = sessionsFor(editValues.date).filter((s) => claimed.includes(s.slot));
+      if (stillPrescribed.length < claimed.length) {
+        setLoadError(
+          `${formatPstDate(editValues.date)} has no ${claimed.join(' or ').toUpperCase()} session — moving this there would drop its plan bonus.`
+        );
+        return;
+      }
+      // A slot goes to the earliest claim on the day, so moving an older row
+      // onto a date the rower has already covered would quietly demote the row
+      // that was counting and cost them the bonus.
+      const conflict = workouts.find(
+        (other) =>
+          other.id !== workout.id &&
+          other.oderId === workout.oderId &&
+          other.date === editValues.date &&
+          decodeSlots(other.activityName).some((slot) => claimed.includes(slot))
+      );
+      if (conflict) {
+        setLoadError(
+          `That rower already has a ${claimed.join('/').toUpperCase()} session on ${formatPstDate(editValues.date)} — only one can count.`
+        );
+        return;
+      }
+      const disallowed = stillPrescribed.find(
+        (s) => s.types.length > 0 && !s.types.includes(editValues.type)
+      );
+      if (disallowed) {
+        setLoadError(`"${disallowed.label}" cannot be logged as that type — the plan bonus would be lost.`);
+        return;
+      }
+      // The bonus is pro-rated against whichever measure the sheet states, so
+      // whichever one that is has to survive the edit.
+      const needsMeters = stillPrescribed.some((s) => !!s.minMeters);
+      if (needsMeters && !hasDistance) {
+        setLoadError('This plan session is measured in metres — clearing the distance would wipe its bonus.');
+        return;
+      }
+      const needsMinutes = stillPrescribed.some((s) => !s.minMeters && !!s.minMinutes);
+      if (needsMinutes && !(minutesValue > 0)) {
+        setLoadError('This is a plan session — it needs minutes, or its bonus is pro-rated to nothing.');
+        return;
+      }
+    }
     const updatedWorkout: Workout = {
       ...workout,
       type: editValues.type,
       date: editValues.date,
       minutes: Number.isFinite(minutesValue) && minutesValue > 0 ? minutesValue : 0,
+      // activity_name (and with it any plan claim) rides along on the spread above.
       distance: hasDistance ? distanceValue : undefined,
       notes: editValues.notes ? editValues.notes.trim() : undefined,
     };
@@ -233,7 +291,35 @@ export default function Admin() {
   };
 
   /** Persist all multiplier inputs, then refresh the live config (inputs untouched). */
+  /**
+   * Multipliers rescore every workout in the app the moment they save, and the
+   * box autosaves on a debounce with no confirm step, so a half-typed number is
+   * a live change to the whole board. Anything outside this range is a slip.
+   */
+  const isSaneMultiplier = (value: string): boolean => {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 && n <= 10;
+  };
+
   const persistMultipliers = async () => {
+    // A blank workout box is skipped by buildPayload, so it changes nothing and
+    // is fine to leave. Anything actually typed has to be a real multiplier.
+    const badWorkout = (Object.entries(workoutInputsRef.current) as [WorkoutType, string][])
+      .find(([, v]) => v !== undefined && v.trim() !== '' && !isSaneMultiplier(v));
+    if (badWorkout) {
+      setSaveStatus('idle');
+      setLoadError(`"${badWorkout[1]}" isn't a usable multiplier — it needs to be a number above 0 and no more than 10.`);
+      return;
+    }
+    // A blank team box is not harmless: Number('') is 0, which buildPayload
+    // accepts as finite and would wipe that group's score to nothing.
+    const badTeam = Object.entries(teamInputsRef.current)
+      .find(([, v]) => v === undefined || v.trim() === '' || !isSaneMultiplier(v));
+    if (badTeam) {
+      setSaveStatus('idle');
+      setLoadError(`"${badTeam[1]}" isn't a usable team multiplier — it needs to be a number above 0 and no more than 10.`);
+      return;
+    }
     setSaveStatus('saving');
     setLoadError('');
     try {

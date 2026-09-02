@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { formatMeters, formatPreciseNumber, formatPstDate, getPstDateString } from '@/lib/data';
+import { formatMeters, formatPreciseNumber, formatPstDate, getLocalDateString, getPstDateString } from '@/lib/data';
+import { useLocalToday } from '@/lib/useLocalToday';
 import { getAllProfiles, getProfileByAuthId, isStanfordEmail, profileToUser } from '@/lib/userProfile';
 import { createNotifications } from '@/lib/notifications';
 import { Mentionable, parseMentions, useMentionAutocomplete } from '@/lib/mentions';
@@ -45,6 +46,13 @@ const inputClass =
 // Exact international mile, so a run logged in miles converts to meters with no
 // rounding — points are scored on the precise meters, only the display rounds.
 const METERS_PER_MILE = 1609.344;
+/**
+ * Sanity bounds. Not a judgement on anyone's training — just far enough beyond
+ * any real session that only a slipped decimal or a wrong unit lands here, and
+ * one of those on the board is hard to spot and harder to explain.
+ */
+const MAX_METERS = 100_000;
+const MAX_MINUTES = 1_440;
 
 export default function LogWorkout() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -52,7 +60,14 @@ export default function LogWorkout() {
   const [hasPieces, setHasPieces] = useState(false);
   const [liftPlan, setLiftPlan] = useState(true);
   const [bikeOutdoor, setBikeOutdoor] = useState(false);
+  // The rower's own day, not California's — see useLocalToday.
+  const today = useLocalToday();
   const [sessionDate, setSessionDate] = useState<string>(getPstDateString());
+  // Settle onto the device's date once we are on the client. Runs before the
+  // rower can have picked anything, so it never overwrites a real choice.
+  useEffect(() => {
+    setSessionDate(getLocalDateString());
+  }, []);
   const [minutes, setMinutes] = useState<number>(0);
   const [distanceKm, setDistanceKm] = useState<string>('');
   // Runners can log in miles; we convert to meters on save so the feed/board stay in meters.
@@ -74,6 +89,8 @@ export default function LogWorkout() {
   const [selectedSlots, setSelectedSlots] = useState<SessionSlot[]>([]);
   /** What they actually did for each ticked session — metres or minutes. */
   const [sessionWork, setSessionWork] = useState<Record<string, string>>({});
+  // Runners think in miles, including on the plan's run days.
+  const [sessionUnit, setSessionUnit] = useState<Record<string, 'm' | 'mi'>>({});
   /** For a "Your Choice" session, the discipline they actually did. */
   const [choiceType, setChoiceType] = useState<Record<string, WorkoutType>>({});
   /** Time on a session scored by distance — recorded, not scored. */
@@ -152,6 +169,14 @@ export default function LogWorkout() {
       ? session.types
       : (Object.keys(WORKOUT_TYPES) as WorkoutType[]).filter((x) => x !== 'training_session');
 
+  /** Metres for a session's entered work, converting from miles when that's the unit. */
+  const sessionMeters = (session: { slot: SessionSlot; scoreAs?: WorkoutType }, raw: number): number =>
+    sessionUnit[session.slot] === 'mi' ? raw * METERS_PER_MILE : raw;
+
+  /** Whether a session's work is logged as a run, so it can be entered in miles. */
+  const sessionIsRun = (session: { slot: SessionSlot; scoreAs?: WorkoutType }): boolean =>
+    typeForSession(session) === 'cross_run';
+
   /** Whether a session's work is measured in metres rather than minutes. */
   const sessionBasis = (session: { slot: SessionSlot; scoreAs?: WorkoutType }): 'minutes' | 'distance' => {
     const t = typeForSession(session);
@@ -187,7 +212,7 @@ export default function LogWorkout() {
 
     // Validate with visible feedback — never fail silently (a dead-looking button).
     if (category === 'session') {
-      if (sessionDate > getPstDateString()) {
+      if (sessionDate > today) {
         setFormError("You can't log a session before you've done it."); return;
       }
       const validSlots = selectedSlots.filter((slot) => daySessions.some((x) => x.slot === slot));
@@ -198,6 +223,18 @@ export default function LogWorkout() {
         const mins = Number(sessionMinutes[session.slot] ?? '');
         if (!Number.isFinite(work) || work <= 0) {
           setFormError(`Enter your ${asDist ? 'distance' : 'minutes'} for the ${session.slot.toUpperCase()} session.`);
+          return;
+        }
+        if (asDist && sessionMeters(session, work) > MAX_METERS) {
+          setFormError(`That ${session.slot.toUpperCase()} distance looks too big — check the number and the unit.`);
+          return;
+        }
+        if (!asDist && work > MAX_MINUTES) {
+          setFormError(`That ${session.slot.toUpperCase()} session is over 24 hours — check the number.`);
+          return;
+        }
+        if (asDist && Number.isFinite(mins) && mins > MAX_MINUTES) {
+          setFormError(`That ${session.slot.toUpperCase()} session is over 24 hours — check the number.`);
           return;
         }
         // The bonus is pro-rated against the sheet's target, so we need the
@@ -213,13 +250,17 @@ export default function LogWorkout() {
       setFormError('Enter how many minutes you did.'); return;
     } else if (basis === 'distance' && distanceValue <= 0) {
       setFormError(loggingMiles ? 'Enter your distance in miles.' : 'Enter your distance in meters.'); return;
+    } else if (basis === 'distance' && distanceValue > MAX_METERS) {
+      setFormError('That distance looks too big — check the number and the unit.'); return;
+    } else if (basis === 'minutes' && minutes > MAX_MINUTES) {
+      setFormError('That is over 24 hours — check the number.'); return;
     }
 
     setFormError('');
     setProofUploadError('');
     setIsSubmitting(true);
 
-    const date = category === 'session' ? sessionDate : getPstDateString();
+    const date = category === 'session' ? sessionDate : today;
 
     try {
       // Upload proof files FIRST so the workout is never saved without its proof,
@@ -248,8 +289,11 @@ export default function LogWorkout() {
       if (category === 'session') {
         for (const session of daySessions.filter((x) => selectedSlots.includes(x.slot))) {
           const raw = Number(sessionWork[session.slot] ?? '');
-          const value = Number.isFinite(raw) && raw > 0 ? raw : 0;
+          const entered = Number.isFinite(raw) && raw > 0 ? raw : 0;
           const asDistance = sessionBasis(session) === 'distance';
+          // Stored in metres whatever the rower typed, so the feed and the
+          // board stay in one unit.
+          const value = asDistance ? sessionMeters(session, entered) : entered;
           created.push(
             await createWorkout({
               user: selectedUser,
@@ -319,9 +363,10 @@ export default function LogWorkout() {
     setHasPieces(false);
     setLiftPlan(true);
     setBikeOutdoor(false);
-    setSessionDate(getPstDateString());
+    setSessionDate(getLocalDateString());
     setSelectedSlots([]);
     setSessionWork({});
+    setSessionUnit({});
     setSessionMinutes({});
     setChoiceType({});
     setMinutes(0);
@@ -557,12 +602,13 @@ export default function LogWorkout() {
               type="date"
               value={sessionDate}
               min={PLAN_START}
-              max={getPstDateString()}
+              max={today}
               onChange={(e) => {
                 // A different day has a different plan — start its ticks clean.
                 setSessionDate(e.target.value);
                 setSelectedSlots([]);
                 setSessionWork({});
+                setSessionUnit({});
                 setSessionMinutes({});
                 setChoiceType({});
                 setFormError('');
@@ -594,6 +640,8 @@ export default function LogWorkout() {
                   const claimed = alreadyClaimed.includes(session.slot);
                   const picked = selectedSlots.includes(session.slot);
                   const asDistance = sessionBasis(session) === 'distance';
+                  const isRunSession = asDistance && sessionIsRun(session);
+                  const unit = sessionUnit[session.slot] ?? 'm';
                   // The sheet states most targets in minutes; the k-piece days
                   // in metres. Whichever it is, we need that number to pro-rate.
                   const targetIsMeters = !!session.minMeters;
@@ -667,12 +715,36 @@ export default function LogWorkout() {
                       {picked && !claimed && (
                         <div className="mt-2 space-y-2.5 pl-3">
                           <div>
-                            <label
-                              htmlFor={`work-${session.slot}`}
-                              className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted"
-                            >
-                              {asDistance ? 'Distance (m)' : 'Minutes'}
-                            </label>
+                            <div className="mb-1.5 flex items-center justify-between gap-2">
+                              <label
+                                htmlFor={`work-${session.slot}`}
+                                className="block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted"
+                              >
+                                {asDistance ? `Distance (${isRunSession ? unit : 'm'})` : 'Minutes'}
+                              </label>
+                              {isRunSession && (
+                                <div className="flex gap-1" role="group" aria-label="Distance unit">
+                                  {(['m', 'mi'] as const).map((u) => (
+                                    <button
+                                      key={u}
+                                      type="button"
+                                      onClick={() => {
+                                        setSessionUnit((prev) => ({ ...prev, [session.slot]: u }));
+                                        setFormError('');
+                                      }}
+                                      aria-pressed={unit === u}
+                                      className={`focus-ring min-h-[44px] min-w-[44px] rounded-lg px-3 text-[12px] font-semibold transition-colors touch-manipulation ${
+                                        unit === u
+                                          ? 'bg-charcoal text-bone'
+                                          : 'border border-stone/40 text-charcoal-muted'
+                                      }`}
+                                    >
+                                      {u}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                             <input
                               id={`work-${session.slot}`}
                               type="number"
@@ -683,12 +755,18 @@ export default function LogWorkout() {
                               onChange={(e) =>
                                 setSessionWork((prev) => ({ ...prev, [session.slot]: e.target.value }))
                               }
-                              placeholder={asDistance ? 'e.g. 15000' : String(session.minMinutes ?? '')}
+                              placeholder={
+                                asDistance ? (isRunSession && unit === 'mi' ? 'e.g. 5' : 'e.g. 15000') : String(session.minMinutes ?? '')
+                              }
                               className={inputClass}
                             />
                             <p className="mt-1.5 text-[11px] text-charcoal-muted">
                               {asDistance
-                                ? `Scored on metres. The sheet asks for ${sessionRequirement(session)}.`
+                                ? `${
+                                    isRunSession && unit === 'mi'
+                                      ? 'Converted to metres when it saves. '
+                                      : 'Scored on metres. '
+                                  }The sheet asks for ${sessionRequirement(session)}.`
                                 : 'Earns its normal points on top of the bonus.'}
                             </p>
                           </div>

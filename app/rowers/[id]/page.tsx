@@ -22,8 +22,8 @@ import {
   updateWorkoutRow,
 } from '@/lib/supabaseData';
 import { aggregateRower, getWeeklySummary } from '@/lib/stats';
-import { scoreWorkouts } from '@/lib/scoring';
-import { isLegacyDate, PLAN_START } from '@/lib/trainingPlan';
+import { LEGACY_PLAN_TYPE, scoreWorkouts } from '@/lib/scoring';
+import { decodeSlots, isLegacyDate, PLAN_START, sessionsFor } from '@/lib/trainingPlan';
 import { useScrollToHash } from '@/lib/useScrollToHash';
 import RowerProfileHeader from '../../components/RowerProfileHeader';
 import WeeklySummaryCard from '../../components/WeeklySummaryCard';
@@ -202,6 +202,36 @@ export default function RowerProfilePage() {
     }
   };
 
+  /**
+   * The prescribed sessions the workout being edited is claiming. An edit must
+   * not be able to quietly break a claim — changing the type to something the
+   * session doesn't allow, or clearing the measure its target is written in,
+   * would silently cost the rower the bonus.
+   */
+  const editedSessions = useMemo(() => {
+    if (!editing) return [];
+    const claimed = decodeSlots(editing.activityName);
+    if (claimed.length === 0) return [];
+    return sessionsFor(editing.date).filter((s) => claimed.includes(s.slot));
+  }, [editing]);
+
+  const editTypeOptions = useMemo(() => {
+    // The retired plan marker scores nothing at all, so it must never be
+    // something a rower can pick and quietly zero their workout with.
+    const all = (Object.entries(WORKOUT_TYPES) as [WorkoutType, WorkoutTypeConfig][])
+      .filter(([k]) => k !== LEGACY_PLAN_TYPE);
+    const allowed = editedSessions.flatMap((s) => s.types);
+    // A session the sheet leaves open ("Your Choice") accepts anything.
+    if (editedSessions.length === 0 || allowed.length === 0) return all;
+    const narrowed = all.filter(([k]) => allowed.includes(k));
+    // Keep the row's own type on the list whatever happens, or the dropdown
+    // would show one thing and save another.
+    const own = all.find(([k]) => k === editing?.type);
+    return own && !narrowed.some(([k]) => k === own[0]) ? [own, ...narrowed] : narrowed;
+  }, [editedSessions, editing]);
+
+  const editNeedsMinutes = editedSessions.some((s) => !s.minMeters && !!s.minMinutes);
+
   const startEdit = (w: Workout) => {
     setEditing(w);
     setEditValues({
@@ -221,11 +251,18 @@ export default function RowerProfilePage() {
     const distance = editValues.distance ? Number(editValues.distance) : undefined;
     if (basis === 'minutes' && minutes <= 0) { setEditError('Enter minutes greater than 0.'); return; }
     if (basis === 'distance' && (!distance || distance <= 0)) { setEditError('Enter a distance greater than 0.'); return; }
+    if (editNeedsMinutes && minutes <= 0) {
+      setEditError('This counts as a plan session — enter the minutes so it still earns its bonus.');
+      return;
+    }
     setEditError('');
     const updated: Workout = {
       ...editing,
       type: editValues.type,
-      minutes: basis === 'minutes' ? minutes : 0,
+      // Keep the minutes exactly as entered whatever the type's basis. They used
+      // to be discarded for distance work, which silently wiped the completion
+      // measure a plan session's bonus is pro-rated against.
+      minutes,
       distance: distance && distance > 0 ? distance : undefined,
       notes: editValues.notes.trim() || undefined,
     };
@@ -374,6 +411,15 @@ export default function RowerProfilePage() {
           <div className="absolute inset-0 bg-charcoal/60 backdrop-blur-sm" />
           <div className="card-solid relative z-10 w-full max-w-md p-6 shadow-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-semibold text-charcoal">Edit workout</h3>
+            {editedSessions.length > 0 && (
+              <p className="mt-2 flex items-start gap-1.5 rounded-xl bg-coral/10 px-3 py-2 text-[12px] leading-snug text-coral">
+                <Icon name="event_available" className="mt-px shrink-0 text-[14px]" />
+                <span>
+                  Counts as {editedSessions.map((s) => s.label).join(' + ')}. Keep the
+                  {editNeedsMinutes ? ' minutes' : ' distance'} filled in so it keeps its bonus.
+                </span>
+              </p>
+            )}
             <div className="mt-4 space-y-3">
               <div>
                 <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Type</label>
@@ -382,14 +428,14 @@ export default function RowerProfilePage() {
                   onChange={(e) => setEditValues((v) => ({ ...v, type: e.target.value as WorkoutType }))}
                   className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal"
                 >
-                  {(Object.entries(WORKOUT_TYPES) as [WorkoutType, WorkoutTypeConfig][]).map(([k, c]) => (
+                  {editTypeOptions.map(([k, c]) => (
                     <option key={k} value={k}>{c.label}</option>
                   ))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Minutes</label>
+                  <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-charcoal-muted">Minutes{editNeedsMinutes && <span className="text-coral"> *</span>}</label>
                   <input type="number" inputMode="numeric" value={editValues.minutes} onChange={(e) => setEditValues((v) => ({ ...v, minutes: e.target.value }))} className="focus-ring w-full rounded-xl border border-stone/40 bg-bone-dark/40 px-3 py-2 text-[13px] text-charcoal" />
                 </div>
                 <div>
