@@ -63,8 +63,13 @@ export default function WorkoutPostCard({
 }: WorkoutPostCardProps) {
   const [showComments, setShowComments] = useState(false);
   // A plan log is any workout that claimed a prescribed session for its date.
-  const planSlots = decodeSlots(workout.activityName);
-  const isPlanSession = planSlots.length > 0;
+  // What the row says it claimed, and what the scorer actually credited. They
+  // differ when a claim was rejected — a duplicate of a slot already taken, or
+  // a row edited into something the session doesn't allow — and in that case the
+  // card must stop showing it as a completed session.
+  const claimedSlots = decodeSlots(workout.activityName);
+  const isPlanSession = claimedSlots.length > 0;
+  const planSlots = score ? score.slots : claimedSlots;
   const author = getUserById(workout.oderId);
   const displayName = author?.name ?? workout.userName ?? 'Unknown';
   const primary = getWorkoutPrimaryValue(workout, configs);
@@ -75,6 +80,7 @@ export default function WorkoutPostCard({
     .map((slot) => sessionAt(workout.date, slot))
     .filter((s): s is NonNullable<typeof s> => !!s);
   const bonus = score?.bonus ?? 0;
+  const claimNotCounted = isPlanSession && planSlots.length === 0 && !(score?.legacy ?? false);
   const reactions = workout.reactions ?? [];
   const comments = workout.comments ?? [];
   const hasReacted = reactions.some((r) => r.userId === currentUser?.id);
@@ -164,10 +170,29 @@ export default function WorkoutPostCard({
                   <span className="mx-1 text-charcoal-light">·</span>
                   <span className="uppercase tracking-wider text-charcoal-muted">{ps.slot}</span>{' '}
                   {ps.label}
-                  {bonus > 0 && <span className="ml-1 font-semibold text-coral">+{bonus}</span>}
+                  {bonus > 0 && planSessions.length === 1 && (
+                    <span className="ml-1 font-semibold text-coral">+{formatPreciseNumber(bonus)}</span>
+                  )}
                 </p>
               </div>
             ))}
+            {bonus > 0 && planSessions.length > 1 && (
+              <p className="px-1 text-[12px] font-semibold text-coral">
+                +{formatPreciseNumber(bonus)} session bonus
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Claimed a session that didn't end up counting — say so rather than
+            leaving the rower to wonder where the bonus went. */}
+        {claimNotCounted && (
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2">
+            <Icon name="info" size={16} className="mt-px shrink-0 text-charcoal-muted" />
+            <p className="min-w-0 text-[12px] leading-snug text-charcoal-muted">
+              Logged against the plan, but it didn&apos;t count — that session was already
+              claimed, or this isn&apos;t work the session allows.
+            </p>
           </div>
         )}
 

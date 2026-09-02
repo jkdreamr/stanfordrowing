@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import { User } from './types';
-import { getTeamIdForPerson, isAdminEmail } from './data';
+import { getTeamIdForPerson, isAdminEmail, resolveTeamId } from './data';
 
 export interface Profile {
   id: string;
@@ -27,7 +27,8 @@ function rowToProfile(row: ProfileRow): Profile {
     id: row.id,
     email: row.email,
     name: row.name,
-    teamId: row.team_id,
+    // The coaches' sheet wins over the group stamped at sign-up — see resolveTeamId.
+    teamId: resolveTeamId(row.email, row.name, row.team_id),
     isAdmin: row.is_admin,
     avatarUrl: row.avatar_url ?? undefined,
     createdAt: row.created_at,

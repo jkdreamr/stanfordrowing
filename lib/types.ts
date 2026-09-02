@@ -113,8 +113,23 @@ export const WORKOUT_TYPES: Record<WorkoutType, WorkoutTypeConfig> = {
     description: 'Outdoor bike time'
   },
   cross_run: {
+    /**
+     * Priced so that an hour of running is worth an hour of erging.
+     *
+     * At the old 0.001 a run paid exactly what an erg metre paid, which sounds
+     * fair and isn't: nobody runs a metre as fast as they pull one. An hour at
+     * 8:00/mile came to 12.1 points against 15.0 for an ordinary 2:00 split, so
+     * the rowers who cannot run fast — generally the biggest ones — were docked
+     * about a quarter of their score for training hard on their feet.
+     *
+     * 0.00125 sets the crossover at 8:00/mile <-> 2:00/500m, two efforts that
+     * really are comparable here: 15.1 against 15.0 points an hour. Quick
+     * runners still come out ahead, as quick ergers do, but not enough to make
+     * running the cheapest points in the app — a 7:00/mile hour pays 17.2,
+     * under what a 1:40 erg hour pays.
+     */
     label: 'Run',
-    multiplier: 0.001,
+    multiplier: 0.00125,
     basis: 'distance',
     description: 'Run meters'
   },

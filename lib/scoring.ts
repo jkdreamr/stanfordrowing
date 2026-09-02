@@ -1,9 +1,10 @@
 import { Workout, WorkoutType, WorkoutTypeConfig } from './types';
-import { getPstDateString, getWorkoutTypeConfigs } from './data';
+import { getLatestDateAnywhere, getWorkoutTypeConfigs } from './data';
 import {
   decodeSlots,
   isLegacyDate,
   PlanSession,
+  REFERENCE_PACE_M_PER_MIN,
   SESSION_BONUS,
   SessionSlot,
   sessionsFor,
@@ -84,13 +85,33 @@ export function volumePoints(
 /**
  * How much of a session's target the logged work covers, 0–1. The target is in
  * whatever unit the sheet states it in — metres for the k-piece days, minutes
- * everywhere else — and the log form requires that measure, so a rower is never
- * penalised for leaving an optional box empty.
+ * everywhere else.
+ *
+ * When the row is missing that measure but carries the other one, the session is
+ * read through {@link REFERENCE_PACE_M_PER_MIN} rather than scored as nothing.
+ * A rower who logs 15,000 m and no minutes did the morning session, and an edit
+ * that drops a field must never quietly cost them the bonus.
  */
 export function sessionFraction(workout: Workout, session: PlanSession): number {
   const required = session.minMeters ?? session.minMinutes ?? 0;
   if (required <= 0) return 1;
-  const achieved = session.minMeters ? workout.distance ?? 0 : workout.minutes;
+
+  const pace = REFERENCE_PACE_M_PER_MIN[workout.type];
+  const meters = workout.distance ?? 0;
+  const minutes = workout.minutes;
+
+  const achieved = session.minMeters
+    ? meters > 0
+      ? meters
+      : pace
+        ? minutes * pace
+        : 0
+    : minutes > 0
+      ? minutes
+      : pace
+        ? meters / pace
+        : 0;
+
   return Math.max(0, Math.min(1, achieved / required));
 }
 
@@ -105,7 +126,12 @@ export function scoreDay(
   // Nobody can have trained tomorrow. The log form blocks future dates, but the
   // client isn't the authority — a row written straight to the API would
   // otherwise let someone claim the whole plan on day one.
-  const future = date > getPstDateString();
+  //
+  // The line is drawn at the furthest-ahead zone rather than California's date,
+  // for two reasons: a rower training in Australia would otherwise have an
+  // honest session zeroed for being "tomorrow", and every viewer has to agree on
+  // the score regardless of where they open the app.
+  const future = date > getLatestDateAnywhere();
 
   if (legacy || future) {
     for (const w of workouts) {

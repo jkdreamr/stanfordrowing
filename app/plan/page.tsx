@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { formatPstDate, getPstDateString } from '@/lib/data';
+import { formatPstDate } from '@/lib/data';
+import { useLocalToday } from '@/lib/useLocalToday';
 import {
   PLAN_DAYS,
   PLAN_END,
@@ -15,7 +16,8 @@ import Icon from '../components/Icon';
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function PlanPage() {
-  const today = getPstDateString();
+  // Highlight the rower's own day — theirs may be a day ahead of California's.
+  const today = useLocalToday();
 
   const weeks = useMemo(() => {
     const byWeek = new Map<number, typeof PLAN_DAYS>();
